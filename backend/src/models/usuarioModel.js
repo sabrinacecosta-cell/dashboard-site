@@ -1,36 +1,64 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 
 const UsuarioModel = {
-  findByEmail(email) {
-    const stmt = db.prepare('SELECT * FROM usuarios WHERE email = ?');
-    return stmt.get(email) || null;
+  async findByEmail(email) {
+    const result = await pool.query(
+      'SELECT * FROM usuarios WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
   },
 
-  findById(id) {
-    const stmt = db.prepare('SELECT nome, email FROM usuarios WHERE id = ?');
-    return stmt.get(id) || null;
+  async findById(id) {
+    const result = await pool.query(
+      'SELECT nome, email FROM usuarios WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
   },
 
-  findByIdFull(id) {
-    const stmt = db.prepare('SELECT * FROM usuarios WHERE id = ?');
-    return stmt.get(id) || null;
+  async findByIdFull(id) {
+    const result = await pool.query(
+      'SELECT * FROM usuarios WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
   },
 
-  create({ nome, email, senha_hash }) {
-    const id = crypto.randomUUID();
-    const stmt = db.prepare(`
-      INSERT INTO usuarios (id, nome, email, senha_hash) 
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(id, nome, email, senha_hash);
-    return this.findById(id);
+  async create({ nome, email, senha_hash }) {
+    const result = await pool.query(
+      `INSERT INTO usuarios (id, nome, email, senha_hash) 
+       VALUES (gen_random_uuid(), $1, $2, $3) 
+       RETURNING id, nome, email, criado_em`,
+      [nome, email, senha_hash]
+    );
+    return result.rows[0];
   },
 
-  updateSenha(id, senha_hash) {
-    const stmt = db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?');
-    stmt.run(senha_hash, id);
-    return this.findById(id);
+  async createIfNotExists({ nome, email, senha_hash }) {
+    const result = await pool.query(
+      `INSERT INTO usuarios (id, nome, email, senha_hash) 
+       VALUES (gen_random_uuid(), $1, $2, $3) 
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id, nome, email, criado_em`,
+      [nome, email, senha_hash]
+    );
+    return result.rows[0] || null;
   },
+
+  async updateSenha(id, senha_hash) {
+    const result = await pool.query(
+      `UPDATE usuarios SET senha_hash = $1 WHERE id = $2 
+       RETURNING id, nome, email, criado_em`,
+      [senha_hash, id]
+    );
+    return result.rows[0];
+  },
+
+  async resetAllPasswords() {
+    const result = await pool.query('UPDATE usuarios SET senha_hash = NULL');
+    return result.rowCount;
+  }
 };
 
 module.exports = UsuarioModel;

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 function Vendas() {
+  const { user } = useAuth();
   const [producao, setProducao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,7 +41,7 @@ function Vendas() {
   return (
     <div className="page-vendas">
       <div className="page-header">
-        <h1>Minhas Vendas</h1>
+        <h1>Olá, {user?.nome}!</h1>
         <p className="page-subtitle">Acompanhe sua produção</p>
       </div>
 

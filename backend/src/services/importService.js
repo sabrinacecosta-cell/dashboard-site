@@ -1,8 +1,8 @@
 const XLSX = require('xlsx');
-const bcrypt = require('bcrypt');
-const db = require('../config/database');
+const ProducaoModel = require('../models/producaoModel');
+const UsuarioModel = require('../models/usuarioModel');
 
-const EXCEL_PATH = '/Users/sabrinacosta/Documents/Base .xlsx';
+const EXCEL_PATH = process.env.EXCEL_PATH || '/Users/sabrinacosta/Documents/Base .xlsx';
 
 const ImportService = {
   async importarPlanilha() {
@@ -11,29 +11,20 @@ const ImportService = {
     const dados = XLSX.utils.sheet_to_json(sheet);
 
     // Limpa tabela de produção
-    db.exec('DELETE FROM producao');
+    await ProducaoModel.deleteAll();
 
     // Insere produção
-    const stmtProd = db.prepare(`
-      INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const insertMany = db.transaction((registros) => {
-      for (const r of registros) {
-        stmtProd.run(
-          r.Mes,
-          r.Cliente,
-          r.Valor_do_bem,
-          r.Assessor,
-          r.Email || null,
-          r.Escritorio,
-          r.Ano
-        );
-      }
-    });
-
-    insertMany(dados);
+    for (const r of dados) {
+      await ProducaoModel.insert({
+        mes: r.Mes,
+        cliente: r.Cliente,
+        valor_do_bem: r.Valor_do_bem,
+        assessor: r.Assessor,
+        email_assessor: r.Email || null,
+        escritorio: r.Escritorio,
+        ano: r.Ano
+      });
+    }
 
     // Coleta assessores únicos com email
     const assessoresComEmail = new Map();
@@ -44,15 +35,14 @@ const ImportService = {
     }
 
     // Cria usuários novos (sem senha - primeiro acesso)
-    const stmtUser = db.prepare(`
-      INSERT OR IGNORE INTO usuarios (id, nome, email, senha_hash)
-      VALUES (?, ?, ?, NULL)
-    `);
-
     let novosUsuarios = 0;
     for (const [email, nome] of assessoresComEmail) {
-      const result = stmtUser.run(crypto.randomUUID(), nome, email);
-      if (result.changes > 0) novosUsuarios++;
+      const created = await UsuarioModel.createIfNotExists({ 
+        nome, 
+        email, 
+        senha_hash: null 
+      });
+      if (created) novosUsuarios++;
     }
 
     return {

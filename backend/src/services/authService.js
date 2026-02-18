@@ -43,7 +43,7 @@ const AuthService = {
   },
 
   async definirSenha(usuarioId, novaSenha) {
-    const usuario = await UsuarioModel.findById(usuarioId);
+    const usuario = await UsuarioModel.findByIdFull(usuarioId);
     
     if (!usuario) {
       throw new Error('Usuário não encontrado');
