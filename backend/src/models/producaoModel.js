@@ -1,50 +1,51 @@
-const pool = require('../config/database');
+const db = require('../config/database');
 
 const ProducaoModel = {
-  async findByAssessor(nomeAssessor, emailAssessor) {
-    const result = await pool.query(`
+  findByAssessor(nomeAssessor, emailAssessor) {
+    const stmt = db.prepare(`
       SELECT * FROM producao 
-      WHERE assessor = $1 OR email_assessor = $2
+      WHERE assessor = ? OR email_assessor = ?
       ORDER BY ano DESC, mes DESC
-    `, [nomeAssessor, emailAssessor]);
-    return result.rows;
+    `);
+    return stmt.all(nomeAssessor, emailAssessor);
   },
 
-  async getResumoByAssessor(nomeAssessor, emailAssessor) {
-    const result = await pool.query(`
+  getResumoByAssessor(nomeAssessor, emailAssessor) {
+    const stmt = db.prepare(`
       SELECT 
         ano,
         mes,
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
       FROM producao 
-      WHERE assessor = $1 OR email_assessor = $2
+      WHERE assessor = ? OR email_assessor = ?
       GROUP BY ano, mes
       ORDER BY ano DESC, mes DESC
-    `, [nomeAssessor, emailAssessor]);
-    return result.rows;
+    `);
+    return stmt.all(nomeAssessor, emailAssessor);
   },
 
-  async getTotalByAssessor(nomeAssessor, emailAssessor) {
-    const result = await pool.query(`
+  getTotalByAssessor(nomeAssessor, emailAssessor) {
+    const stmt = db.prepare(`
       SELECT 
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
       FROM producao 
-      WHERE assessor = $1 OR email_assessor = $2
-    `, [nomeAssessor, emailAssessor]);
-    return result.rows[0];
+      WHERE assessor = ? OR email_assessor = ?
+    `);
+    return stmt.get(nomeAssessor, emailAssessor);
   },
 
-  async deleteAll() {
-    await pool.query('DELETE FROM producao');
+  deleteAll() {
+    db.exec('DELETE FROM producao');
   },
 
-  async insert({ mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano }) {
-    await pool.query(`
+  insert({ mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano }) {
+    const stmt = db.prepare(`
       INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-    `, [mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano]);
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano);
   }
 };
 

@@ -1,47 +1,44 @@
 require('dotenv').config();
-const pool = require('../src/config/database');
+const fs = require('fs');
+const path = require('path');
 
-async function migrate() {
-  try {
-    console.log('Iniciando migração...');
-
-    // Cria tabela de usuários
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        nome VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        senha_hash VARCHAR(255),
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('Tabela "usuarios" criada!');
-
-    // Cria tabela de produção
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS producao (
-        id SERIAL PRIMARY KEY,
-        mes INTEGER,
-        cliente TEXT,
-        valor_do_bem DECIMAL(15,2),
-        assessor TEXT,
-        email_assessor TEXT,
-        escritorio TEXT,
-        ano INTEGER
-      )
-    `);
-    console.log('Tabela "producao" criada!');
-
-    // Índices
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);
-
-    console.log('Migração concluída!');
-    process.exit(0);
-  } catch (error) {
-    console.error('Erro na migração:', error);
-    process.exit(1);
-  }
+// Cria pasta data se não existir
+const dataDir = path.join(__dirname, '../data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
-migrate();
+const db = require('../src/config/database');
+
+console.log('Iniciando migração...');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS usuarios (
+    id TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    senha_hash TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+console.log('Tabela "usuarios" criada!');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS producao (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mes INTEGER,
+    cliente TEXT,
+    valor_do_bem REAL,
+    assessor TEXT,
+    email_assessor TEXT,
+    escritorio TEXT,
+    ano INTEGER
+  )
+`);
+console.log('Tabela "producao" criada!');
+
+// Índice para busca por assessor
+db.exec(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
+db.exec(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);
+
+console.log('Migração concluída!');

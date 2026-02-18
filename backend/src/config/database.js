@@ -1,17 +1,12 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const Database = require('better-sqlite3');
+const path = require('path');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const dbPath = path.join(__dirname, '../../data/auth.db');
+const db = new Database(dbPath);
 
-pool.on('connect', () => {
-  console.log('Conectado ao PostgreSQL');
-});
+// Habilita foreign keys
+db.pragma('journal_mode = WAL');
 
-pool.on('error', (err) => {
-  console.error('Erro na conexão com PostgreSQL:', err);
-});
+console.log('Conectado ao SQLite:', dbPath);
 
-module.exports = pool;
+module.exports = db;

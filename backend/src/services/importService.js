@@ -11,11 +11,11 @@ const ImportService = {
     const dados = XLSX.utils.sheet_to_json(sheet);
 
     // Limpa tabela de produção
-    await ProducaoModel.deleteAll();
+    ProducaoModel.deleteAll();
 
     // Insere produção
     for (const r of dados) {
-      await ProducaoModel.insert({
+      ProducaoModel.insert({
         mes: r.Mes,
         cliente: r.Cliente,
         valor_do_bem: r.Valor_do_bem,
@@ -37,7 +37,7 @@ const ImportService = {
     // Cria usuários novos (sem senha - primeiro acesso)
     let novosUsuarios = 0;
     for (const [email, nome] of assessoresComEmail) {
-      const created = await UsuarioModel.createIfNotExists({ 
+      const created = UsuarioModel.createIfNotExists({ 
         nome, 
         email, 
         senha_hash: null 
