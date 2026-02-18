@@ -36,6 +36,20 @@ const ProducaoModel = {
     return stmt.get(nomeAssessor, emailAssessor);
   },
 
+  getResumoAnualByAssessor(nomeAssessor, emailAssessor) {
+    const stmt = db.prepare(`
+      SELECT 
+        ano,
+        COUNT(*) as quantidade,
+        SUM(valor_do_bem) as total
+      FROM producao 
+      WHERE assessor = ? OR email_assessor = ?
+      GROUP BY ano
+      ORDER BY ano DESC
+    `);
+    return stmt.all(nomeAssessor, emailAssessor);
+  },
+
   deleteAll() {
     db.exec('DELETE FROM producao');
   },

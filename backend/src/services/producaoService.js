@@ -16,6 +16,7 @@ const ProducaoService = {
     // Busca produção
     const producao = ProducaoModel.findByAssessor(nomeAssessor, emailAssessor);
     const resumo = ProducaoModel.getResumoByAssessor(nomeAssessor, emailAssessor);
+    const resumoAnual = ProducaoModel.getResumoAnualByAssessor(nomeAssessor, emailAssessor);
     const totais = ProducaoModel.getTotalByAssessor(nomeAssessor, emailAssessor);
 
     return {
@@ -24,6 +25,7 @@ const ProducaoService = {
         quantidade: totais.quantidade || 0,
         valorTotal: totais.total || 0
       },
+      resumoAnual: resumoAnual,
       resumoMensal: resumo,
       detalhes: producao
     };

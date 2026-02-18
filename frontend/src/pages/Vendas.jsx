@@ -58,6 +58,29 @@ function Vendas() {
 
           {/* Tabela Resumo Mensal */}
           <div className="card">
+            <h3>Resumo Anual</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ano</th>
+                  <th style={{ textAlign: 'right' }}>Quantidade</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {producao.resumoAnual?.map((item, i) => (
+                  <tr key={i}>
+                    <td className="text-primary">{item.ano}</td>
+                    <td style={{ textAlign: 'right' }}>{item.quantidade}</td>
+                    <td style={{ textAlign: 'right' }} className="text-primary">{formatCurrency(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Tabela Resumo Mensal */}
+          <div className="card">
             <h3>Resumo Mensal</h3>
             <table>
               <thead>
