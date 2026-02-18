@@ -83,6 +83,7 @@ function Layout({ children }) {
 
 function AdminButton() {
   const [importando, setImportando] = React.useState(false);
+  const [resetando, setResetando] = React.useState(false);
   const [result, setResult] = React.useState(null);
 
   const handleImportar = async () => {
@@ -101,10 +102,29 @@ function AdminButton() {
     }
   };
 
+  const handleResetarSenhas = async () => {
+    if (!confirm('⚠️ ATENÇÃO: Isso vai resetar a senha de TODOS os usuários (incluindo a sua). Todos terão que criar nova senha no próximo login. Continuar?')) return;
+    setResetando(true);
+    try {
+      const api = (await import('../services/api')).default;
+      const response = await api.post('/admin/resetar-senhas');
+      setResult({ success: true, msg: response.data.message });
+      setTimeout(() => setResult(null), 4000);
+    } catch (err) {
+      setResult({ success: false, msg: 'Erro ao resetar' });
+      setTimeout(() => setResult(null), 3000);
+    } finally {
+      setResetando(false);
+    }
+  };
+
   return (
-    <div style={{ position: 'relative' }}>
-      <button className="btn-admin" onClick={handleImportar} disabled={importando}>
+    <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+      <button className="btn-admin" onClick={handleImportar} disabled={importando} title="Atualizar dados">
         {importando ? '...' : '🔄'}
+      </button>
+      <button className="btn-admin" onClick={handleResetarSenhas} disabled={resetando} title="Resetar senhas">
+        {resetando ? '...' : '🔑'}
       </button>
       {result && (
         <span className={`admin-toast ${result.success ? 'success' : 'error'}`}>
