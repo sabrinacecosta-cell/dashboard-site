@@ -43,16 +43,15 @@ const ImportService = {
       }
     }
 
-    // Cria usuários novos
-    const senhaHash = await bcrypt.hash('123456', 10);
+    // Cria usuários novos (sem senha - primeiro acesso)
     const stmtUser = db.prepare(`
       INSERT OR IGNORE INTO usuarios (id, nome, email, senha_hash)
-      VALUES (?, ?, ?, ?)
+      VALUES (?, ?, ?, NULL)
     `);
 
     let novosUsuarios = 0;
     for (const [email, nome] of assessoresComEmail) {
-      const result = stmtUser.run(crypto.randomUUID(), nome, email, senhaHash);
+      const result = stmtUser.run(crypto.randomUUID(), nome, email);
       if (result.changes > 0) novosUsuarios++;
     }
 
