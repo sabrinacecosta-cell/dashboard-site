@@ -7,7 +7,7 @@ const UsuarioModel = {
   },
 
   findById(id) {
-    const stmt = db.prepare('SELECT nome, email FROM usuarios WHERE id = ?');
+    const stmt = db.prepare('SELECT id, nome, email FROM usuarios WHERE id = ?');
     return stmt.get(id) || null;
   },
 
