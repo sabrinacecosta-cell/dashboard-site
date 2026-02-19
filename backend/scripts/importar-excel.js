@@ -10,48 +10,44 @@ const EXCEL_PATH = process.env.EXCEL_PATH || '/Users/sabrinacosta/Documents/Base
 async function importar() {
   console.log('Lendo planilha:', EXCEL_PATH);
   const workbook = XLSX.readFile(EXCEL_PATH);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const dados = XLSX.utils.sheet_to_json(sheet);
+  
+  // ========== IMPORTAR PRODUÇÃO (Planilha1) ==========
+  console.log('\n--- PRODUÇÃO ---');
+  const sheetProducao = workbook.Sheets['Planilha1'];
+  const dadosProducao = XLSX.utils.sheet_to_json(sheetProducao);
+  console.log(`${dadosProducao.length} registros de produção`);
 
-  console.log(`${dados.length} registros encontrados`);
-
-  // Limpa tabela de produção
   await db.query('DELETE FROM producao');
   console.log('Tabela producao limpa');
 
-  // Insere produção em lotes
-  const client = await db.connect();
-  try {
-    await client.query('BEGIN');
+  // Insere produção em batch
+  if (dadosProducao.length > 0) {
+    const valuesProducao = [];
+    const paramsProducao = [];
+    let i = 1;
     
-    for (const r of dados) {
-      await client.query(
-        `INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [r.Mes, r.Cliente, r.Valor_do_bem, r.Assessor, r.Email || null, r.Escritorio, r.Ano]
-      );
+    for (const r of dadosProducao) {
+      valuesProducao.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
+      paramsProducao.push(r.Mes, r.Cliente, r.Valor_do_bem, r.Assessor, r.Email || null, r.Escritorio, r.Ano);
     }
     
-    await client.query('COMMIT');
+    await db.query(
+      'INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano) VALUES ' + valuesProducao.join(','),
+      paramsProducao
+    );
     console.log('Produção importada!');
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
   }
 
   // Coleta assessores únicos com email
   const assessoresComEmail = new Map();
-  for (const r of dados) {
+  for (const r of dadosProducao) {
     if (r.Email && r.Assessor) {
       assessoresComEmail.set(r.Email.toLowerCase().trim(), r.Assessor);
     }
   }
+  console.log(`${assessoresComEmail.size} assessores com email`);
 
-  console.log(`\n${assessoresComEmail.size} assessores com email encontrados`);
-
-  // Cria usuários APENAS se não existirem (preserva senhas existentes!)
+  // Cria usuários APENAS se não existirem (preserva senhas!)
   for (const [email, nome] of assessoresComEmail) {
     const result = await db.query(
       `INSERT INTO usuarios (id, nome, email, senha_hash)
@@ -61,12 +57,55 @@ async function importar() {
     );
     
     if (result.rowCount > 0) {
-      console.log(`Novo usuário: ${email} (${nome})`);
+      console.log(`Novo usuário: ${email}`);
     }
   }
 
-  console.log('\nImportação concluída!');
-  console.log('Usuários novos precisam definir senha no primeiro acesso.');
+  // ========== IMPORTAR CONTEMPLAÇÃO (Planilha2) ==========
+  if (workbook.SheetNames.includes('Planilha2')) {
+    console.log('\n--- CONTEMPLAÇÃO ---');
+    const sheetContemp = workbook.Sheets['Planilha2'];
+    const dadosContemp = XLSX.utils.sheet_to_json(sheetContemp);
+    console.log(`${dadosContemp.length} registros de contemplação`);
+
+    await db.query('DELETE FROM contemplacao');
+    console.log('Tabela contemplacao limpa');
+
+    if (dadosContemp.length > 0) {
+      const valuesContemp = [];
+      const paramsContemp = [];
+      let j = 1;
+      
+      for (const r of dadosContemp) {
+        valuesContemp.push(`($${j++}, $${j++}, $${j++}, $${j++}, $${j++}, $${j++}, $${j++}, $${j++})`);
+        
+        const contempMensal = r['Contemplação mensal'] ? Math.round(r['Contemplação mensal'] * 100) + '%' : null;
+        const mediaContemp = r['Média contemplação'] ? Math.round(r['Média contemplação'] * 100) + '%' : null;
+        const mes = (r['Mês '] || r['Mês'] || '').toString().toLowerCase().trim();
+        
+        paramsContemp.push(
+          r['Grupo'],
+          mes,
+          r['Lance %'] ? Math.round(r['Lance %'] * 10) / 10 : null,
+          r['Qnt lances'] ? Math.round(r['Qnt lances']) : null,
+          r['Contemplados'] ? Math.round(r['Contemplados']) : null,
+          contempMensal,
+          mediaContemp,
+          r['Média % lance'] || null
+        );
+      }
+      
+      await db.query(
+        'INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent) VALUES ' + valuesContemp.join(','),
+        paramsContemp
+      );
+      console.log('Contemplação importada!');
+    }
+  } else {
+    console.log('\nPlanilha2 não encontrada, pulando contemplação');
+  }
+
+  console.log('\n✅ Importação concluída!');
   console.log('Senhas existentes foram PRESERVADAS!');
   
   process.exit(0);
