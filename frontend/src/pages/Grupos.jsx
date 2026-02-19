@@ -83,9 +83,9 @@ function Grupos() {
             <table>
               <thead>
                 <tr>
-                  <th>Grupo</th>
-                  <th style={{ textAlign: 'right' }}>Média Contemplação</th>
-                  <th style={{ textAlign: 'right' }}>Lance % (último mês)</th>
+                  <th style={{ textAlign: 'center' }}>Grupo</th>
+                  <th style={{ textAlign: 'center' }}>Média Contemplação</th>
+                  <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
                 </tr>
               </thead>
               <tbody>
@@ -96,9 +96,9 @@ function Grupos() {
                     style={{ cursor: 'pointer' }}
                     className="row-clickable"
                   >
-                    <td className="text-primary">Grupo {r.grupo}</td>
-                    <td style={{ textAlign: 'right' }}>{r.media_contemplacao}%</td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{r.ultimo_lance_percent}%</td>
+                    <td style={{ textAlign: 'center' }} className="text-primary">Grupo {r.grupo}</td>
+                    <td style={{ textAlign: 'center' }}>{r.media_contemplacao}%</td>
+                    <td style={{ textAlign: 'center' }} className="text-primary">{r.ultimo_lance_percent}%</td>
                   </tr>
                 ))}
               </tbody>
