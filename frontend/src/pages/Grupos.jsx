@@ -84,10 +84,8 @@ function Grupos() {
               <thead>
                 <tr>
                   <th>Grupo</th>
-                  <th style={{ textAlign: 'right' }}>Meses</th>
-                  <th style={{ textAlign: 'right' }}>Média Lance %</th>
-                  <th style={{ textAlign: 'right' }}>Total Lances</th>
-                  <th style={{ textAlign: 'right' }}>Total Contemplados</th>
+                  <th style={{ textAlign: 'right' }}>Média Contemplação</th>
+                  <th style={{ textAlign: 'right' }}>Lance % (último mês)</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,10 +97,8 @@ function Grupos() {
                     className="row-clickable"
                   >
                     <td className="text-primary">Grupo {r.grupo}</td>
-                    <td style={{ textAlign: 'right' }}>{r.total_meses}</td>
-                    <td style={{ textAlign: 'right' }}>{r.media_lance}%</td>
-                    <td style={{ textAlign: 'right' }}>{r.total_lances}</td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{r.total_contemplados}</td>
+                    <td style={{ textAlign: 'right' }}>{r.media_contemplacao}%</td>
+                    <td style={{ textAlign: 'right' }} className="text-primary">{r.ultimo_lance_percent}%</td>
                   </tr>
                 ))}
               </tbody>

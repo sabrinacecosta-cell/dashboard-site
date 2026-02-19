@@ -37,15 +37,32 @@ const ContemplacaoModel = {
 
   async getResumoGrupos() {
     const result = await db.query(`
+      WITH ultimo_mes AS (
+        SELECT DISTINCT ON (grupo) 
+          grupo, 
+          lance_percent as ultimo_lance_percent
+        FROM contemplacao 
+        ORDER BY grupo, id DESC
+      ),
+      medias AS (
+        SELECT 
+          grupo,
+          ROUND(AVG(
+            CASE 
+              WHEN contemplacao_mensal IS NOT NULL 
+              THEN REPLACE(contemplacao_mensal, '%', '')::numeric 
+            END
+          ), 0) as media_contemplacao
+        FROM contemplacao 
+        GROUP BY grupo
+      )
       SELECT 
-        grupo,
-        COUNT(*) as total_meses,
-        ROUND(AVG(lance_percent)::numeric, 2) as media_lance,
-        SUM(contemplados) as total_contemplados,
-        SUM(qnt_lances) as total_lances
-      FROM contemplacao 
-      GROUP BY grupo 
-      ORDER BY grupo
+        m.grupo,
+        m.media_contemplacao,
+        u.ultimo_lance_percent
+      FROM medias m
+      JOIN ultimo_mes u ON m.grupo = u.grupo
+      ORDER BY m.grupo
     `);
     return result.rows;
   },
