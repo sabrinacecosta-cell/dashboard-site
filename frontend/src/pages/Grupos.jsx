@@ -27,6 +27,14 @@ function Grupos() {
     return `${value}%`;
   };
 
+  const formatMesAno = (mes) => {
+    const mesLower = mes?.toLowerCase();
+    if (mesLower === 'janeiro') return 'janeiro/2026';
+    if (mesLower === 'fevereiro') return 'fevereiro/2026';
+    if (mesLower === 'março') return 'março/2026';
+    return `${mes}/2025`;
+  };
+
   if (loading) return <div className="page-loading">Carregando...</div>;
   if (error) return <div className="page-error">{error}</div>;
 
@@ -85,7 +93,7 @@ function Grupos() {
                 <tr>
                   <th style={{ textAlign: 'center' }}>Grupo</th>
                   <th style={{ textAlign: 'center' }}>Média Contemplação</th>
-                  <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
+                  <th style={{ textAlign: 'center' }}>Lance % (últimos 10 meses)</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,7 +135,7 @@ function Grupos() {
               <tbody>
                 {registros.map((r, i) => (
                   <tr key={i}>
-                    <td className="text-primary" style={{ textTransform: 'capitalize' }}>{r.mes}</td>
+                    <td className="text-primary" style={{ textTransform: 'capitalize' }}>{formatMesAno(r.mes)}</td>
                     <td style={{ textAlign: 'right' }}>{r.lance_percent}%</td>
                     <td style={{ textAlign: 'right' }}>{r.qnt_lances}</td>
                     <td style={{ textAlign: 'right' }}>{r.contemplados}</td>
