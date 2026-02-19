@@ -1,49 +1,49 @@
 const db = require('../config/database');
+const crypto = require('crypto');
 
 const UsuarioModel = {
-  findByEmail(email) {
-    const stmt = db.prepare('SELECT * FROM usuarios WHERE email = ?');
-    return stmt.get(email) || null;
+  async findByEmail(email) {
+    const result = await db.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+    return result.rows[0] || null;
   },
 
-  findById(id) {
-    const stmt = db.prepare('SELECT id, nome, email FROM usuarios WHERE id = ?');
-    return stmt.get(id) || null;
+  async findById(id) {
+    const result = await db.query('SELECT id, nome, email FROM usuarios WHERE id = $1', [id]);
+    return result.rows[0] || null;
   },
 
-  findByIdFull(id) {
-    const stmt = db.prepare('SELECT * FROM usuarios WHERE id = ?');
-    return stmt.get(id) || null;
+  async findByIdFull(id) {
+    const result = await db.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+    return result.rows[0] || null;
   },
 
-  create({ nome, email, senha_hash }) {
+  async create({ nome, email, senha_hash }) {
     const id = crypto.randomUUID();
-    const stmt = db.prepare(`
-      INSERT INTO usuarios (id, nome, email, senha_hash) 
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(id, nome, email, senha_hash);
+    await db.query(
+      'INSERT INTO usuarios (id, nome, email, senha_hash) VALUES ($1, $2, $3, $4)',
+      [id, nome, email, senha_hash]
+    );
     return this.findById(id);
   },
 
-  createIfNotExists({ nome, email, senha_hash }) {
-    const stmt = db.prepare(`
-      INSERT OR IGNORE INTO usuarios (id, nome, email, senha_hash)
-      VALUES (?, ?, ?, ?)
-    `);
-    const result = stmt.run(crypto.randomUUID(), nome, email, senha_hash);
-    return result.changes > 0;
+  async createIfNotExists({ nome, email, senha_hash }) {
+    const result = await db.query(
+      `INSERT INTO usuarios (id, nome, email, senha_hash)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO NOTHING`,
+      [crypto.randomUUID(), nome, email, senha_hash]
+    );
+    return result.rowCount > 0;
   },
 
-  updateSenha(id, senha_hash) {
-    const stmt = db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?');
-    stmt.run(senha_hash, id);
+  async updateSenha(id, senha_hash) {
+    await db.query('UPDATE usuarios SET senha_hash = $1 WHERE id = $2', [senha_hash, id]);
     return this.findById(id);
   },
 
-  resetAllPasswords() {
-    const result = db.prepare('UPDATE usuarios SET senha_hash = NULL').run();
-    return result.changes;
+  async resetAllPasswords() {
+    const result = await db.query('UPDATE usuarios SET senha_hash = NULL');
+    return result.rowCount;
   }
 };
 

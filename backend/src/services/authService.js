@@ -4,7 +4,7 @@ const UsuarioModel = require('../models/usuarioModel');
 
 const AuthService = {
   async login(email, senha) {
-    const usuario = UsuarioModel.findByEmail(email);
+    const usuario = await UsuarioModel.findByEmail(email);
     
     if (!usuario) {
       throw new Error('Usuário não encontrado');
@@ -29,7 +29,7 @@ const AuthService = {
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '7d' }
     );
 
     return {
@@ -43,19 +43,19 @@ const AuthService = {
   },
 
   async definirSenha(usuarioId, novaSenha) {
-    const usuario = UsuarioModel.findByIdFull(usuarioId);
+    const usuario = await UsuarioModel.findByIdFull(usuarioId);
     
     if (!usuario) {
       throw new Error('Usuário não encontrado');
     }
 
     const senha_hash = await bcrypt.hash(novaSenha, 10);
-    const usuarioAtualizado = UsuarioModel.updateSenha(usuarioId, senha_hash);
+    const usuarioAtualizado = await UsuarioModel.updateSenha(usuarioId, senha_hash);
 
     const token = jwt.sign(
       { id: usuarioAtualizado.id, email: usuarioAtualizado.email },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '7d' }
     );
 
     return {
@@ -65,7 +65,7 @@ const AuthService = {
   },
 
   async getUsuarioAutenticado(id) {
-    const usuario = UsuarioModel.findById(id);
+    const usuario = await UsuarioModel.findById(id);
     
     if (!usuario) {
       throw new Error('Usuário não encontrado');

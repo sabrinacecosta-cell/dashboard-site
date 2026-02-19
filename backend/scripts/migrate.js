@@ -1,44 +1,44 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-
-// Cria pasta data se não existir
-const dataDir = path.join(__dirname, '../data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
 const db = require('../src/config/database');
 
-console.log('Iniciando migração...');
+async function migrate() {
+  console.log('Iniciando migração PostgreSQL...');
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS usuarios (
-    id TEXT PRIMARY KEY,
-    nome TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    senha_hash TEXT,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
-console.log('Tabela "usuarios" criada!');
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id TEXT PRIMARY KEY,
+      nome TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      senha_hash TEXT,
+      criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log('Tabela "usuarios" OK!');
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS producao (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mes INTEGER,
-    cliente TEXT,
-    valor_do_bem REAL,
-    assessor TEXT,
-    email_assessor TEXT,
-    escritorio TEXT,
-    ano INTEGER
-  )
-`);
-console.log('Tabela "producao" criada!');
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS producao (
+      id SERIAL PRIMARY KEY,
+      mes INTEGER,
+      cliente TEXT,
+      valor_do_bem DECIMAL(15,2),
+      assessor TEXT,
+      email_assessor TEXT,
+      escritorio TEXT,
+      ano INTEGER
+    )
+  `);
+  console.log('Tabela "producao" OK!');
 
-// Índice para busca por assessor
-db.exec(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
-db.exec(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);
+  // Índices para busca por assessor
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);
+  console.log('Índices OK!');
 
-console.log('Migração concluída!');
+  console.log('Migração concluída!');
+  process.exit(0);
+}
+
+migrate().catch(err => {
+  console.error('Erro na migração:', err);
+  process.exit(1);
+});

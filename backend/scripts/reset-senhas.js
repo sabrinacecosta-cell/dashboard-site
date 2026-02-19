@@ -1,9 +1,18 @@
 require('dotenv').config();
 const db = require('../src/config/database');
 
-console.log('Resetando todas as senhas...');
+async function reset() {
+  console.log('Resetando todas as senhas...');
 
-const result = db.prepare('UPDATE usuarios SET senha_hash = NULL').run();
+  const result = await db.query('UPDATE usuarios SET senha_hash = NULL');
 
-console.log(`${result.changes} usuários resetados!`);
-console.log('Todos deverão criar uma nova senha no próximo login.');
+  console.log(`${result.rowCount} usuários resetados!`);
+  console.log('Todos deverão criar uma nova senha no próximo login.');
+  
+  process.exit(0);
+}
+
+reset().catch(err => {
+  console.error('Erro:', err);
+  process.exit(1);
+});

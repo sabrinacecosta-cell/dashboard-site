@@ -4,7 +4,7 @@ const UsuarioModel = require('../models/usuarioModel');
 const ProducaoService = {
   async getProducaoDoUsuario(userId, userEmail) {
     // Busca o nome do usuário para usar como assessor
-    const usuario = UsuarioModel.findByIdFull(userId);
+    const usuario = await UsuarioModel.findByIdFull(userId);
     
     if (!usuario) {
       throw new Error('Usuário não encontrado');
@@ -14,16 +14,18 @@ const ProducaoService = {
     const emailAssessor = userEmail;
 
     // Busca produção
-    const producao = ProducaoModel.findByAssessor(nomeAssessor, emailAssessor);
-    const resumo = ProducaoModel.getResumoByAssessor(nomeAssessor, emailAssessor);
-    const resumoAnual = ProducaoModel.getResumoAnualByAssessor(nomeAssessor, emailAssessor);
-    const totais = ProducaoModel.getTotalByAssessor(nomeAssessor, emailAssessor);
+    const [producao, resumo, resumoAnual, totais] = await Promise.all([
+      ProducaoModel.findByAssessor(nomeAssessor, emailAssessor),
+      ProducaoModel.getResumoByAssessor(nomeAssessor, emailAssessor),
+      ProducaoModel.getResumoAnualByAssessor(nomeAssessor, emailAssessor),
+      ProducaoModel.getTotalByAssessor(nomeAssessor, emailAssessor)
+    ]);
 
     return {
       assessor: nomeAssessor,
       totais: {
-        quantidade: totais.quantidade || 0,
-        valorTotal: totais.total || 0
+        quantidade: parseInt(totais.quantidade) || 0,
+        valorTotal: parseFloat(totais.total) || 0
       },
       resumoAnual: resumoAnual,
       resumoMensal: resumo,

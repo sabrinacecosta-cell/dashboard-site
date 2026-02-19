@@ -1,65 +1,89 @@
 const db = require('../config/database');
 
 const ProducaoModel = {
-  findByAssessor(nomeAssessor, emailAssessor) {
-    const stmt = db.prepare(`
-      SELECT * FROM producao 
-      WHERE assessor = ? OR email_assessor = ?
-      ORDER BY ano DESC, mes DESC
-    `);
-    return stmt.all(nomeAssessor, emailAssessor);
+  async findByAssessor(nomeAssessor, emailAssessor) {
+    const result = await db.query(
+      `SELECT * FROM producao 
+       WHERE assessor = $1 OR email_assessor = $2
+       ORDER BY ano DESC, mes DESC`,
+      [nomeAssessor, emailAssessor]
+    );
+    return result.rows;
   },
 
-  getResumoByAssessor(nomeAssessor, emailAssessor) {
-    const stmt = db.prepare(`
-      SELECT 
+  async getResumoByAssessor(nomeAssessor, emailAssessor) {
+    const result = await db.query(
+      `SELECT 
         ano,
         mes,
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
-      FROM producao 
-      WHERE assessor = ? OR email_assessor = ?
-      GROUP BY ano, mes
-      ORDER BY ano DESC, mes DESC
-    `);
-    return stmt.all(nomeAssessor, emailAssessor);
+       FROM producao 
+       WHERE assessor = $1 OR email_assessor = $2
+       GROUP BY ano, mes
+       ORDER BY ano DESC, mes DESC`,
+      [nomeAssessor, emailAssessor]
+    );
+    return result.rows;
   },
 
-  getTotalByAssessor(nomeAssessor, emailAssessor) {
-    const stmt = db.prepare(`
-      SELECT 
+  async getTotalByAssessor(nomeAssessor, emailAssessor) {
+    const result = await db.query(
+      `SELECT 
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
-      FROM producao 
-      WHERE assessor = ? OR email_assessor = ?
-    `);
-    return stmt.get(nomeAssessor, emailAssessor);
+       FROM producao 
+       WHERE assessor = $1 OR email_assessor = $2`,
+      [nomeAssessor, emailAssessor]
+    );
+    return result.rows[0];
   },
 
-  getResumoAnualByAssessor(nomeAssessor, emailAssessor) {
-    const stmt = db.prepare(`
-      SELECT 
+  async getResumoAnualByAssessor(nomeAssessor, emailAssessor) {
+    const result = await db.query(
+      `SELECT 
         ano,
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
-      FROM producao 
-      WHERE assessor = ? OR email_assessor = ?
-      GROUP BY ano
-      ORDER BY ano DESC
-    `);
-    return stmt.all(nomeAssessor, emailAssessor);
+       FROM producao 
+       WHERE assessor = $1 OR email_assessor = $2
+       GROUP BY ano
+       ORDER BY ano DESC`,
+      [nomeAssessor, emailAssessor]
+    );
+    return result.rows;
   },
 
-  deleteAll() {
-    db.exec('DELETE FROM producao');
+  async deleteAll() {
+    await db.query('DELETE FROM producao');
   },
 
-  insert({ mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano }) {
-    const stmt = db.prepare(`
-      INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run(mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano);
+  async insert({ mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano }) {
+    await db.query(
+      `INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano]
+    );
+  },
+
+  async insertMany(registros) {
+    const client = await db.connect();
+    try {
+      await client.query('BEGIN');
+      for (const r of registros) {
+        await client.query(
+          `INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [r.mes, r.cliente, r.valor_do_bem, r.assessor, r.email_assessor, r.escritorio, r.ano]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 };
 

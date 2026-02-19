@@ -1,12 +1,17 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = path.join(__dirname, '../../data/auth.db');
-const db = new Database(dbPath);
+// Railway fornece DATABASE_URL automaticamente
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
-// Habilita foreign keys
-db.pragma('journal_mode = WAL');
+pool.on('connect', () => {
+  console.log('Conectado ao PostgreSQL');
+});
 
-console.log('Conectado ao SQLite:', dbPath);
+pool.on('error', (err) => {
+  console.error('Erro no PostgreSQL:', err);
+});
 
-module.exports = db;
+module.exports = pool;

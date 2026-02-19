@@ -1,17 +1,17 @@
 {
   "name": "backend-auth",
   "version": "1.0.0",
-  "description": "Backend com autenticação JWT",
+  "description": "Backend com autenticação JWT e PostgreSQL",
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
-    "migrate": "node scripts/migrate.js"
+    "import": "node scripts/importar-excel.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^12.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
@@ -21,5 +21,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
