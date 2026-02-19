@@ -15,6 +15,7 @@ function Layout({ children }) {
     { path: '/vendas', icon: '📊', label: 'Vendas' },
     { path: '/comissoes', icon: '💰', label: 'Comissões' },
     { path: '/simulador', icon: '🧮', label: 'Simulador' },
+    { path: '/grupos', icon: '📈', label: 'Métricas' },
   ];
 
   return (
