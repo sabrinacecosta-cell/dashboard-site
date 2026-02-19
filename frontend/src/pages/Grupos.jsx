@@ -92,8 +92,8 @@ function Grupos() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'center' }}>Grupo</th>
-                  <th style={{ textAlign: 'center' }}>Média Contemplação</th>
-                  <th style={{ textAlign: 'center' }}>Lance % (últimos 10 meses)</th>
+                  <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 10 meses)</th>
+                  <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
                 </tr>
               </thead>
               <tbody>
