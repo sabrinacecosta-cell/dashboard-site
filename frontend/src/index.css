@@ -1,17 +1,21 @@
 :root {
-  --bg-primary: #0B1C2D;
-  --bg-sidebar: #081520;
-  --bg-card: #122A40;
-  --bg-card-hover: #1a3a5c;
-  --text-primary: #F1F5F9;
-  --text-secondary: #CBD5E1;
-  --text-muted: #64748B;
-  --accent: #E10600;
-  --accent-hover: #ff1a1a;
+  /* Claude.ai Dark Mode Colors */
+  --bg-primary: #1a1a1a;
+  --bg-sidebar: #1a1a1a;
+  --bg-card: #262626;
+  --bg-card-hover: #2d2d2d;
+  --text-primary: #ececec;
+  --text-secondary: #ececec;
+  --text-muted: #9b9b9b;
+  --accent: #cc785c;
+  --accent-hover: #d4886c;
   --success: #10B981;
-  --border: #1e3a5f;
+  --border: #3a3a3a;
   --sidebar-width: 240px;
   --header-height: 64px;
+
+  /* Claude.ai Typography */
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -21,10 +25,15 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
+}
+
+/* Monospace for code */
+code, pre, .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* Layout Principal */
@@ -80,7 +89,7 @@ body {
   gap: 12px;
   padding: 12px 16px;
   border-radius: 8px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -93,8 +102,8 @@ body {
 }
 
 .nav-item.active {
-  background: var(--text-secondary);
-  color: var(--bg-sidebar);
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
 }
 
 .nav-icon {
@@ -124,6 +133,7 @@ body {
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
+  color: var(--text-primary);
 }
 
 .user-name {
@@ -178,7 +188,7 @@ body {
   padding: 8px 16px;
   background: var(--accent);
   border: none;
-  color: white;
+  color: var(--text-primary);
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
@@ -205,6 +215,7 @@ body {
   justify-content: center;
   transition: all 0.15s;
   margin: 0;
+  color: var(--text-primary);
 }
 
 .btn-admin:hover {
@@ -228,7 +239,7 @@ body {
 }
 
 .admin-toast.error {
-  background: rgba(225, 6, 0, 0.2);
+  background: rgba(204, 120, 92, 0.2);
   color: var(--accent);
 }
 
@@ -237,6 +248,7 @@ body {
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  background: var(--bg-primary);
 }
 
 /* Page Styles */
@@ -248,6 +260,7 @@ body {
   font-size: 28px;
   font-weight: 600;
   margin-bottom: 4px;
+  color: var(--text-primary);
 }
 
 .page-subtitle {
@@ -274,7 +287,7 @@ body {
 }
 
 .stat-card.accent {
-  background: linear-gradient(135deg, #1e3a5f 0%, #122A40 100%);
+  background: linear-gradient(135deg, var(--bg-card-hover) 0%, var(--bg-card) 100%);
   border: 1px solid var(--border);
 }
 
@@ -282,17 +295,18 @@ body {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  opacity: 0.85;
+  color: var(--text-muted);
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: 700;
+  color: var(--text-primary);
 }
 
 .stat-detail {
   font-size: 14px;
-  opacity: 0.75;
+  color: var(--text-muted);
 }
 
 /* Cards */
@@ -308,7 +322,7 @@ body {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   margin-bottom: 16px;
   font-weight: 600;
 }
@@ -345,7 +359,7 @@ tbody tr:hover {
 td {
   padding: 14px 12px;
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .text-primary {
@@ -404,18 +418,23 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-sidebar);
+  background: var(--bg-primary);
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
   margin: 20px;
+  background: var(--bg-card);
+  padding: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .login-card h1 {
   text-align: center;
   margin-bottom: 30px;
+  color: var(--text-primary);
 }
 
 /* Forms */
@@ -427,7 +446,7 @@ label {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 14px;
 }
 
@@ -437,6 +456,7 @@ input {
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 15px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -445,7 +465,7 @@ input {
 input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.15);
 }
 
 input::placeholder {
@@ -455,19 +475,20 @@ input::placeholder {
 button {
   width: 100%;
   padding: 14px;
-  background: var(--text-secondary);
-  color: var(--bg-sidebar);
+  background: var(--accent);
+  color: var(--text-primary);
   border: none;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   cursor: pointer;
   margin-top: 10px;
   transition: background 0.2s, transform 0.1s;
 }
 
 button:hover {
-  background: var(--text-primary);
+  background: var(--accent-hover);
 }
 
 button:active {
@@ -494,6 +515,17 @@ button:disabled {
   font-size: 14px;
 }
 
+/* Links */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -501,7 +533,7 @@ button:disabled {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-sidebar);
+  background: var(--bg-primary);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -511,4 +543,10 @@ button:disabled {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Selection */
+::selection {
+  background: rgba(204, 120, 92, 0.3);
+  color: var(--text-primary);
 }
