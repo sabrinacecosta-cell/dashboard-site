@@ -2,7 +2,14 @@ const ProducaoModel = require('../models/producaoModel');
 const UsuarioModel = require('../models/usuarioModel');
 
 const ProducaoService = {
-  async getProducaoDoUsuario(userId, userEmail) {
+  async getProducaoDoUsuario(userId, userEmail, filters = {}) {
+    // Verifica se é admin
+    const isAdmin = ProducaoModel.isAdmin(userEmail);
+
+    if (isAdmin) {
+      return this.getProducaoAdmin(filters);
+    }
+
     // Busca o nome do usuário para usar como assessor
     const usuario = await UsuarioModel.findByIdFull(userId);
     
@@ -22,6 +29,7 @@ const ProducaoService = {
     ]);
 
     return {
+      isAdmin: false,
       assessor: nomeAssessor,
       totais: {
         quantidade: parseInt(totais.quantidade) || 0,
@@ -30,6 +38,49 @@ const ProducaoService = {
       resumoAnual: resumoAnual,
       resumoMensal: resumo,
       detalhes: producao
+    };
+  },
+
+  async getProducaoAdmin(filters = {}) {
+    const [
+      detalhes,
+      totais,
+      porEscritorio,
+      porMes,
+      porAssessor,
+      filterOptions
+    ] = await Promise.all([
+      ProducaoModel.findAll(filters),
+      ProducaoModel.getTotalGeral(filters),
+      ProducaoModel.getTotalPorEscritorio(filters),
+      ProducaoModel.getTotalPorMes(filters),
+      ProducaoModel.getTotalPorAssessor(filters),
+      ProducaoModel.getFilterOptions()
+    ]);
+
+    return {
+      isAdmin: true,
+      totais: {
+        quantidade: parseInt(totais.quantidade) || 0,
+        valorTotal: parseFloat(totais.total) || 0
+      },
+      porEscritorio: porEscritorio.map(r => ({
+        escritorio: r.escritorio || 'Não informado',
+        total: parseFloat(r.total) || 0,
+        quantidade: parseInt(r.quantidade) || 0
+      })),
+      porMes: porMes.map(r => ({
+        mes: parseInt(r.mes),
+        total: parseFloat(r.total) || 0,
+        quantidade: parseInt(r.quantidade) || 0
+      })),
+      porAssessor: porAssessor.map(r => ({
+        assessor: r.assessor,
+        total: parseFloat(r.total) || 0,
+        quantidade: parseInt(r.quantidade) || 0
+      })),
+      filterOptions,
+      detalhes
     };
   }
 };
