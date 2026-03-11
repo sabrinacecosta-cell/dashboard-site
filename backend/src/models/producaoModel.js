@@ -80,11 +80,11 @@ const ProducaoModel = {
       params.push(filters.ano);
     }
     if (filters.escritorio) {
-      query += ` AND escritorio = $${paramIndex++}`;
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND assessor = $${paramIndex++}`;
+      query += ` AND TRIM(assessor) = $${paramIndex++}`;
       params.push(filters.assessor);
     }
 
@@ -107,11 +107,11 @@ const ProducaoModel = {
       params.push(filters.ano);
     }
     if (filters.escritorio) {
-      query += ` AND escritorio = $${paramIndex++}`;
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND assessor = $${paramIndex++}`;
+      query += ` AND TRIM(assessor) = $${paramIndex++}`;
       params.push(filters.assessor);
     }
 
@@ -120,7 +120,7 @@ const ProducaoModel = {
   },
 
   async getTotalPorEscritorio(filters = {}) {
-    let query = `SELECT escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
+    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
     const params = [];
     let paramIndex = 1;
 
@@ -133,15 +133,15 @@ const ProducaoModel = {
       params.push(filters.ano);
     }
     if (filters.escritorio) {
-      query += ` AND escritorio = $${paramIndex++}`;
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND assessor = $${paramIndex++}`;
+      query += ` AND TRIM(assessor) = $${paramIndex++}`;
       params.push(filters.assessor);
     }
 
-    query += ' GROUP BY escritorio ORDER BY total DESC';
+    query += ' GROUP BY TRIM(escritorio) ORDER BY total DESC';
     const result = await db.query(query, params);
     return result.rows;
   },
@@ -156,11 +156,11 @@ const ProducaoModel = {
       params.push(filters.ano);
     }
     if (filters.escritorio) {
-      query += ` AND escritorio = $${paramIndex++}`;
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND assessor = $${paramIndex++}`;
+      query += ` AND TRIM(assessor) = $${paramIndex++}`;
       params.push(filters.assessor);
     }
 
@@ -170,7 +170,7 @@ const ProducaoModel = {
   },
 
   async getTotalPorAssessor(filters = {}) {
-    let query = `SELECT assessor, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
+    let query = `SELECT TRIM(assessor) as assessor, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
     const params = [];
     let paramIndex = 1;
 
@@ -183,11 +183,11 @@ const ProducaoModel = {
       params.push(filters.ano);
     }
     if (filters.escritorio) {
-      query += ` AND escritorio = $${paramIndex++}`;
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
 
-    query += ' GROUP BY assessor ORDER BY total DESC';
+    query += ' GROUP BY TRIM(assessor) ORDER BY total DESC';
     const result = await db.query(query, params);
     return result.rows;
   },
@@ -196,8 +196,8 @@ const ProducaoModel = {
     const [meses, anos, escritorios, assessores] = await Promise.all([
       db.query('SELECT DISTINCT mes FROM producao ORDER BY mes'),
       db.query('SELECT DISTINCT ano FROM producao ORDER BY ano DESC'),
-      db.query('SELECT DISTINCT escritorio FROM producao WHERE escritorio IS NOT NULL ORDER BY escritorio'),
-      db.query('SELECT DISTINCT assessor FROM producao ORDER BY assessor')
+      db.query('SELECT DISTINCT TRIM(escritorio) as escritorio FROM producao WHERE escritorio IS NOT NULL ORDER BY escritorio'),
+      db.query('SELECT DISTINCT TRIM(assessor) as assessor FROM producao ORDER BY assessor')
     ]);
 
     return {
