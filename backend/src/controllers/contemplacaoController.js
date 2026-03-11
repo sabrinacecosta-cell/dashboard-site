@@ -1,13 +1,18 @@
 const ContemplacaoModel = require('../models/contemplacaoModel');
+const ContemplacaoAutoModel = require('../models/contemplacaoAutoModel');
 
 const ContemplacaoController = {
   async getAll(req, res) {
     try {
-      const dados = await ContemplacaoModel.findAll();
-      const grupos = await ContemplacaoModel.getGrupos();
-      const resumo = await ContemplacaoModel.getResumoGrupos();
+      const { tipo } = req.query; // 'auto' ou 'imovel' (default)
+      const Model = tipo === 'auto' ? ContemplacaoAutoModel : ContemplacaoModel;
+
+      const dados = await Model.findAll();
+      const grupos = await Model.getGrupos();
+      const resumo = await Model.getResumoGrupos();
 
       return res.json({
+        tipo: tipo || 'imovel',
         grupos,
         resumo,
         dados
@@ -21,7 +26,10 @@ const ContemplacaoController = {
   async getByGrupo(req, res) {
     try {
       const { grupo } = req.params;
-      const dados = await ContemplacaoModel.findByGrupo(grupo);
+      const { tipo } = req.query;
+      const Model = tipo === 'auto' ? ContemplacaoAutoModel : ContemplacaoModel;
+
+      const dados = await Model.findByGrupo(grupo);
 
       if (dados.length === 0) {
         return res.status(404).json({ error: 'Grupo não encontrado' });

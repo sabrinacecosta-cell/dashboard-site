@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
 function Grupos() {
+  const [tipoSelecionado, setTipoSelecionado] = useState('imovel'); // 'imovel' ou 'auto'
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -9,11 +10,14 @@ function Grupos() {
 
   useEffect(() => {
     loadDados();
-  }, []);
+  }, [tipoSelecionado]);
 
   async function loadDados() {
     try {
-      const response = await api.get('/contemplacao');
+      setLoading(true);
+      setError('');
+      setGrupoSelecionado(null);
+      const response = await api.get(`/contemplacao?tipo=${tipoSelecionado}`);
       setDados(response.data);
     } catch (err) {
       setError('Erro ao carregar dados');
@@ -35,8 +39,15 @@ function Grupos() {
     return `${mes}/2025`;
   };
 
+  const handleTipoChange = (novoTipo) => {
+    if (novoTipo !== tipoSelecionado) {
+      setTipoSelecionado(novoTipo);
+    }
+  };
+
   if (loading) return <div className="page-loading">Carregando...</div>;
   if (error) return <div className="page-error">{error}</div>;
+  if (!dados || !dados.dados) return <div className="page-error">Nenhum dado disponível</div>;
 
   // Filtra dados pelo grupo selecionado
   const dadosFiltrados = grupoSelecionado 
@@ -59,10 +70,28 @@ function Grupos() {
         <p className="page-subtitle">Contemplações e lances por grupo</p>
       </div>
 
+      {/* Toggle Auto / Imóvel */}
+      <div className="toggle-group">
+        <button
+          type="button"
+          className={`toggle-btn ${tipoSelecionado === 'auto' ? 'active' : ''}`}
+          onClick={() => handleTipoChange('auto')}
+        >
+          🚗 Auto
+        </button>
+        <button
+          type="button"
+          className={`toggle-btn ${tipoSelecionado === 'imovel' ? 'active' : ''}`}
+          onClick={() => handleTipoChange('imovel')}
+        >
+          🏠 Imóvel
+        </button>
+      </div>
+
       {/* Filtro de Grupos */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <label style={{ fontWeight: 500 }}>Filtrar grupo:</label>
+          <label style={{ fontWeight: 500, marginBottom: 0 }}>Filtrar grupo:</label>
           <select 
             value={grupoSelecionado || ''} 
             onChange={(e) => setGrupoSelecionado(e.target.value ? Number(e.target.value) : null)}
@@ -70,13 +99,14 @@ function Grupos() {
               padding: '0.5rem 1rem',
               borderRadius: '8px',
               border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--text)',
-              fontSize: '1rem'
+              background: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              fontSize: '1rem',
+              width: 'auto'
             }}
           >
             <option value="">Todos os grupos</option>
-            {dados.grupos.map(g => (
+            {dados.grupos && dados.grupos.map(g => (
               <option key={g} value={g}>Grupo {g}</option>
             ))}
           </select>
@@ -84,7 +114,7 @@ function Grupos() {
       </div>
 
       {/* Resumo Geral */}
-      {!grupoSelecionado && (
+      {!grupoSelecionado && dados.resumo && dados.resumo.length > 0 && (
         <div className="card">
           <h3>Resumo por Grupo</h3>
           <div className="table-scroll">
@@ -111,6 +141,17 @@ function Grupos() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Mensagem quando não há dados */}
+      {Object.keys(dadosPorGrupo).length === 0 && (
+        <div className="card">
+          <div className="empty-state">
+            <span className="empty-icon">{tipoSelecionado === 'auto' ? '🚗' : '🏠'}</span>
+            <h3>Nenhum dado disponível</h3>
+            <p>Não há registros de contemplação para {tipoSelecionado === 'auto' ? 'Auto' : 'Imóvel'}.</p>
           </div>
         </div>
       )}

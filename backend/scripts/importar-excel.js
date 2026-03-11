@@ -61,12 +61,12 @@ async function importar() {
     }
   }
 
-  // ========== IMPORTAR CONTEMPLAÇÃO (Planilha2) ==========
+  // ========== IMPORTAR CONTEMPLAÇÃO IMÓVEL (Planilha2) ==========
   if (workbook.SheetNames.includes('Planilha2')) {
-    console.log('\n--- CONTEMPLAÇÃO ---');
+    console.log('\n--- CONTEMPLAÇÃO IMÓVEL ---');
     const sheetContemp = workbook.Sheets['Planilha2'];
     const dadosContemp = XLSX.utils.sheet_to_json(sheetContemp);
-    console.log(`${dadosContemp.length} registros de contemplação`);
+    console.log(`${dadosContemp.length} registros de contemplação (imóvel)`);
 
     await db.query('DELETE FROM contemplacao');
     console.log('Tabela contemplacao limpa');
@@ -99,10 +99,54 @@ async function importar() {
         'INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent) VALUES ' + valuesContemp.join(','),
         paramsContemp
       );
-      console.log('Contemplação importada!');
+      console.log('Contemplação Imóvel importada!');
     }
   } else {
-    console.log('\nPlanilha2 não encontrada, pulando contemplação');
+    console.log('\nPlanilha2 não encontrada, pulando contemplação imóvel');
+  }
+
+  // ========== IMPORTAR CONTEMPLAÇÃO AUTO (Planilha3) ==========
+  if (workbook.SheetNames.includes('Planilha3')) {
+    console.log('\n--- CONTEMPLAÇÃO AUTO ---');
+    const sheetAuto = workbook.Sheets['Planilha3'];
+    const dadosAuto = XLSX.utils.sheet_to_json(sheetAuto);
+    console.log(`${dadosAuto.length} registros de contemplação (auto)`);
+
+    await db.query('DELETE FROM contemplacao_auto');
+    console.log('Tabela contemplacao_auto limpa');
+
+    if (dadosAuto.length > 0) {
+      const valuesAuto = [];
+      const paramsAuto = [];
+      let k = 1;
+      
+      for (const r of dadosAuto) {
+        valuesAuto.push(`($${k++}, $${k++}, $${k++}, $${k++}, $${k++}, $${k++}, $${k++}, $${k++})`);
+        
+        const contempMensal = r['Contemplação mensal'] ? Math.round(r['Contemplação mensal'] * 100) + '%' : null;
+        const mediaContemp = r['Média contemplação'] ? Math.round(r['Média contemplação'] * 100) + '%' : null;
+        const mes = (r['Mês '] || r['Mês'] || '').toString().toLowerCase().trim();
+        
+        paramsAuto.push(
+          r['Grupo'],
+          mes,
+          r['Lance %'] ? Math.round(r['Lance %'] * 10) / 10 : null,
+          r['Qnt lances'] ? Math.round(r['Qnt lances']) : null,
+          r['Contemplados'] ? Math.round(r['Contemplados']) : null,
+          contempMensal,
+          mediaContemp,
+          r['Média % lance'] || null
+        );
+      }
+      
+      await db.query(
+        'INSERT INTO contemplacao_auto (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent) VALUES ' + valuesAuto.join(','),
+        paramsAuto
+      );
+      console.log('Contemplação Auto importada!');
+    }
+  } else {
+    console.log('\nPlanilha3 não encontrada, pulando contemplação auto');
   }
 
   console.log('\n✅ Importação concluída!');
