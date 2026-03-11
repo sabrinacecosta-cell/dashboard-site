@@ -84,8 +84,12 @@ const ProducaoModel = {
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND TRIM(assessor) = $${paramIndex++}`;
-      params.push(filters.assessor);
+      if (filters.assessor === 'Sem nome') {
+        query += ` AND (assessor IS NULL OR TRIM(assessor) = '')`;
+      } else {
+        query += ` AND TRIM(assessor) = $${paramIndex++}`;
+        params.push(filters.assessor);
+      }
     }
 
     query += ' ORDER BY ano DESC, mes DESC';
@@ -111,8 +115,12 @@ const ProducaoModel = {
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND TRIM(assessor) = $${paramIndex++}`;
-      params.push(filters.assessor);
+      if (filters.assessor === 'Sem nome') {
+        query += ` AND (assessor IS NULL OR TRIM(assessor) = '')`;
+      } else {
+        query += ` AND TRIM(assessor) = $${paramIndex++}`;
+        params.push(filters.assessor);
+      }
     }
 
     const result = await db.query(query, params);
@@ -137,8 +145,12 @@ const ProducaoModel = {
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND TRIM(assessor) = $${paramIndex++}`;
-      params.push(filters.assessor);
+      if (filters.assessor === 'Sem nome') {
+        query += ` AND (assessor IS NULL OR TRIM(assessor) = '')`;
+      } else {
+        query += ` AND TRIM(assessor) = $${paramIndex++}`;
+        params.push(filters.assessor);
+      }
     }
 
     query += ' GROUP BY TRIM(escritorio) ORDER BY total DESC';
@@ -160,8 +172,12 @@ const ProducaoModel = {
       params.push(filters.escritorio);
     }
     if (filters.assessor) {
-      query += ` AND TRIM(assessor) = $${paramIndex++}`;
-      params.push(filters.assessor);
+      if (filters.assessor === 'Sem nome') {
+        query += ` AND (assessor IS NULL OR TRIM(assessor) = '')`;
+      } else {
+        query += ` AND TRIM(assessor) = $${paramIndex++}`;
+        params.push(filters.assessor);
+      }
     }
 
     query += ' GROUP BY mes ORDER BY mes';
@@ -170,7 +186,7 @@ const ProducaoModel = {
   },
 
   async getTotalPorAssessor(filters = {}) {
-    let query = `SELECT TRIM(assessor) as assessor, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
+    let query = `SELECT COALESCE(NULLIF(TRIM(assessor), ''), 'Sem nome') as assessor, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE 1=1`;
     const params = [];
     let paramIndex = 1;
 
@@ -186,8 +202,16 @@ const ProducaoModel = {
       query += ` AND TRIM(escritorio) = $${paramIndex++}`;
       params.push(filters.escritorio);
     }
+    if (filters.assessor) {
+      if (filters.assessor === 'Sem nome') {
+        query += ` AND (assessor IS NULL OR TRIM(assessor) = '')`;
+      } else {
+        query += ` AND TRIM(assessor) = $${paramIndex++}`;
+        params.push(filters.assessor);
+      }
+    }
 
-    query += ' GROUP BY TRIM(assessor) ORDER BY total DESC';
+    query += ` GROUP BY COALESCE(NULLIF(TRIM(assessor), ''), 'Sem nome') ORDER BY total DESC`;
     const result = await db.query(query, params);
     return result.rows;
   },
@@ -196,8 +220,8 @@ const ProducaoModel = {
     const [meses, anos, escritorios, assessores] = await Promise.all([
       db.query('SELECT DISTINCT mes FROM producao ORDER BY mes'),
       db.query('SELECT DISTINCT ano FROM producao ORDER BY ano DESC'),
-      db.query('SELECT DISTINCT TRIM(escritorio) as escritorio FROM producao WHERE escritorio IS NOT NULL ORDER BY escritorio'),
-      db.query('SELECT DISTINCT TRIM(assessor) as assessor FROM producao ORDER BY assessor')
+      db.query('SELECT DISTINCT TRIM(escritorio) as escritorio FROM producao WHERE escritorio IS NOT NULL AND TRIM(escritorio) != \'\' ORDER BY escritorio'),
+      db.query('SELECT DISTINCT COALESCE(NULLIF(TRIM(assessor), \'\'), \'Sem nome\') as assessor FROM producao ORDER BY assessor')
     ]);
 
     return {
