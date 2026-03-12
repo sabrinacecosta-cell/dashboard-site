@@ -7,6 +7,17 @@ const db = require('../src/config/database');
 // Ajuste o caminho do Excel conforme necessário
 const EXCEL_PATH = process.env.EXCEL_PATH || '/Users/sabrinacosta/Documents/Base .xlsx';
 
+// Normaliza strings removendo acentos e espaços extras
+function normalizar(str) {
+  if (!str) return null;
+  return str
+    .toString()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .toUpperCase();
+}
+
 async function importar() {
   console.log('Lendo planilha:', EXCEL_PATH);
   const workbook = XLSX.readFile(EXCEL_PATH);
@@ -32,9 +43,9 @@ async function importar() {
         mes: r.Mes,
         cliente: r.Cliente,
         valor_do_bem: r.Valor_do_bem,
-        assessor: r.Assessor || null,
-        email_assessor: r.Email || null,
-        escritorio: r.Escritorio,
+        assessor: r.Assessor ? r.Assessor.trim() : null,
+        email_assessor: r.Email ? r.Email.trim().toLowerCase() : null,
+        escritorio: normalizar(r.Escritorio),
         ano: r.Ano,
         modalidade: r.Modalidade || null,
         grupo: r.Grupo ? String(r.Grupo) : null,
@@ -53,8 +64,8 @@ async function importar() {
           cliente: r.Cliente,
           valor_do_bem: r.Valor_do_bem,
           assessor: assessores[idx],
-          email_assessor: emails[idx] || null,
-          escritorio: r.Escritorio,
+          email_assessor: emails[idx] ? emails[idx].toLowerCase() : null,
+          escritorio: normalizar(r.Escritorio),
           ano: r.Ano,
           modalidade: r.Modalidade || null,
           grupo: r.Grupo ? String(r.Grupo) : null,
