@@ -61,6 +61,30 @@ async function migrate() {
   `);
   console.log('Tabela "contemplacao_auto" OK!');
 
+  // Novas colunas para producao (janeiro/2026+)
+  const novasColunas = [
+    { nome: 'modalidade', tipo: 'TEXT' },
+    { nome: 'grupo', tipo: 'TEXT' },
+    { nome: 'cota', tipo: 'INTEGER' },
+    { nome: 'parcela', tipo: 'DECIMAL(15,2)' },
+    { nome: 'natureza_sujeito', tipo: 'TEXT' },
+    { nome: 'uf', tipo: 'TEXT' },
+    { nome: 'tipo_produto', tipo: 'TEXT' },
+    { nome: 'taxa_adm', tipo: 'DECIMAL(5,2)' }
+  ];
+
+  for (const col of novasColunas) {
+    await db.query(`
+      DO $$ 
+      BEGIN 
+        ALTER TABLE producao ADD COLUMN ${col.nome} ${col.tipo};
+      EXCEPTION 
+        WHEN duplicate_column THEN NULL;
+      END $$;
+    `);
+  }
+  console.log('Novas colunas em "producao" OK!');
+
   // Índices para busca por assessor
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);

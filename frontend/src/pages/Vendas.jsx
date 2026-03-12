@@ -276,8 +276,8 @@ function Vendas() {
         {/* Tabela de Detalhes */}
         <div className="card">
           <h3>Detalhes ({producao.detalhes?.length || 0} registros)</h3>
-          <div className="table-scroll" style={{ maxHeight: '400px' }}>
-            <table>
+          <div className="table-scroll" style={{ maxHeight: '500px', overflowX: 'auto' }}>
+            <table style={{ minWidth: '1200px' }}>
               <thead>
                 <tr>
                   <th>Cliente</th>
@@ -285,16 +285,32 @@ function Vendas() {
                   <th>Escritório</th>
                   <th style={{ textAlign: 'right' }}>Valor</th>
                   <th style={{ textAlign: 'center' }}>Período</th>
+                  <th>Modalidade</th>
+                  <th>Grupo</th>
+                  <th style={{ textAlign: 'right' }}>Cota</th>
+                  <th style={{ textAlign: 'right' }}>Parcela</th>
+                  <th>Natureza</th>
+                  <th>UF</th>
+                  <th>Tipo Produto</th>
+                  <th style={{ textAlign: 'right' }}>Taxa Adm</th>
                 </tr>
               </thead>
               <tbody>
                 {producao.detalhes?.map((item, i) => (
                   <tr key={i}>
                     <td className="text-primary">{item.cliente}</td>
-                    <td>{item.assessor}</td>
+                    <td>{item.assessor || '-'}</td>
                     <td>{item.escritorio || '-'}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
                     <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
+                    <td>{item.modalidade || '-'}</td>
+                    <td>{item.grupo || '-'}</td>
+                    <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>
+                    <td style={{ textAlign: 'right' }}>{item.parcela ? formatCurrency(item.parcela) : '-'}</td>
+                    <td>{item.natureza_sujeito || '-'}</td>
+                    <td>{item.uf || '-'}</td>
+                    <td>{item.tipo_produto || '-'}</td>
+                    <td style={{ textAlign: 'right' }}>{item.taxa_adm ? `${(item.taxa_adm * 100).toFixed(0)}%` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -373,13 +389,21 @@ function Vendas() {
           {/* Detalhes */}
           <div className="card">
             <h3>Detalhes ({producao.detalhes?.length || 0} registros)</h3>
-            <div className="table-scroll">
-              <table>
+            <div className="table-scroll" style={{ overflowX: 'auto' }}>
+              <table style={{ minWidth: '1000px' }}>
                 <thead>
                   <tr>
                     <th>Cliente</th>
                     <th style={{ textAlign: 'right' }}>Valor</th>
                     <th style={{ textAlign: 'center' }}>Período</th>
+                    <th>Modalidade</th>
+                    <th>Grupo</th>
+                    <th style={{ textAlign: 'right' }}>Cota</th>
+                    <th style={{ textAlign: 'right' }}>Parcela</th>
+                    <th>Natureza</th>
+                    <th>UF</th>
+                    <th>Tipo Produto</th>
+                    <th style={{ textAlign: 'right' }}>Taxa Adm</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -388,6 +412,14 @@ function Vendas() {
                       <td className="text-primary">{item.cliente}</td>
                       <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
                       <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
+                      <td>{item.modalidade || '-'}</td>
+                      <td>{item.grupo || '-'}</td>
+                      <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>
+                      <td style={{ textAlign: 'right' }}>{item.parcela ? formatCurrency(item.parcela) : '-'}</td>
+                      <td>{item.natureza_sujeito || '-'}</td>
+                      <td>{item.uf || '-'}</td>
+                      <td>{item.tipo_produto || '-'}</td>
+                      <td style={{ textAlign: 'right' }}>{item.taxa_adm ? `${(item.taxa_adm * 100).toFixed(0)}%` : '-'}</td>
                     </tr>
                   ))}
                 </tbody>

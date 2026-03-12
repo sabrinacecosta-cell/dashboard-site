@@ -15,34 +15,88 @@ async function importar() {
   console.log('\n--- PRODUÇÃO ---');
   const sheetProducao = workbook.Sheets['Planilha1'];
   const dadosProducao = XLSX.utils.sheet_to_json(sheetProducao);
-  console.log(`${dadosProducao.length} registros de produção`);
+  console.log(`${dadosProducao.length} registros de produção na planilha`);
 
   await db.query('DELETE FROM producao');
   console.log('Tabela producao limpa');
 
+  // Expande registros com múltiplos assessores (separados por /)
+  const registrosExpandidos = [];
+  for (const r of dadosProducao) {
+    const assessores = (r.Assessor || '').split('/').map(a => a.trim()).filter(a => a);
+    const emails = (r.Email || '').split('/').map(e => e.trim()).filter(e => e);
+    
+    if (assessores.length <= 1) {
+      // Registro normal (1 ou 0 assessores)
+      registrosExpandidos.push({
+        mes: r.Mes,
+        cliente: r.Cliente,
+        valor_do_bem: r.Valor_do_bem,
+        assessor: r.Assessor || null,
+        email_assessor: r.Email || null,
+        escritorio: r.Escritorio,
+        ano: r.Ano,
+        modalidade: r.Modalidade || null,
+        grupo: r.Grupo ? String(r.Grupo) : null,
+        cota: r.Cota || null,
+        parcela: r.Parcela || null,
+        natureza_sujeito: r['Natureza do sujeito'] || null,
+        uf: r.UF || null,
+        tipo_produto: r['Tipo de Produto'] || null,
+        taxa_adm: r['Taxa adm'] || null
+      });
+    } else {
+      // Múltiplos assessores - cria um registro para cada
+      for (let idx = 0; idx < assessores.length; idx++) {
+        registrosExpandidos.push({
+          mes: r.Mes,
+          cliente: r.Cliente,
+          valor_do_bem: r.Valor_do_bem,
+          assessor: assessores[idx],
+          email_assessor: emails[idx] || null,
+          escritorio: r.Escritorio,
+          ano: r.Ano,
+          modalidade: r.Modalidade || null,
+          grupo: r.Grupo ? String(r.Grupo) : null,
+          cota: r.Cota || null,
+          parcela: r.Parcela || null,
+          natureza_sujeito: r['Natureza do sujeito'] || null,
+          uf: r.UF || null,
+          tipo_produto: r['Tipo de Produto'] || null,
+          taxa_adm: r['Taxa adm'] || null
+        });
+      }
+    }
+  }
+  console.log(`${registrosExpandidos.length} registros após expansão de múltiplos assessores`);
+
   // Insere produção em batch
-  if (dadosProducao.length > 0) {
+  if (registrosExpandidos.length > 0) {
+    const colunas = 'mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano, modalidade, grupo, cota, parcela, natureza_sujeito, uf, tipo_produto, taxa_adm';
     const valuesProducao = [];
     const paramsProducao = [];
     let i = 1;
     
-    for (const r of dadosProducao) {
-      valuesProducao.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
-      paramsProducao.push(r.Mes, r.Cliente, r.Valor_do_bem, r.Assessor, r.Email || null, r.Escritorio, r.Ano);
+    for (const r of registrosExpandidos) {
+      valuesProducao.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
+      paramsProducao.push(
+        r.mes, r.cliente, r.valor_do_bem, r.assessor, r.email_assessor, r.escritorio, r.ano,
+        r.modalidade, r.grupo, r.cota, r.parcela, r.natureza_sujeito, r.uf, r.tipo_produto, r.taxa_adm
+      );
     }
     
     await db.query(
-      'INSERT INTO producao (mes, cliente, valor_do_bem, assessor, email_assessor, escritorio, ano) VALUES ' + valuesProducao.join(','),
+      `INSERT INTO producao (${colunas}) VALUES ` + valuesProducao.join(','),
       paramsProducao
     );
     console.log('Produção importada!');
   }
 
-  // Coleta assessores únicos com email
+  // Coleta assessores únicos com email (incluindo os expandidos)
   const assessoresComEmail = new Map();
-  for (const r of dadosProducao) {
-    if (r.Email && r.Assessor) {
-      assessoresComEmail.set(r.Email.toLowerCase().trim(), r.Assessor);
+  for (const r of registrosExpandidos) {
+    if (r.email_assessor && r.assessor) {
+      assessoresComEmail.set(r.email_assessor.toLowerCase().trim(), r.assessor);
     }
   }
   console.log(`${assessoresComEmail.size} assessores com email`);
