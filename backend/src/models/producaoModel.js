@@ -14,7 +14,7 @@ const ProducaoModel = {
   async findByAssessor(nomeAssessor, emailAssessor) {
     const result = await db.query(
       `SELECT * FROM producao 
-       WHERE assessor = $1 OR email_assessor = $2
+       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
        ORDER BY ano DESC, mes DESC`,
       [nomeAssessor, emailAssessor]
     );
@@ -29,7 +29,7 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR email_assessor = $2
+       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
        GROUP BY ano, mes
        ORDER BY ano DESC, mes DESC`,
       [nomeAssessor, emailAssessor]
@@ -43,7 +43,7 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR email_assessor = $2`,
+       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)`,
       [nomeAssessor, emailAssessor]
     );
     return result.rows[0];
@@ -56,7 +56,7 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR email_assessor = $2
+       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
        GROUP BY ano
        ORDER BY ano DESC`,
       [nomeAssessor, emailAssessor]
@@ -67,7 +67,7 @@ const ProducaoModel = {
   // ========== MÉTODOS ASSESSOR COM FILTROS ==========
 
   async findByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
-    let query = 'SELECT * FROM producao WHERE (assessor = $1 OR email_assessor = $2)';
+    let query = 'SELECT * FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))';
     const params = [nomeAssessor, emailAssessor];
     let paramIndex = 3;
 
@@ -90,7 +90,7 @@ const ProducaoModel = {
   },
 
   async getTotalByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
     const params = [nomeAssessor, emailAssessor];
     let paramIndex = 3;
 
@@ -112,7 +112,7 @@ const ProducaoModel = {
   },
 
   async getTotalPorEscritorioByAssessor(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
     const params = [nomeAssessor, emailAssessor];
     let paramIndex = 3;
 
@@ -135,7 +135,7 @@ const ProducaoModel = {
   },
 
   async getTotalPorMesByAssessor(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
     const params = [nomeAssessor, emailAssessor];
     let paramIndex = 3;
 
@@ -154,7 +154,7 @@ const ProducaoModel = {
   },
 
   async getFilterOptionsByAssessor(nomeAssessor, emailAssessor) {
-    const baseWhere = '(assessor = $1 OR email_assessor = $2)';
+    const baseWhere = '(assessor = $1 OR LOWER(email_assessor) = LOWER($2))';
     const params = [nomeAssessor, emailAssessor];
 
     const [meses, anos, escritorios] = await Promise.all([
