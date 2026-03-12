@@ -204,9 +204,9 @@ function Vendas() {
       </div>
 
       {/* Gráficos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        {/* Gráfico por Escritório */}
-        {dadosEscritorio.length > 0 && (
+      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? 'repeat(auto-fit, minmax(400px, 1fr))' : '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        {/* Gráfico por Escritório - Apenas Admin */}
+        {isAdmin && dadosEscritorio.length > 0 && (
           <div className="card">
             <h3>Total por Escritório</h3>
             <div style={{ height: '300px' }}>
