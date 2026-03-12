@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell
 } from 'recharts';
 
 const COLORS = ['#cc785c', '#d4886c', '#e09980', '#ecaa94', '#f5bba8', '#feccbc', '#ffddd0', '#ffeee4'];
@@ -16,7 +16,7 @@ function Vendas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Filtros (apenas para admin)
+  // Filtros
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState('');
   const [filtroEscritorio, setFiltroEscritorio] = useState('');
@@ -24,7 +24,7 @@ function Vendas() {
 
   useEffect(() => {
     loadProducao();
-  }, []);
+  }, [filtroMes, filtroAno, filtroEscritorio, filtroAssessor]);
 
   async function loadProducao() {
     try {
@@ -45,23 +45,12 @@ function Vendas() {
     }
   }
 
-  function aplicarFiltros() {
-    loadProducao();
-  }
-
   function limparFiltros() {
     setFiltroMes('');
     setFiltroAno('');
     setFiltroEscritorio('');
     setFiltroAssessor('');
-    setTimeout(() => loadProducao(), 0);
   }
-
-  useEffect(() => {
-    if (producao?.isAdmin) {
-      loadProducao();
-    }
-  }, [filtroMes, filtroAno, filtroEscritorio, filtroAssessor]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -101,88 +90,90 @@ function Vendas() {
     return null;
   };
 
-  if (loading) return <div className="page-loading">Carregando...</div>;
+  if (loading && !producao) return <div className="page-loading">Carregando...</div>;
   if (error) return <div className="page-error">{error}</div>;
 
-  // ========== VISÃO ADMIN ==========
-  if (producao?.isAdmin) {
-    const dadosMes = producao.porMes?.map(item => ({
-      name: getMesNome(item.mes),
-      value: item.total
-    })) || [];
+  const isAdmin = producao?.isAdmin;
 
-    const dadosEscritorio = producao.porEscritorio?.map(item => ({
-      name: item.escritorio,
-      value: item.total
-    })) || [];
+  const dadosMes = producao?.porMes?.map(item => ({
+    name: getMesNome(item.mes),
+    value: item.total
+  })) || [];
 
-    const dadosAssessor = producao.porAssessor?.slice(0, 15).map(item => ({
-      name: item.assessor,
-      value: item.total
-    })) || [];
+  const dadosEscritorio = producao?.porEscritorio?.map(item => ({
+    name: item.escritorio,
+    value: item.total
+  })) || [];
 
-    return (
-      <div className="page-vendas">
-        <div className="page-header">
-          <h1>Visão Geral de Vendas</h1>
-          <p className="page-subtitle">Painel administrativo</p>
+  const dadosAssessor = producao?.porAssessor?.slice(0, 15).map(item => ({
+    name: item.assessor,
+    value: item.total
+  })) || [];
+
+  return (
+    <div className="page-vendas">
+      <div className="page-header">
+        <h1>{isAdmin ? 'Visão Geral de Vendas' : `Olá, ${user?.nome}!`}</h1>
+        <p className="page-subtitle">{isAdmin ? 'Painel administrativo' : 'Acompanhe sua produção'}</p>
+      </div>
+
+      {/* Total em Destaque */}
+      <div className="stats-grid">
+        <div className="stat-card accent">
+          <span className="stat-label">Total Geral</span>
+          <span className="stat-value">{formatCurrency(producao?.totais?.valorTotal || 0)}</span>
+          <span className="stat-detail">{producao?.totais?.quantidade || 0} contratos</span>
         </div>
+      </div>
 
-        {/* Total em Destaque */}
-        <div className="stats-grid">
-          <div className="stat-card accent">
-            <span className="stat-label">Total Geral</span>
-            <span className="stat-value">{formatCurrency(producao.totais.valorTotal)}</span>
-            <span className="stat-detail">{producao.totais.quantidade} contratos</span>
+      {/* Filtros */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <h3>Filtros</h3>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ minWidth: '120px' }}>
+            <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Mês</label>
+            <select
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px' }}
+            >
+              <option value="">Todos</option>
+              {producao?.filterOptions?.meses?.map(m => (
+                <option key={m} value={m}>{getMesNome(m)}</option>
+              ))}
+            </select>
           </div>
-        </div>
 
-        {/* Filtros */}
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <h3>Filtros</h3>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ minWidth: '120px' }}>
-              <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Mês</label>
-              <select
-                value={filtroMes}
-                onChange={(e) => setFiltroMes(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px' }}
-              >
-                <option value="">Todos</option>
-                {producao.filterOptions?.meses?.map(m => (
-                  <option key={m} value={m}>{getMesNome(m)}</option>
-                ))}
-              </select>
-            </div>
+          <div style={{ minWidth: '100px' }}>
+            <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Ano</label>
+            <select
+              value={filtroAno}
+              onChange={(e) => setFiltroAno(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px' }}
+            >
+              <option value="">Todos</option>
+              {producao?.filterOptions?.anos?.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+          </div>
 
-            <div style={{ minWidth: '100px' }}>
-              <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Ano</label>
-              <select
-                value={filtroAno}
-                onChange={(e) => setFiltroAno(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px' }}
-              >
-                <option value="">Todos</option>
-                {producao.filterOptions?.anos?.map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
+          <div style={{ minWidth: '150px' }}>
+            <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Escritório</label>
+            <select
+              value={filtroEscritorio}
+              onChange={(e) => setFiltroEscritorio(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px' }}
+            >
+              <option value="">Todos</option>
+              {producao?.filterOptions?.escritorios?.map(e => (
+                <option key={e} value={e}>{e}</option>
+              ))}
+            </select>
+          </div>
 
-            <div style={{ minWidth: '150px' }}>
-              <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Escritório</label>
-              <select
-                value={filtroEscritorio}
-                onChange={(e) => setFiltroEscritorio(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px' }}
-              >
-                <option value="">Todos</option>
-                {producao.filterOptions?.escritorios?.map(e => (
-                  <option key={e} value={e}>{e}</option>
-                ))}
-              </select>
-            </div>
-
+          {/* Filtro de Assessor só para Admin */}
+          {isAdmin && (
             <div style={{ minWidth: '180px' }}>
               <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Assessor</label>
               <select
@@ -191,29 +182,31 @@ function Vendas() {
                 style={{ width: '100%', padding: '8px 12px' }}
               >
                 <option value="">Todos</option>
-                {producao.filterOptions?.assessores?.map(a => (
+                {producao?.filterOptions?.assessores?.map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
             </div>
+          )}
 
-            <button
-              onClick={limparFiltros}
-              style={{
-                padding: '8px 16px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                marginTop: 0
-              }}
-            >
-              Limpar
-            </button>
-          </div>
+          <button
+            onClick={limparFiltros}
+            style={{
+              padding: '8px 16px',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              marginTop: 0
+            }}
+          >
+            Limpar
+          </button>
         </div>
+      </div>
 
-        {/* Gráficos */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          {/* Gráfico por Escritório */}
+      {/* Gráficos */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        {/* Gráfico por Escritório */}
+        {dadosEscritorio.length > 0 && (
           <div className="card">
             <h3>Total por Escritório</h3>
             <div style={{ height: '300px' }}>
@@ -228,8 +221,10 @@ function Vendas() {
               </ResponsiveContainer>
             </div>
           </div>
+        )}
 
-          {/* Gráfico por Mês (Rosca) */}
+        {/* Gráfico por Mês (Rosca) */}
+        {dadosMes.length > 0 && (
           <div className="card">
             <h3>Distribuição por Mês</h3>
             <div style={{ height: '300px' }}>
@@ -255,9 +250,11 @@ function Vendas() {
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Gráfico por Assessor */}
+      {/* Gráfico por Assessor - Apenas para Admin */}
+      {isAdmin && dadosAssessor.length > 0 && (
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <h3>Total por Assessor (Top 15)</h3>
           <div style={{ height: '400px' }}>
@@ -272,162 +269,52 @@ function Vendas() {
             </ResponsiveContainer>
           </div>
         </div>
+      )}
 
-        {/* Tabela de Detalhes */}
-        <div className="card">
-          <h3>Detalhes ({producao.detalhes?.length || 0} registros)</h3>
-          <div className="table-scroll" style={{ maxHeight: '500px', overflowX: 'auto' }}>
-            <table style={{ minWidth: '1200px' }}>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Assessor</th>
-                  <th>Escritório</th>
-                  <th style={{ textAlign: 'right' }}>Valor</th>
-                  <th style={{ textAlign: 'center' }}>Período</th>
-                  <th>Modalidade</th>
-                  <th>Grupo</th>
-                  <th style={{ textAlign: 'right' }}>Cota</th>
-                  <th style={{ textAlign: 'right' }}>Parcela</th>
-                  <th>Natureza</th>
-                  <th>UF</th>
-                  <th>Tipo Produto</th>
-                  <th style={{ textAlign: 'right' }}>Taxa Adm</th>
+      {/* Tabela de Detalhes */}
+      <div className="card">
+        <h3>Detalhes ({producao?.detalhes?.length || 0} registros)</h3>
+        <div className="table-scroll" style={{ maxHeight: '500px', overflowX: 'auto' }}>
+          <table style={{ minWidth: '1200px' }}>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                {isAdmin && <th>Assessor</th>}
+                <th>Escritório</th>
+                <th style={{ textAlign: 'right' }}>Valor</th>
+                <th style={{ textAlign: 'center' }}>Período</th>
+                <th>Modalidade</th>
+                <th>Grupo</th>
+                <th style={{ textAlign: 'right' }}>Cota</th>
+                <th style={{ textAlign: 'right' }}>Parcela</th>
+                <th>Natureza</th>
+                <th>UF</th>
+                <th>Tipo Produto</th>
+                <th style={{ textAlign: 'right' }}>Taxa Adm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {producao?.detalhes?.map((item, i) => (
+                <tr key={i}>
+                  <td className="text-primary">{item.cliente}</td>
+                  {isAdmin && <td>{item.assessor || '-'}</td>}
+                  <td>{item.escritorio || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
+                  <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
+                  <td>{item.modalidade || '-'}</td>
+                  <td>{item.grupo || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>{item.parcela ? formatCurrency(item.parcela) : '-'}</td>
+                  <td>{item.natureza_sujeito || '-'}</td>
+                  <td>{item.uf || '-'}</td>
+                  <td>{item.tipo_produto || '-'}</td>
+                  <td style={{ textAlign: 'right' }}>{item.taxa_adm ? `${(item.taxa_adm * 100).toFixed(0)}%` : '-'}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {producao.detalhes?.map((item, i) => (
-                  <tr key={i}>
-                    <td className="text-primary">{item.cliente}</td>
-                    <td>{item.assessor || '-'}</td>
-                    <td>{item.escritorio || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
-                    <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
-                    <td>{item.modalidade || '-'}</td>
-                    <td>{item.grupo || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{item.parcela ? formatCurrency(item.parcela) : '-'}</td>
-                    <td>{item.natureza_sujeito || '-'}</td>
-                    <td>{item.uf || '-'}</td>
-                    <td>{item.tipo_produto || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{item.taxa_adm ? `${(item.taxa_adm * 100).toFixed(0)}%` : '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    );
-  }
-
-  // ========== VISÃO USUÁRIO COMUM ==========
-  return (
-    <div className="page-vendas">
-      <div className="page-header">
-        <h1>Olá, {user?.nome}!</h1>
-        <p className="page-subtitle">Acompanhe sua produção</p>
-      </div>
-
-      {producao && (
-        <>
-          {/* Cards de Resumo */}
-          <div className="stats-grid">
-            <div className="stat-card accent">
-              <span className="stat-label">Total Geral</span>
-              <span className="stat-value">{formatCurrency(producao.totais.valorTotal)}</span>
-              <span className="stat-detail">{producao.totais.quantidade} contratos</span>
-            </div>
-          </div>
-
-          {/* Tabela Resumo Anual */}
-          <div className="card">
-            <h3>Resumo Anual</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Ano</th>
-                  <th style={{ textAlign: 'right' }}>Quantidade</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {producao.resumoAnual?.map((item, i) => (
-                  <tr key={i}>
-                    <td className="text-primary">{item.ano}</td>
-                    <td style={{ textAlign: 'right' }}>{item.quantidade}</td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{formatCurrency(item.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Tabela Resumo Mensal */}
-          <div className="card">
-            <h3>Resumo Mensal</h3>
-            <table>
-              <thead>
-                <tr>
-                  <th>Período</th>
-                  <th style={{ textAlign: 'right' }}>Quantidade</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {producao.resumoMensal?.map((item, i) => (
-                  <tr key={i}>
-                    <td className="text-primary">{getMesNome(item.mes)}/{item.ano}</td>
-                    <td style={{ textAlign: 'right' }}>{item.quantidade}</td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{formatCurrency(item.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Detalhes */}
-          <div className="card">
-            <h3>Detalhes ({producao.detalhes?.length || 0} registros)</h3>
-            <div className="table-scroll" style={{ overflowX: 'auto' }}>
-              <table style={{ minWidth: '1000px' }}>
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th style={{ textAlign: 'right' }}>Valor</th>
-                    <th style={{ textAlign: 'center' }}>Período</th>
-                    <th>Modalidade</th>
-                    <th>Grupo</th>
-                    <th style={{ textAlign: 'right' }}>Cota</th>
-                    <th style={{ textAlign: 'right' }}>Parcela</th>
-                    <th>Natureza</th>
-                    <th>UF</th>
-                    <th>Tipo Produto</th>
-                    <th style={{ textAlign: 'right' }}>Taxa Adm</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {producao.detalhes?.map((item, i) => (
-                    <tr key={i}>
-                      <td className="text-primary">{item.cliente}</td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
-                      <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
-                      <td>{item.modalidade || '-'}</td>
-                      <td>{item.grupo || '-'}</td>
-                      <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>
-                      <td style={{ textAlign: 'right' }}>{item.parcela ? formatCurrency(item.parcela) : '-'}</td>
-                      <td>{item.natureza_sujeito || '-'}</td>
-                      <td>{item.uf || '-'}</td>
-                      <td>{item.tipo_produto || '-'}</td>
-                      <td style={{ textAlign: 'right' }}>{item.taxa_adm ? `${(item.taxa_adm * 100).toFixed(0)}%` : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

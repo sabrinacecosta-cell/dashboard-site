@@ -64,6 +64,112 @@ const ProducaoModel = {
     return result.rows;
   },
 
+  // ========== MÉTODOS ASSESSOR COM FILTROS ==========
+
+  async findByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
+    let query = 'SELECT * FROM producao WHERE (assessor = $1 OR email_assessor = $2)';
+    const params = [nomeAssessor, emailAssessor];
+    let paramIndex = 3;
+
+    if (filters.mes) {
+      query += ` AND mes = $${paramIndex++}`;
+      params.push(filters.mes);
+    }
+    if (filters.ano) {
+      query += ` AND ano = $${paramIndex++}`;
+      params.push(filters.ano);
+    }
+    if (filters.escritorio) {
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
+      params.push(filters.escritorio);
+    }
+
+    query += ' ORDER BY ano DESC, mes DESC';
+    const result = await db.query(query, params);
+    return result.rows;
+  },
+
+  async getTotalByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
+    let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    const params = [nomeAssessor, emailAssessor];
+    let paramIndex = 3;
+
+    if (filters.mes) {
+      query += ` AND mes = $${paramIndex++}`;
+      params.push(filters.mes);
+    }
+    if (filters.ano) {
+      query += ` AND ano = $${paramIndex++}`;
+      params.push(filters.ano);
+    }
+    if (filters.escritorio) {
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
+      params.push(filters.escritorio);
+    }
+
+    const result = await db.query(query, params);
+    return result.rows[0];
+  },
+
+  async getTotalPorEscritorioByAssessor(nomeAssessor, emailAssessor, filters = {}) {
+    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    const params = [nomeAssessor, emailAssessor];
+    let paramIndex = 3;
+
+    if (filters.mes) {
+      query += ` AND mes = $${paramIndex++}`;
+      params.push(filters.mes);
+    }
+    if (filters.ano) {
+      query += ` AND ano = $${paramIndex++}`;
+      params.push(filters.ano);
+    }
+    if (filters.escritorio) {
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
+      params.push(filters.escritorio);
+    }
+
+    query += ' GROUP BY TRIM(escritorio) ORDER BY total DESC';
+    const result = await db.query(query, params);
+    return result.rows;
+  },
+
+  async getTotalPorMesByAssessor(nomeAssessor, emailAssessor, filters = {}) {
+    let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR email_assessor = $2)`;
+    const params = [nomeAssessor, emailAssessor];
+    let paramIndex = 3;
+
+    if (filters.ano) {
+      query += ` AND ano = $${paramIndex++}`;
+      params.push(filters.ano);
+    }
+    if (filters.escritorio) {
+      query += ` AND TRIM(escritorio) = $${paramIndex++}`;
+      params.push(filters.escritorio);
+    }
+
+    query += ' GROUP BY mes ORDER BY mes';
+    const result = await db.query(query, params);
+    return result.rows;
+  },
+
+  async getFilterOptionsByAssessor(nomeAssessor, emailAssessor) {
+    const baseWhere = '(assessor = $1 OR email_assessor = $2)';
+    const params = [nomeAssessor, emailAssessor];
+
+    const [meses, anos, escritorios] = await Promise.all([
+      db.query(`SELECT DISTINCT mes FROM producao WHERE ${baseWhere} ORDER BY mes`, params),
+      db.query(`SELECT DISTINCT ano FROM producao WHERE ${baseWhere} ORDER BY ano DESC`, params),
+      db.query(`SELECT DISTINCT TRIM(escritorio) as escritorio FROM producao WHERE ${baseWhere} AND escritorio IS NOT NULL AND TRIM(escritorio) != '' ORDER BY escritorio`, params)
+    ]);
+
+    return {
+      meses: meses.rows.map(r => r.mes),
+      anos: anos.rows.map(r => r.ano),
+      escritorios: escritorios.rows.map(r => r.escritorio)
+    };
+  },
+
   // ========== MÉTODOS ADMIN ==========
 
   async findAll(filters = {}) {
