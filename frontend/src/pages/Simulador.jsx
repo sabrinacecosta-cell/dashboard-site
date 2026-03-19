@@ -1,4 +1,5 @@
 import React from 'react';
+import SimuladorComponent from '../components/Simulador';
 
 function Simulador() {
   return (
@@ -7,14 +8,7 @@ function Simulador() {
         <h1>Simulador</h1>
         <p className="page-subtitle">Simule suas vendas e comissões</p>
       </div>
-
-      <div className="card">
-        <div className="empty-state">
-          <span className="empty-icon">🧮</span>
-          <h3>Em breve</h3>
-          <p>O simulador está sendo desenvolvido.</p>
-        </div>
-      </div>
+      <SimuladorComponent />
     </div>
   );
 }

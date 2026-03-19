@@ -1,0 +1,582 @@
+/* Simulador de Consórcio - Estilos */
+
+/* Variáveis */
+.sim-container {
+  --bg-geral: #1a1a1a;
+  --bg-painel: #242424;
+  --bg-card: #1e1e1e;
+  --cor-destaque: #c8714a;
+  --texto-principal: #ffffff;
+  --texto-secundario: #888888;
+  --texto-hint: #555555;
+  --texto-titulo: #666666;
+  --borda: #2e2e2e;
+  --radius-painel: 14px;
+  --radius-card: 10px;
+}
+
+/* Container Principal */
+.sim-container {
+  background: var(--bg-geral);
+  min-height: 100%;
+  padding: 24px;
+  color: var(--texto-principal);
+}
+
+/* Etapas */
+.sim-etapa {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Títulos de Seção */
+.sim-titulo-secao {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--texto-titulo);
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+/* Botão Voltar */
+.sim-btn-voltar {
+  background: transparent;
+  border: none;
+  color: var(--texto-secundario);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+}
+
+.sim-btn-voltar:hover {
+  color: var(--texto-principal);
+}
+
+/* Cards Grid */
+.sim-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.sim-cards-estrategia {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 800px;
+}
+
+/* Card Modalidade */
+.sim-card-modalidade {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 40px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sim-card-modalidade:hover {
+  border-color: var(--cor-destaque);
+  background: var(--bg-card);
+}
+
+.sim-card-icon {
+  font-size: 48px;
+}
+
+.sim-card-nome {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+/* Card Estratégia */
+.sim-card-estrategia {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 32px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.sim-card-estrategia:hover:not(.sim-card-disabled) {
+  border-color: var(--cor-destaque);
+  background: var(--bg-card);
+}
+
+.sim-card-estrategia .sim-card-nome {
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.sim-card-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sim-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 9px;
+  text-transform: uppercase;
+  background: var(--borda);
+  color: var(--texto-hint);
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Filtros */
+.sim-filtros {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.sim-filtro-grupo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sim-filtro-label {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+/* Dropdown Customizado */
+.sim-dropdown {
+  position: relative;
+  min-width: 160px;
+}
+
+.sim-dropdown-trigger {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 10px 16px;
+  color: var(--texto-principal);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+
+.sim-dropdown-trigger:hover {
+  border-color: var(--cor-destaque);
+}
+
+.sim-dropdown-arrow {
+  font-size: 10px;
+  color: var(--texto-secundario);
+}
+
+.sim-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sim-dropdown-item {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: var(--texto-principal);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sim-dropdown-item:hover {
+  background: var(--bg-card);
+}
+
+.sim-dropdown-item.active {
+  background: var(--cor-destaque);
+  color: #ffffff;
+}
+
+/* Pills Toggle */
+.sim-pills {
+  display: flex;
+}
+
+.sim-pill {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 400;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #2a2a2a;
+  color: #666666;
+}
+
+.sim-pill.pill-left {
+  border-radius: 8px 0 0 8px;
+}
+
+.sim-pill.pill-right {
+  border-radius: 0 8px 8px 0;
+}
+
+.sim-pill.active {
+  background: #ffffff;
+  color: #111111;
+  font-weight: 700;
+}
+
+/* Layout Colunas */
+.sim-colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .sim-colunas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Painéis */
+.sim-painel {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 24px;
+}
+
+.sim-painel-resumo {
+  margin-top: 0;
+}
+
+/* Info Bar */
+.sim-info-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sim-info-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 12px;
+  text-align: center;
+}
+
+.sim-info-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-hint);
+  margin-bottom: 4px;
+}
+
+.sim-info-valor {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+/* Inputs */
+.sim-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.sim-input-grupo label {
+  display: block;
+  font-size: 12px;
+  color: var(--texto-secundario);
+  margin-bottom: 8px;
+}
+
+.sim-input-grupo input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  color: var(--texto-principal);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.sim-input-grupo input:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+}
+
+/* Reajuste */
+.sim-reajuste {
+  font-size: 13px;
+  color: var(--texto-secundario);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--borda);
+  margin-bottom: 16px;
+}
+
+.sim-reajuste strong {
+  color: var(--texto-principal);
+}
+
+/* Resultados */
+.sim-resultados {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.sim-resultado-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.sim-resultado-item:last-child {
+  border-bottom: none;
+}
+
+.sim-resultado-label {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+.sim-resultado-valor {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+.valor-cobre {
+  color: var(--cor-destaque) !important;
+}
+
+/* Botão PDF */
+.sim-btn-pdf {
+  width: 100%;
+  background: var(--cor-destaque);
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 14px 24px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-bottom: 16px;
+}
+
+.sim-btn-pdf:hover {
+  opacity: 0.9;
+}
+
+/* Observação Legal */
+.sim-observacao {
+  font-size: 10px;
+  color: #444444;
+  line-height: 1.5;
+}
+
+/* Tabela de Parcelas */
+.sim-tabela-container {
+  overflow-x: auto;
+}
+
+.sim-tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sim-tabela thead {
+  background: var(--bg-card);
+}
+
+.sim-tabela th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-secundario);
+  font-weight: 600;
+  border-left: 3px solid transparent;
+}
+
+.sim-tabela th:first-child {
+  border-left: 3px solid var(--cor-destaque);
+}
+
+.sim-tabela td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--borda);
+  border-left: 3px solid transparent;
+}
+
+.sim-tabela tbody tr {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sim-tabela tbody tr:hover {
+  background: var(--bg-card);
+}
+
+.sim-tabela tbody tr.selected {
+  background: #2a2118;
+}
+
+.sim-tabela tbody tr.selected td:first-child {
+  border-left: 3px solid var(--cor-destaque);
+}
+
+.sim-tabela .valor-destaque {
+  color: var(--cor-destaque);
+  font-weight: 600;
+}
+
+.sim-tabela .valor-riscado {
+  color: var(--texto-hint);
+  text-decoration: line-through;
+}
+
+/* Resumo da Proposta */
+.sim-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+@media (max-width: 900px) {
+  .sim-resumo {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sim-resumo-secao {
+  padding-right: 24px;
+  border-right: 1px solid var(--borda);
+}
+
+.sim-resumo-secao:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+@media (max-width: 900px) {
+  .sim-resumo-secao {
+    border-right: none;
+    border-bottom: 1px solid var(--borda);
+    padding-right: 0;
+    padding-bottom: 24px;
+  }
+  
+  .sim-resumo-secao:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.sim-resumo-titulo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-titulo);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.sim-resumo-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.sim-resumo-linha:last-child {
+  border-bottom: none;
+}
+
+.sim-resumo-label {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+.sim-resumo-valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .sim-container {
+    padding: 16px;
+  }
+  
+  .sim-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .sim-cards-estrategia {
+    grid-template-columns: 1fr;
+  }
+  
+  .sim-filtros {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .sim-info-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .sim-inputs {
+    grid-template-columns: 1fr;
+  }
+}
