@@ -2,14 +2,14 @@
 
 /* Variáveis */
 .sim-container {
-  --bg-geral: #1a1a1a;
-  --bg-painel: #242424;
-  --bg-card: #1e1e1e;
-  --cor-destaque: #c8714a;
-  --texto-principal: #ffffff;
-  --texto-secundario: #888888;
+  --bg-geral: #0A0A0A;
+  --bg-painel: #1A1A1A;
+  --bg-card: #1E1E1E;
+  --cor-destaque: #F5C000;
+  --texto-principal: #FFFFFF;
+  --texto-secundario: #CCCCCC;
   --texto-hint: #555555;
-  --texto-titulo: #666666;
+  --texto-titulo: #FFFFFF;
   --borda: #2e2e2e;
   --radius-painel: 14px;
   --radius-card: 10px;
@@ -226,7 +226,7 @@
 
 .sim-dropdown-item.active {
   background: var(--cor-destaque);
-  color: #ffffff;
+  color: #000000;
 }
 
 /* Pills Toggle */
@@ -402,7 +402,7 @@
   border: none;
   border-radius: var(--radius-card);
   padding: 14px 24px;
-  color: #ffffff;
+  color: #000000;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -467,7 +467,7 @@
 }
 
 .sim-tabela tbody tr.selected {
-  background: #2a2118;
+  background: #1F1A00;
 }
 
 .sim-tabela tbody tr.selected td:first-child {

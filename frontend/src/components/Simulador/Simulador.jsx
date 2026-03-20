@@ -264,84 +264,197 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
   const gerarPDF = async () => {
     const { default: jsPDF } = await import('jspdf');
-    const doc = new jsPDF();
-    
-    const margin = 20;
-    let y = margin;
-    
-    // Título
-    doc.setFontSize(18);
-    doc.setTextColor(200, 113, 74); // Cobre
-    doc.text('Proposta de Consórcio', margin, y);
-    y += 15;
-    
-    // Subtítulo
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(`${grupo.nome} - Grupo ${grupo.grupo} - ${grupo.prazo} meses`, margin, y);
-    y += 10;
-    doc.text(`Plano: ${plano === 'taxaReduzida' ? 'Taxa Reduzida' : 'Parcela Reduzida'}`, margin, y);
-    y += 15;
-    
-    // Crédito e Parcelas
-    doc.setFontSize(11);
-    doc.setTextColor(50);
-    doc.text('CRÉDITO E PARCELAS', margin, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(80);
-    doc.text(`Carta de crédito: ${formatarMoedaInteiro(simulacao.credito)}`, margin, y);
-    y += 6;
-    doc.text(`Parcela inicial: ${formatarMoeda(simulacao.parcelaInicial)}`, margin, y);
-    y += 6;
-    doc.text(`Crédito disponível pós contemplação: ${formatarMoedaInteiro(simulacao.creditoDisponivel)}`, margin, y);
-    y += 12;
-    
-    // Lance
-    doc.setFontSize(11);
-    doc.setTextColor(50);
-    doc.text('LANCE', margin, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(80);
-    doc.text(`Lance recursos próprios (${lanceProprioPercent}%): ${formatarMoedaInteiro(simulacao.lanceProprio)}`, margin, y);
-    y += 6;
-    doc.text(`Lance embutido (${lanceEmbutidoPercent}%): ${formatarMoedaInteiro(simulacao.lanceEmbutido)}`, margin, y);
-    y += 6;
-    doc.setTextColor(200, 113, 74);
-    doc.text(`Lance total: ${formatarMoedaInteiro(simulacao.lanceTotal)}`, margin, y);
-    y += 12;
-    
-    // Custos
-    doc.setFontSize(11);
-    doc.setTextColor(50);
-    doc.text('CUSTOS', margin, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(80);
-    doc.text(`Taxa de administração (${formatarPercentual(dadosPlano.taxaAdm)}): ${formatarMoedaInteiro(simulacao.totalTaxaAdm)}`, margin, y);
-    y += 6;
-    doc.text(`Fundo de reserva (${formatarPercentual(dadosPlano.fundoReserva)}): ${formatarMoedaInteiro(simulacao.totalFundoReserva)}`, margin, y);
-    y += 6;
-    doc.text(`Total taxas: ${formatarMoedaInteiro(simulacao.totalTaxas)}`, margin, y);
-    y += 6;
-    doc.text(`Saldo devedor inicial: ${formatarMoedaInteiro(simulacao.saldoDevedor)}`, margin, y);
-    y += 15;
-    
-    // Observações
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    const W = 210;
+    const H = 297;
+    const M = 12; // margens ~36px
+    let y = M;
+
+    const gold = [245, 192, 0];
+    const white = [255, 255, 255];
+    const black = [10, 10, 10];
+    const grey = [153, 153, 153];
+    const lightGrey = [200, 200, 200];
+    const darkCard = [30, 30, 30];
+    const darkBorder = [46, 46, 46];
+
+    // Fundo preto total
+    doc.setFillColor(...black);
+    doc.rect(0, 0, W, H, 'F');
+
+    // Elemento geométrico diagonal dourado (triângulo) — canto superior direito
+    doc.setFillColor(...gold);
+    doc.lines([[-65, 0], [65, 65], [0, -65]], W, 0, [1, 1], 'F', true);
+    // Camada interna mais sutil para profundidade
+    doc.setFillColor(200, 155, 0);
+    doc.lines([[-35, 0], [35, 35], [0, -35]], W, 0, [1, 1], 'F', true);
+
+    // ─── HEADER ───
     doc.setFontSize(8);
-    doc.setTextColor(120);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'bold');
+    const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
+    doc.text(`GRUPO ${grupo.grupo} | ${modalLabel}`, M, y + 5);
+    y += 13;
+
+    // Linha de categoria
+    doc.setFontSize(7.5);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    const planoLabel = plano === 'taxaReduzida' ? 'TAXA REDUZIDA' : 'PARCELA REDUZIDA';
+    doc.text(`${planoLabel} | PLANEJAMENTO PATRIMONIAL DE LONGO PRAZO`, M, y);
+    y += 14;
+
+    // ─── TÍTULO GRANDE ───
+    doc.setFontSize(20);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`CONSÓRCIO ${modalLabel} XP`, M, y);
+    y += 9;
+    doc.setFontSize(13);
+    doc.setTextColor(...gold);
+    doc.text(`CRÉDITO DE ${formatarMoedaInteiro(creditoSelecionado)}`, M, y);
+    y += 18;
+
+    // ─── BLOCO COM BARRA VERTICAL AMARELA — estratégia ───
+    const barHeight1 = 15;
+    doc.setFillColor(...gold);
+    doc.rect(M, y, 3, barHeight1, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Consórcio XP como estratégia de diversificação patrimonial', M + 7, y + 5.5);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Alternativa para construção de patrimônio com custo controlado e parcelas acessíveis.', M + 7, y + 12);
+    y += barHeight1 + 10;
+
+    // ─── BOX COM BORDA AMARELA — redução 50% ───
+    doc.setFillColor(25, 20, 0);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(M, y, W - 2 * M, 18, 3, 3, 'FD');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Redução de 50% no valor das parcelas até a contemplação do crédito', W / 2, y + 7.5, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 13.5, { align: 'center' });
+    y += 26;
+
+    // ─── CARDS LADO A LADO — 2 colunas ───
+    const cardW = (W - 2 * M - 8) / 2;
+    const cardH = 40;
+
+    // Card esquerdo — Crédito + Parcela integral
+    doc.setFillColor(...darkCard);
+    doc.setDrawColor(...darkBorder);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CRÉDITO', M + 7, y + 8);
+    doc.setFontSize(15);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoedaInteiro(creditoSelecionado), M + 7, y + 17);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Parcela integral', M + 7, y + 27);
+    doc.setFontSize(10);
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(linhaSelecionada?.parcelaIntegral || 0), M + 7, y + 35);
+
+    // Card direito — Parcela reduzida 50%
+    const card2X = M + cardW + 8;
+    const parcelaReduzida = linhaSelecionada?.redutor50 || linhaSelecionada?.parcelaDesconto || parcelaInicial;
+    doc.setFillColor(...darkCard);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(card2X, y, cardW, cardH, 4, 4, 'FD');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PARCELA REDUZIDA (50%)', card2X + 7, y + 8);
+    doc.setFontSize(17);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 20);
+    doc.setFontSize(7.5);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('até a contemplação do crédito', card2X + 7, y + 29);
+    const economia = (linhaSelecionada?.parcelaIntegral || 0) - parcelaReduzida;
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 36);
+
+    y += cardH + 16;
+
+    // ─── BLOCO COM BARRA VERTICAL AMARELA — indicado para ───
+    const indicados = [
+      '• Construção gradual de patrimônio imobiliário',
+      '• Diversificação em ativos reais',
+      '• Planejamento de aquisições futuras',
+      '• Estratégias familiares e sucessórias',
+    ];
+    const barHeight2 = 8 + indicados.length * 5.5;
+    doc.setFillColor(...gold);
+    doc.rect(M, y, 3, barHeight2, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ESTRUTURA INDICADA PARA:', M + 7, y + 6);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'normal');
+    indicados.forEach((linha, i) => {
+      doc.text(linha, M + 7, y + 12 + i * 5.5);
+    });
+    y += barHeight2 + 12;
+
+    // ─── BOX CTA ───
+    doc.setFillColor(22, 18, 0);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M, y, W - 2 * M, 22, 4, 4, 'FD');
+    doc.setFontSize(9);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 8, { align: 'center' });
+    doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 15, { align: 'center' });
+    y += 30;
+
+    // ─── OBSERVAÇÕES LEGAIS ───
+    doc.setFontSize(6.5);
+    doc.setTextColor(80, 80, 80);
+    doc.setFont('helvetica', 'normal');
     const observacao = OBSERVACOES_LEGAIS[modalidade];
-    const linhasObs = doc.splitTextToSize(observacao, 170);
-    doc.text(linhasObs, margin, y);
-    
-    // Data
-    y = 280;
+    const linhasObs = doc.splitTextToSize(observacao, W - 2 * M);
+    doc.text(linhasObs, M, y);
+
+    // ─── FOOTER ───
+    doc.setFillColor(20, 20, 20);
+    doc.rect(0, H - 16, W, 16, 'F');
+    doc.setFontSize(9);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Consórcio XP', M, H - 6);
+    const dataValidade = new Date();
+    dataValidade.setDate(dataValidade.getDate() + 30);
     doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, y);
-    
-    doc.save(`proposta-consorcio-${modalidade}-${creditoSelecionado}.pdf`);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Oferta válida até ${dataValidade.toLocaleDateString('pt-BR')}`, W - M, H - 6, { align: 'right' });
+
+    doc.save(`proposta-xp-${modalidade}-grupo${grupo.grupo}-${creditoSelecionado}.pdf`);
   };
 
   return (
