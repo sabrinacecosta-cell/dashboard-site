@@ -553,6 +553,92 @@
   color: var(--texto-principal);
 }
 
+/* Modal Nome do Cliente */
+.sim-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sim-modal {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sim-modal-pergunta {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--texto-principal);
+  margin: 0;
+}
+
+.sim-modal-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  color: var(--texto-principal);
+  font-size: 14px;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.sim-modal-input:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+}
+
+.sim-modal-input::placeholder {
+  color: var(--texto-hint);
+}
+
+.sim-modal-acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.sim-modal-btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: var(--radius-card);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.sim-modal-btn-nao {
+  background: var(--bg-card);
+  color: var(--texto-secundario);
+  border: 1px solid var(--borda);
+}
+
+.sim-modal-btn-nao:hover {
+  color: var(--texto-principal);
+}
+
+.sim-modal-btn-sim {
+  background: var(--cor-destaque);
+  color: #000000;
+}
+
+.sim-modal-btn-sim:hover {
+  opacity: 0.9;
+}
+
 /* Responsivo */
 @media (max-width: 600px) {
   .sim-container {

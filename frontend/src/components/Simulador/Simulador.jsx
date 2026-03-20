@@ -226,7 +226,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
   const [plano, setPlano] = useState('taxaReduzida');
   const [lanceProprioPercent, setLanceProprioPercent] = useState(30);
   const [lanceEmbutidoPercent, setLanceEmbutidoPercent] = useState(30);
-  
+  const [showModalNome, setShowModalNome] = useState(false);
+  const [nomeClienteInput, setNomeClienteInput] = useState('');
+
   const dadosPlano = grupo[plano];
   const tabela = dadosPlano.tabela;
   const [creditoSelecionado, setCreditoSelecionado] = useState(tabela[0].credito);
@@ -240,7 +242,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
   }, [plano, grupo, creditoSelecionado]);
 
   const linhaSelecionada = tabela.find(r => r.credito === creditoSelecionado);
-  
+
   // Determina a parcela inicial baseada no plano
   const parcelaInicial = useMemo(() => {
     if (!linhaSelecionada) return 0;
@@ -262,13 +264,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     });
   }, [creditoSelecionado, lanceProprioPercent, lanceEmbutidoPercent, dadosPlano, parcelaInicial, linhaSelecionada]);
 
-  const gerarPDF = async () => {
+  const gerarPDF = async (nomeCliente) => {
     const { default: jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
     const W = 210;
     const H = 297;
-    const M = 12; // margens ~36px
+    const M = 12;
     let y = M;
 
     const gold = [245, 192, 0];
@@ -283,10 +285,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFillColor(...black);
     doc.rect(0, 0, W, H, 'F');
 
-    // Elemento geométrico diagonal dourado (triângulo) — canto superior direito
+    // Elemento geométrico diagonal dourado — canto superior direito
     doc.setFillColor(...gold);
     doc.lines([[-65, 0], [65, 65], [0, -65]], W, 0, [1, 1], 'F', true);
-    // Camada interna mais sutil para profundidade
     doc.setFillColor(200, 155, 0);
     doc.lines([[-35, 0], [35, 35], [0, -35]], W, 0, [1, 1], 'F', true);
 
@@ -296,15 +297,29 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFont('helvetica', 'bold');
     const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
     doc.text(`GRUPO ${grupo.grupo} | ${modalLabel}`, M, y + 5);
-    y += 13;
+    // Reduz gap se há saudação para compensar espaço
+    y += nomeCliente ? 10 : 13;
 
-    // Linha de categoria
+    // ─── SAUDAÇÃO PERSONALIZADA (opcional) ───
+    if (nomeCliente) {
+      doc.setFontSize(10);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'normal');
+      const tipoPlano = modalidade === 'imovel' ? 'imobiliário' : 'de automóvel';
+      doc.text(
+        `Olá, ${nomeCliente}. Segue o planejamento ${tipoPlano} feito para você.`,
+        M, y + 5
+      );
+      y += 11;
+    }
+
+    // ─── LINHA DE CATEGORIA ───
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
     const planoLabel = plano === 'taxaReduzida' ? 'TAXA REDUZIDA' : 'PARCELA REDUZIDA';
     doc.text(`${planoLabel} | PLANEJAMENTO PATRIMONIAL DE LONGO PRAZO`, M, y);
-    y += 14;
+    y += 12;
 
     // ─── TÍTULO GRANDE ───
     doc.setFontSize(20);
@@ -315,12 +330,11 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(13);
     doc.setTextColor(...gold);
     doc.text(`CRÉDITO DE ${formatarMoedaInteiro(creditoSelecionado)}`, M, y);
-    y += 18;
+    y += 16;
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — estratégia ───
-    const barHeight1 = 15;
     doc.setFillColor(...gold);
-    doc.rect(M, y, 3, barHeight1, 'F');
+    doc.rect(M, y, 3, 13, 'F');
     doc.setFontSize(10);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
@@ -328,27 +342,27 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(8.5);
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Alternativa para construção de patrimônio com custo controlado e parcelas acessíveis.', M + 7, y + 12);
-    y += barHeight1 + 10;
+    doc.text('Alternativa para construção de patrimônio com custo controlado e parcelas acessíveis.', M + 7, y + 11);
+    y += 19;
 
     // ─── BOX COM BORDA AMARELA — redução 50% ───
     doc.setFillColor(25, 20, 0);
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.5);
-    doc.roundedRect(M, y, W - 2 * M, 18, 3, 3, 'FD');
+    doc.roundedRect(M, y, W - 2 * M, 16, 3, 3, 'FD');
     doc.setFontSize(9.5);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Redução de 50% no valor das parcelas até a contemplação do crédito', W / 2, y + 7.5, { align: 'center' });
+    doc.text('Redução de 50% no valor das parcelas até a contemplação do crédito', W / 2, y + 6.5, { align: 'center' });
     doc.setFontSize(8);
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 13.5, { align: 'center' });
-    y += 26;
+    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 12.5, { align: 'center' });
+    y += 22;
 
     // ─── CARDS LADO A LADO — 2 colunas ───
     const cardW = (W - 2 * M - 8) / 2;
-    const cardH = 40;
+    const cardH = 36;
 
     // Card esquerdo — Crédito + Parcela integral
     doc.setFillColor(...darkCard);
@@ -358,19 +372,19 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'bold');
-    doc.text('CRÉDITO', M + 7, y + 8);
-    doc.setFontSize(15);
+    doc.text('CRÉDITO', M + 7, y + 7);
+    doc.setFontSize(14);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoedaInteiro(creditoSelecionado), M + 7, y + 17);
+    doc.text(formatarMoedaInteiro(creditoSelecionado), M + 7, y + 15);
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Parcela integral', M + 7, y + 27);
+    doc.text('Parcela integral', M + 7, y + 25);
     doc.setFontSize(10);
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(linhaSelecionada?.parcelaIntegral || 0), M + 7, y + 35);
+    doc.text(formatarMoeda(linhaSelecionada?.parcelaIntegral || 0), M + 7, y + 32);
 
     // Card direito — Parcela reduzida 50%
     const card2X = M + cardW + 8;
@@ -382,21 +396,65 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(7.5);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('PARCELA REDUZIDA (50%)', card2X + 7, y + 8);
-    doc.setFontSize(17);
+    doc.text('PARCELA REDUZIDA (50%)', card2X + 7, y + 7);
+    doc.setFontSize(16);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 20);
+    doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 18);
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
-    doc.text('até a contemplação do crédito', card2X + 7, y + 29);
+    doc.text('até a contemplação do crédito', card2X + 7, y + 27);
     const economia = (linhaSelecionada?.parcelaIntegral || 0) - parcelaReduzida;
     doc.setFontSize(7);
     doc.setTextColor(...grey);
-    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 36);
+    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 33);
 
-    y += cardH + 16;
+    y += cardH + 9;
+
+    // ─── INFORMAÇÕES TÉCNICAS DO GRUPO ───
+    const techCells = [
+      { label: 'TAXA ADM', value: formatarPercentual(dadosPlano.taxaAdm) },
+      { label: 'TAXA/MÊS', value: formatarPercentual(dadosPlano.taxaMes) },
+      { label: 'FUNDO RESERVA', value: formatarPercentual(dadosPlano.fundoReserva) },
+      { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%` },
+      { label: 'LANCE FIXO', value: `${lanceProprioPercent}%` },
+      { label: 'PRAZO', value: `${grupo.prazo} meses` },
+    ];
+    const techH = 27;
+    const techColW = (W - 2 * M) / 3;
+    doc.setFillColor(...darkCard);
+    doc.setDrawColor(...darkBorder);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(M, y, W - 2 * M, techH, 4, 4, 'FD');
+    techCells.forEach((cell, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const cx = M + col * techColW + 7;
+      const cy = y + 8 + row * 13;
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text(cell.label, cx, cy);
+      doc.setFontSize(10);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.text(cell.value, cx, cy + 6);
+    });
+    y += techH + 8;
+
+    // ─── BLOCO REAJUSTE PRÉ-FIXADO ───
+    doc.setFillColor(...gold);
+    doc.rect(M, y, 3, 13, 'F');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Este grupo possui previsibilidade de correção de parcelas: reajuste', M + 7, y + 5.5);
+    doc.setFontSize(9);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pré-fixado de 5% ao ano.', M + 7, y + 12);
+    y += 20;
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — indicado para ───
     const indicados = [
@@ -405,7 +463,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       '• Planejamento de aquisições futuras',
       '• Estratégias familiares e sucessórias',
     ];
-    const barHeight2 = 8 + indicados.length * 5.5;
+    const barHeight2 = 8 + indicados.length * 5;
     doc.setFillColor(...gold);
     doc.rect(M, y, 3, barHeight2, 'F');
     doc.setFontSize(8);
@@ -416,29 +474,32 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
     indicados.forEach((linha, i) => {
-      doc.text(linha, M + 7, y + 12 + i * 5.5);
+      doc.text(linha, M + 7, y + 11 + i * 5);
     });
-    y += barHeight2 + 12;
+    y += barHeight2 + 8;
 
     // ─── BOX CTA ───
     doc.setFillColor(22, 18, 0);
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.4);
-    doc.roundedRect(M, y, W - 2 * M, 22, 4, 4, 'FD');
+    doc.roundedRect(M, y, W - 2 * M, 18, 4, 4, 'FD');
     doc.setFontSize(9);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 8, { align: 'center' });
-    doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 15, { align: 'center' });
-    y += 30;
+    doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 7, { align: 'center' });
+    doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 13.5, { align: 'center' });
+    y += 25;
 
-    // ─── OBSERVAÇÕES LEGAIS ───
-    doc.setFontSize(6.5);
-    doc.setTextColor(80, 80, 80);
-    doc.setFont('helvetica', 'normal');
-    const observacao = OBSERVACOES_LEGAIS[modalidade];
-    const linhasObs = doc.splitTextToSize(observacao, W - 2 * M);
-    doc.text(linhasObs, M, y);
+    // ─── OBSERVAÇÕES LEGAIS (ancoradas acima do footer) ───
+    const legalY = H - 28;
+    if (y < legalY) {
+      doc.setFontSize(6.5);
+      doc.setTextColor(80, 80, 80);
+      doc.setFont('helvetica', 'normal');
+      const observacao = OBSERVACOES_LEGAIS[modalidade];
+      const linhasObs = doc.splitTextToSize(observacao, W - 2 * M);
+      doc.text(linhasObs, M, legalY);
+    }
 
     // ─── FOOTER ───
     doc.setFillColor(20, 20, 20);
@@ -559,7 +620,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
               </div>
             </div>
 
-            <button className="sim-btn-pdf" onClick={gerarPDF}>
+            <button className="sim-btn-pdf" onClick={() => setShowModalNome(true)}>
               Gerar PDF da proposta
             </button>
 
@@ -587,6 +648,43 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
         <h3 className="sim-titulo-secao">Resumo da proposta</h3>
         <ResumoProposta simulacao={simulacao} />
       </div>
+
+      {/* Modal: nome do cliente */}
+      {showModalNome && (
+        <div className="sim-modal-overlay" onClick={() => setShowModalNome(false)}>
+          <div className="sim-modal" onClick={e => e.stopPropagation()}>
+            <p className="sim-modal-pergunta">Deseja adicionar o nome do cliente?</p>
+            <input
+              className="sim-modal-input"
+              type="text"
+              placeholder="Nome do cliente (opcional)"
+              value={nomeClienteInput}
+              onChange={e => setNomeClienteInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  setShowModalNome(false);
+                  gerarPDF(nomeClienteInput.trim());
+                }
+              }}
+              autoFocus
+            />
+            <div className="sim-modal-acoes">
+              <button
+                className="sim-modal-btn sim-modal-btn-nao"
+                onClick={() => { setShowModalNome(false); gerarPDF(''); }}
+              >
+                Não
+              </button>
+              <button
+                className="sim-modal-btn sim-modal-btn-sim"
+                onClick={() => { setShowModalNome(false); gerarPDF(nomeClienteInput.trim()); }}
+              >
+                Sim — Gerar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
