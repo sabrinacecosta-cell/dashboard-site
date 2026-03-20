@@ -705,7 +705,7 @@
 .cr-btn-remover {
   background: transparent;
   border: none;
-  color: var(--texto-secundario);
+  color: #E24B4A;
   font-size: 14px;
   cursor: pointer;
   padding: 4px 6px;
@@ -713,7 +713,7 @@
 }
 
 .cr-btn-remover:hover {
-  color: #e55;
+  color: #C03A3A;
 }
 
 /* Linha de totais */

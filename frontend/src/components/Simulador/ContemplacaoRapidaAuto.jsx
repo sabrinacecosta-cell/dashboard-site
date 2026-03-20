@@ -14,8 +14,7 @@ function CardGrupo({ grupo, tipoParcela, onAdd }) {
         <div className="cr-grupo-meta">
           <span>Taxa ADM: {(grupo.taxaAdm * 100).toFixed(0)}%</span>
           <span>FR: {(grupo.fundoReserva * 100).toFixed(0)}%</span>
-          <span>Prazo: {grupo.prazo}m</span>
-          <span>Restante: {grupo.prazoRestante}m</span>
+          <span>Prazo restante: {grupo.prazoRestante}m</span>
           <span>Lance emb.: {grupo.lanceEmbutido}%</span>
           <span>Índice: {grupo.indice}</span>
         </div>
@@ -60,7 +59,7 @@ function LinhaSimulacao({ linha, onRemove, onUpdate }) {
   const parcelaInicial    = linha.parcela * linha.qtde;
   const lanceEmb          = cartaTotal * (linha.lanceEmbutidoPercent / 100);
   const lanceTotal        = lanceEmb;
-  const creditoContemplado = Math.max(0, cartaTotal - lanceEmb - (linha.recProprios || 0));
+  const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
   return (
     <tr>
@@ -124,7 +123,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     const cartaTotal        = l.carta * l.qtde;
     const parcelaInicial    = l.parcela * l.qtde;
     const lanceEmb          = cartaTotal * (l.lanceEmbutidoPercent / 100);
-    const creditoContemplado = Math.max(0, cartaTotal - lanceEmb - (l.recProprios || 0));
+    const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
     return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal: lanceEmb, creditoContemplado };
   }), [linhas]);
 
@@ -200,11 +199,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
     doc.text('CONSÓRCIO AUTOMÓVEL XP', M, y);
-    y += 9;
-    doc.setFontSize(12);
-    doc.setTextColor(...gold);
-    doc.text(`CRÉDITO CONTEMPLADO DE ${formatarMoedaInteiro(totais.creditoContemplado)}`, M, y);
-    y += 14;
+    y += 16;
 
     // ── Bloco estratégia ──
     doc.setFillColor(...gold);
@@ -547,7 +542,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
             </div>
           </div>
           <p className="sim-observacao cr-nota-rodape">
-            * Crédito contemplado = carta total − lance embutido [− recursos próprios, se houver].<br />
+            * Crédito contemplado = carta total − lance embutido.<br />
             * Parcela inicial válida até a contemplação ou metade do prazo do grupo, o que vier primeiro.<br />
             * Após esse evento, a parcela será recalculada sobre o saldo devedor atualizado dividido pelo prazo restante.
           </p>
