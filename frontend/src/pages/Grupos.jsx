@@ -113,6 +113,20 @@ function Grupos() {
         </div>
       </div>
 
+      {/* Nota explicativa sobre os cálculos */}
+      <div style={{
+        background: '#1e1e1e',
+        borderLeft: '3px solid #F5C000',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '1.5rem',
+        color: 'var(--text-secondary)',
+        fontSize: '0.82rem',
+        lineHeight: '1.6',
+      }}>
+        Estes cálculos mostram a efetividade do lance máximo, calculada pela relação entre a quantidade de cotas que ofertaram lance máximo VS contempladas em cada mês. A análise considera tanto o desempenho mês a mês quanto as médias dos últimos 6 e 11 meses, permitindo ao assessor entender a probabilidade de contemplação e planejar a estratégia com maior previsibilidade.
+      </div>
+
       {/* Resumo Geral */}
       {!grupoSelecionado && dados.resumo && dados.resumo.length > 0 && (
         <div className="card">

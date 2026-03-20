@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { GRUPOS, ESTRATEGIAS, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
+import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
 import './Simulador.css';
 
 // Etapa 1 - Seleção de Modalidade
@@ -23,13 +24,19 @@ function EtapaModalidade({ onSelect }) {
 }
 
 // Etapa 2 - Seleção de Estratégia
-function EtapaEstrategia({ onSelect, onVoltar }) {
+function EtapaEstrategia({ modalidade, onSelect, onVoltar }) {
+  // Contemplação rápida disponível apenas para automóvel
+  const estrategiasVisiveis = ESTRATEGIAS.map(est => ({
+    ...est,
+    disponivel: est.id === 'contemplacao' ? modalidade === 'automovel' : est.disponivel,
+  }));
+
   return (
     <div className="sim-etapa sim-etapa-estrategia">
       <button className="sim-btn-voltar" onClick={onVoltar}>← Voltar</button>
       <h2 className="sim-titulo-secao">Escolha a estratégia</h2>
       <div className="sim-cards-grid sim-cards-estrategia">
-        {ESTRATEGIAS.map((est) => (
+        {estrategiasVisiveis.map((est) => (
           <button
             key={est.id}
             className={`sim-card-estrategia ${!est.disponivel ? 'sim-card-disabled' : ''}`}
@@ -746,8 +753,18 @@ function Simulador() {
   return (
     <div className="sim-container">
       {etapa === 1 && <EtapaModalidade onSelect={handleSelectModalidade} />}
-      {etapa === 2 && <EtapaEstrategia onSelect={handleSelectEstrategia} onVoltar={handleVoltar} />}
-      {etapa === 3 && <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />}
+      {etapa === 2 && (
+        <EtapaEstrategia
+          modalidade={modalidade}
+          onSelect={handleSelectEstrategia}
+          onVoltar={handleVoltar}
+        />
+      )}
+      {etapa === 3 && (
+        modalidade === 'automovel' && estrategia === 'contemplacao'
+          ? <EtapaContemplacaoRapidaAuto onVoltar={handleVoltar} />
+          : <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />
+      )}
     </div>
   );
 }

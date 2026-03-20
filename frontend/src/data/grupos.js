@@ -79,6 +79,49 @@ export const GRUPOS = {
   }
 };
 
+export const GRUPOS_CONTEMPLACAO_AUTO = {
+  2127: {
+    numero: 2127,
+    taxaAdm: 0.18,
+    fundoReserva: 0.03,
+    taxaMes: 0.00063,
+    prazo: 80,
+    prazoRestante: 50,
+    lanceEmbutido: 50,
+    indice: 'INPC',
+    mesReajuste: 'Setembro',
+    tabela: [
+      { carta: 54698.62, parcelaReduzida: 661.85,  parcelaNormal: 1323.71 },
+      { carta: 60168.49, parcelaReduzida: 728.04,  parcelaNormal: 1456.08 },
+      { carta: 65638.35, parcelaReduzida: 794.22,  parcelaNormal: 1588.45 },
+      { carta: 71108.21, parcelaReduzida: 860.41,  parcelaNormal: 1720.82 },
+      { carta: 76578.07, parcelaReduzida: 926.59,  parcelaNormal: 1853.19 },
+      { carta: 82047.94, parcelaReduzida: 992.78,  parcelaNormal: 1985.56 },
+      { carta: 87517.80, parcelaReduzida: 1058.97, parcelaNormal: 2117.93 },
+    ],
+  },
+  2128: {
+    numero: 2128,
+    taxaAdm: 0.18,
+    fundoReserva: 0.03,
+    taxaMes: 0.00063,
+    prazo: 80,
+    prazoRestante: 61,
+    lanceEmbutido: 30,
+    indice: 'INPC',
+    mesReajuste: 'Agosto',
+    tabela: [
+      { carta: 52590.20, parcelaReduzida: 521.59, parcelaNormal: 1043.18 },
+      { carta: 57849.22, parcelaReduzida: 573.75, parcelaNormal: 1147.50 },
+      { carta: 63108.24, parcelaReduzida: 625.91, parcelaNormal: 1251.82 },
+      { carta: 68367.26, parcelaReduzida: 678.07, parcelaNormal: 1356.14 },
+      { carta: 73626.28, parcelaReduzida: 730.23, parcelaNormal: 1460.46 },
+      { carta: 78885.30, parcelaReduzida: 782.39, parcelaNormal: 1564.78 },
+      { carta: 84144.32, parcelaReduzida: 834.55, parcelaNormal: 1669.10 },
+    ],
+  },
+};
+
 export const ESTRATEGIAS = [
   { id: 'lancamento', nome: 'Grupo lançamento', disponivel: true },
   { id: 'contemplacao', nome: 'Contemplação rápida', disponivel: false },

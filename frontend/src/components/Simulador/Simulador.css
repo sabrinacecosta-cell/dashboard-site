@@ -553,6 +553,242 @@
   color: var(--texto-principal);
 }
 
+/* ═══════════════════════════════════════════════════════
+   Contemplação Rápida — Automóvel
+   ═══════════════════════════════════════════════════════ */
+
+/* Toggle tipo de parcela */
+.cr-toggle-parcela {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.cr-toggle-btn {
+  padding: 11px 28px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border: 1px solid var(--borda);
+  background: var(--bg-painel);
+  color: var(--texto-secundario);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cr-toggle-btn:first-child {
+  border-radius: var(--radius-card) 0 0 var(--radius-card);
+}
+
+.cr-toggle-btn:last-child {
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+  border-left: none;
+}
+
+.cr-toggle-btn.active {
+  background: var(--cor-destaque);
+  border-color: var(--cor-destaque);
+  color: #000000;
+}
+
+/* Grid de cards de grupos */
+.cr-grupos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .cr-grupos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card individual de grupo */
+.cr-card-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cr-grupo-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cr-grupo-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cor-destaque);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.cr-grupo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cr-grupo-meta span {
+  font-size: 11px;
+  color: var(--texto-secundario);
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+/* Tabela de cotas */
+.cr-tabela-cotas th:last-child,
+.cr-tabela-cotas td:last-child {
+  width: 60px;
+  text-align: right;
+}
+
+/* Botão Add */
+.cr-btn-add {
+  background: transparent;
+  border: 1px solid var(--cor-destaque);
+  border-radius: 6px;
+  color: var(--cor-destaque);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cr-btn-add:hover {
+  background: var(--cor-destaque);
+  color: #000;
+}
+
+/* Painel simulação */
+.cr-painel-simulacao {
+  margin-top: 24px;
+}
+
+/* Wrapper com scroll horizontal */
+.cr-tabela-wrapper {
+  overflow-x: auto;
+}
+
+/* Tabela de simulação */
+.cr-tabela-simulacao th,
+.cr-tabela-simulacao td {
+  white-space: nowrap;
+}
+
+/* Input editável dentro da tabela */
+.cr-input-celula {
+  width: 80px;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--texto-principal);
+  font-size: 13px;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.cr-input-celula:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+}
+
+/* Botão remover linha */
+.cr-btn-remover {
+  background: transparent;
+  border: none;
+  color: var(--texto-secundario);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.2s;
+}
+
+.cr-btn-remover:hover {
+  color: #e55;
+}
+
+/* Linha de totais */
+.cr-totais td {
+  border-top: 2px solid var(--borda);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+/* Crédito contemplado em verde */
+.cr-credito-contemplado {
+  color: #5DCAA5 !important;
+  font-weight: 700 !important;
+}
+
+/* Painel resumo */
+.cr-painel-resumo {
+  margin-top: 24px;
+}
+
+/* Grid do resumo */
+.cr-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .cr-resumo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .cr-resumo-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cr-resumo-item {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cr-resumo-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--texto-secundario);
+}
+
+.cr-resumo-valor {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--texto-principal);
+}
+
+.cr-verde { color: #5DCAA5 !important; }
+.cr-ouro  { color: var(--cor-destaque) !important; }
+
+/* Nota de rodapé do resumo */
+.cr-nota-rodape {
+  color: #555;
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 16px;
+}
+
 /* Nota explicativa abaixo da tabela de parcelas */
 .sim-nota-parcela {
   margin-top: 14px;
