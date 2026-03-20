@@ -164,39 +164,39 @@ function Grupos() {
             <table>
               <thead>
                 <tr>
-                  <th>Mês</th>
-                  <th style={{ textAlign: 'right' }}>Lance %</th>
-                  <th style={{ textAlign: 'right' }}>Qnt Lances</th>
-                  <th style={{ textAlign: 'right' }}>Contemplados</th>
-                  <th style={{ textAlign: 'right' }}>Contemp. Mensal</th>
+                  <th style={{ textAlign: 'center' }}>Mês</th>
+                  <th style={{ textAlign: 'center' }}>Lance %</th>
+                  <th style={{ textAlign: 'center' }}>Qnt Lances</th>
+                  <th style={{ textAlign: 'center' }}>Contemplados</th>
+                  <th style={{ textAlign: 'center' }}>Contemp. Mensal</th>
                   {tipoSelecionado === 'imovel' ? (
                     <>
-                      <th style={{ textAlign: 'right' }}>Média Contemp. (11 meses)</th>
-                      <th style={{ textAlign: 'right' }}>Média Contemp. (6 meses)</th>
+                      <th style={{ textAlign: 'center' }}>Média Contemp. (11 meses)</th>
+                      <th style={{ textAlign: 'center' }}>Média Contemp. (6 meses)</th>
                     </>
                   ) : (
-                    <th style={{ textAlign: 'right' }}>Média Contemp.</th>
+                    <th style={{ textAlign: 'center' }}>Média Contemp.</th>
                   )}
-                  <th style={{ textAlign: 'right' }}>Média Lance</th>
+                  <th style={{ textAlign: 'center' }}>Média Lance</th>
                 </tr>
               </thead>
               <tbody>
                 {registros.map((r, i) => (
                   <tr key={i}>
-                    <td className="text-primary" style={{ textTransform: 'capitalize' }}>{formatMesAno(r.mes)}</td>
-                    <td style={{ textAlign: 'right' }}>{r.lance_percent}%</td>
-                    <td style={{ textAlign: 'right' }}>{r.qnt_lances}</td>
-                    <td style={{ textAlign: 'right' }}>{r.contemplados}</td>
-                    <td style={{ textAlign: 'right' }}>{r.contemplacao_mensal || '-'}</td>
+                    <td className="text-primary" style={{ textAlign: 'center', textTransform: 'capitalize' }}>{formatMesAno(r.mes)}</td>
+                    <td style={{ textAlign: 'center' }}>{r.lance_percent}%</td>
+                    <td style={{ textAlign: 'center' }}>{r.qnt_lances}</td>
+                    <td style={{ textAlign: 'center' }}>{r.contemplados}</td>
+                    <td style={{ textAlign: 'center' }}>{r.contemplacao_mensal || '-'}</td>
                     {tipoSelecionado === 'imovel' ? (
                       <>
-                        <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao || '-'}</td>
-                        <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao_6m || '-'}</td>
+                        <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                        <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao_6m || '-'}</td>
                       </>
                     ) : (
-                      <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                      <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao || '-'}</td>
                     )}
-                    <td style={{ textAlign: 'right' }}>{r.media_lance_percent ? `${r.media_lance_percent}%` : '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{r.media_lance_percent ? `${r.media_lance_percent}%` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
