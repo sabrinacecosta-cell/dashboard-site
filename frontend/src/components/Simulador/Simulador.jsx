@@ -67,26 +67,27 @@ function CustomDropdown({ options, value, onChange, formatLabel }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedOption = options.find(opt => opt.credito === value);
+  const rowKey = (opt) => opt.id ?? opt.credito;
+  const selectedOption = options.find(opt => rowKey(opt) === value);
 
   return (
     <div className="sim-dropdown" ref={dropdownRef}>
-      <button 
+      <button
         className="sim-dropdown-trigger"
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
-        <span>{formatLabel ? formatLabel(selectedOption) : formatarMoedaInteiro(value)}</span>
+        <span>{formatLabel ? formatLabel(selectedOption) : formatarMoedaInteiro(selectedOption?.credito ?? value)}</span>
         <span className="sim-dropdown-arrow">▼</span>
       </button>
       {isOpen && (
         <div className="sim-dropdown-menu">
           {options.map((opt) => (
             <button
-              key={opt.credito}
-              className={`sim-dropdown-item ${opt.credito === value ? 'active' : ''}`}
+              key={rowKey(opt)}
+              className={`sim-dropdown-item ${rowKey(opt) === value ? 'active' : ''}`}
               onClick={() => {
-                onChange(opt.credito);
+                onChange(rowKey(opt));
                 setIsOpen(false);
               }}
               type="button"
@@ -119,9 +120,10 @@ function PillsToggle({ options, value, onChange }) {
 }
 
 // Tabela de Parcelas
-function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito }) {
+function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, defaultTaxaAdm }) {
   const isTaxaReduzida = plano === 'taxaReduzida';
   const isImovelTaxaReduzida = isTaxaReduzida && tabela[0]?.parcelaDesconto !== undefined;
+  const rowKey = (row) => row.id ?? row.credito;
 
   return (
     <div className="sim-tabela-container">
@@ -143,27 +145,43 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito }) 
           </tr>
         </thead>
         <tbody>
-          {tabela.map((row) => {
-            const isSelected = row.credito === creditoSelecionado;
+          {tabela.map((row, index) => {
+            const isSelected = rowKey(row) === creditoSelecionado;
+            const prevRow = index > 0 ? tabela[index - 1] : null;
+            const curTaxa = row.taxaAdm ?? defaultTaxaAdm;
+            const prevTaxa = prevRow ? (prevRow.taxaAdm ?? defaultTaxaAdm) : null;
+            const showPill = index === 0 || curTaxa !== prevTaxa;
+
             return (
-              <tr
-                key={row.credito}
-                className={isSelected ? 'selected' : ''}
-                onClick={() => onSelectCredito(row.credito)}
-              >
-                <td>{formatarMoedaInteiro(row.credito)}</td>
-                {isImovelTaxaReduzida ? (
-                  <>
-                    <td className="valor-destaque">{formatarMoeda(row.parcelaDesconto)}</td>
-                    <td className="valor-riscado">{formatarMoeda(row.parcelaIntegral)}</td>
-                  </>
-                ) : (
-                  <>
-                    <td className="valor-destaque">{formatarMoeda(row.redutor50)}</td>
-                    <td className="valor-riscado">{formatarMoeda(row.parcelaIntegral)}</td>
-                  </>
+              <React.Fragment key={rowKey(row)}>
+                {showPill && (
+                  <tr className="sim-tabela-grupo-header">
+                    <td colSpan={3}>
+                      <span className="sim-taxa-pill">
+                        <span className="sim-taxa-pill-label">Taxa ADM</span>
+                        <span className="sim-taxa-pill-valor">{formatarPercentual(curTaxa)}</span>
+                      </span>
+                    </td>
+                  </tr>
                 )}
-              </tr>
+                <tr
+                  className={isSelected ? 'selected' : ''}
+                  onClick={() => onSelectCredito(rowKey(row))}
+                >
+                  <td>{formatarMoedaInteiro(row.credito)}</td>
+                  {isImovelTaxaReduzida ? (
+                    <>
+                      <td className="valor-destaque">{formatarMoeda(row.parcelaDesconto)}</td>
+                      <td className="valor-riscado">{formatarMoeda(row.parcelaIntegral)}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="valor-destaque">{formatarMoeda(row.redutor50)}</td>
+                      <td className="valor-riscado">{formatarMoeda(row.parcelaIntegral)}</td>
+                    </>
+                  )}
+                </tr>
+              </React.Fragment>
             );
           })}
         </tbody>
@@ -238,17 +256,19 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
   const dadosPlano = grupo[plano];
   const tabela = dadosPlano.tabela;
-  const [creditoSelecionado, setCreditoSelecionado] = useState(tabela[0].credito);
+  const rowKey = (r) => r.id ?? r.credito;
+  const [creditoSelecionado, setCreditoSelecionado] = useState(rowKey(tabela[0]));
 
   // Atualiza crédito quando muda o plano
   useEffect(() => {
     const novaTabela = grupo[plano].tabela;
-    if (!novaTabela.find(r => r.credito === creditoSelecionado)) {
-      setCreditoSelecionado(novaTabela[0].credito);
+    if (!novaTabela.find(r => rowKey(r) === creditoSelecionado)) {
+      setCreditoSelecionado(rowKey(novaTabela[0]));
     }
   }, [plano, grupo, creditoSelecionado]);
 
-  const linhaSelecionada = tabela.find(r => r.credito === creditoSelecionado);
+  const linhaSelecionada = tabela.find(r => rowKey(r) === creditoSelecionado);
+  const efetivaTaxaAdm = linhaSelecionada?.taxaAdm ?? dadosPlano.taxaAdm;
 
   // Determina a parcela inicial baseada no plano
   const parcelaInicial = useMemo(() => {
@@ -261,15 +281,15 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
   const simulacao = useMemo(() => {
     return calcularSimulacao({
-      credito: creditoSelecionado,
+      credito: linhaSelecionada?.credito ?? 0,
       lanceProprioPercent,
       lanceEmbutidoPercent,
-      taxaAdm: dadosPlano.taxaAdm,
+      taxaAdm: efetivaTaxaAdm,
       fundoReserva: dadosPlano.fundoReserva,
       parcelaInicial,
       parcelaIntegral: linhaSelecionada?.parcelaIntegral || 0
     });
-  }, [creditoSelecionado, lanceProprioPercent, lanceEmbutidoPercent, dadosPlano, parcelaInicial, linhaSelecionada]);
+  }, [linhaSelecionada, lanceProprioPercent, lanceEmbutidoPercent, dadosPlano, parcelaInicial, efetivaTaxaAdm]);
 
   const gerarPDF = async (nomeCliente) => {
     const { default: jsPDF } = await import('jspdf');
@@ -336,7 +356,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += 9;
     doc.setFontSize(13);
     doc.setTextColor(...gold);
-    doc.text(`CRÉDITO DE ${formatarMoedaInteiro(creditoSelecionado)}`, M, y);
+    doc.text(`CRÉDITO DE ${formatarMoedaInteiro(linhaSelecionada?.credito ?? 0)}`, M, y);
     y += 16;
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — estratégia ───
@@ -380,7 +400,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(10);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(creditoSelecionado), M + 7, y + 13);
+    doc.text(formatarMoeda(linhaSelecionada?.credito ?? 0), M + 7, y + 13);
     doc.setFontSize(7);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
@@ -444,7 +464,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
     // ─── INFORMAÇÕES TÉCNICAS DO GRUPO (linha única horizontal) ───
     const techCells = [
-      { label: 'TAXA ADM',       value: formatarPercentual(dadosPlano.taxaAdm)      },
+      { label: 'TAXA ADM',       value: formatarPercentual(efetivaTaxaAdm)           },
       { label: 'TAXA/MÊS',       value: formatarPercentual(dadosPlano.taxaMes)      },
       { label: 'FUNDO RESERVA',  value: formatarPercentual(dadosPlano.fundoReserva) },
       { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%`                 },
@@ -550,7 +570,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFont('helvetica', 'normal');
     doc.text(`Oferta válida até ${dataValidade.toLocaleDateString('pt-BR')}`, W - M, H - 6, { align: 'right' });
 
-    doc.save(`proposta-xp-${modalidade}-grupo${grupo.grupo}-${creditoSelecionado}.pdf`);
+    doc.save(`proposta-xp-${modalidade}-grupo${grupo.grupo}-${linhaSelecionada?.credito ?? 0}.pdf`);
   };
 
   return (
@@ -565,6 +585,10 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
             options={tabela}
             value={creditoSelecionado}
             onChange={setCreditoSelecionado}
+            formatLabel={(opt) => opt.taxaAdm
+              ? `${formatarMoedaInteiro(opt.credito)} · TA ${formatarPercentual(opt.taxaAdm)}`
+              : formatarMoedaInteiro(opt.credito)
+            }
           />
         </div>
         <PillsToggle
@@ -585,7 +609,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
             <div className="sim-info-bar">
               <div className="sim-info-item">
                 <span className="sim-info-label">Taxa adm</span>
-                <span className="sim-info-valor">{formatarPercentual(dadosPlano.taxaAdm)}</span>
+                <span className="sim-info-valor">{formatarPercentual(efetivaTaxaAdm)}</span>
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Taxa/mês</span>
@@ -673,6 +697,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
               plano={plano}
               creditoSelecionado={creditoSelecionado}
               onSelectCredito={setCreditoSelecionado}
+              defaultTaxaAdm={dadosPlano.taxaAdm}
             />
             <p className="sim-nota-parcela">
               ✦ O valor reduzido é válido até a contemplação ou metade do prazo do grupo, o que vier primeiro. Após esse evento, a parcela é recalculada com base no saldo devedor atualizado.

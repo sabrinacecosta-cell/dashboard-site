@@ -53,13 +53,20 @@ export const GRUPOS = {
       fundoReserva: 0.03,   // 3%
       taxaMes: 0.00218,     // 0,218%
       tabela: [
-        { credito: 50000, redutor50: 385, parcelaIntegral: 776 },
-        { credito: 55000, redutor50: 423, parcelaIntegral: 853 },
-        { credito: 60000, redutor50: 461, parcelaIntegral: 931 },
-        { credito: 65000, redutor50: 500, parcelaIntegral: 1008 },
-        { credito: 70000, redutor50: 538, parcelaIntegral: 1086 },
-        { credito: 75000, redutor50: 577, parcelaIntegral: 1163 },
-        { credito: 80000, redutor50: 615, parcelaIntegral: 1241 },
+        { id: 50000, credito: 50000, redutor50: 385,    parcelaIntegral: 776    },
+        { id: 55000, credito: 55000, redutor50: 423,    parcelaIntegral: 853    },
+        { id: 60000, credito: 60000, redutor50: 461,    parcelaIntegral: 931    },
+        { id: 65000, credito: 65000, redutor50: 500,    parcelaIntegral: 1008   },
+        { id: 70000, credito: 70000, redutor50: 538,    parcelaIntegral: 1086   },
+        { id: 75000, credito: 75000, redutor50: 577,    parcelaIntegral: 1163   },
+        { id: 80000, credito: 80000, redutor50: 615,    parcelaIntegral: 1241   },
+        { id: '50000_115', credito: 50000, redutor50: 366.99, parcelaIntegral: 733.97,  taxaAdm: 0.115 },
+        { id: '55000_115', credito: 55000, redutor50: 403.69, parcelaIntegral: 807.37,  taxaAdm: 0.115 },
+        { id: '60000_115', credito: 60000, redutor50: 440.39, parcelaIntegral: 880.77,  taxaAdm: 0.115 },
+        { id: '65000_115', credito: 65000, redutor50: 477.09, parcelaIntegral: 954.17,  taxaAdm: 0.115 },
+        { id: '70000_115', credito: 70000, redutor50: 513.78, parcelaIntegral: 1027.56, taxaAdm: 0.115 },
+        { id: '75000_115', credito: 75000, redutor50: 550.48, parcelaIntegral: 1100.96, taxaAdm: 0.115 },
+        { id: '80000_115', credito: 80000, redutor50: 587.18, parcelaIntegral: 1174.36, taxaAdm: 0.115 },
       ]
     },
     parcelaReduzida: {
@@ -67,13 +74,20 @@ export const GRUPOS = {
       fundoReserva: 0.03,   // 3%
       taxaMes: 0.00218,     // 0,218%
       tabela: [
-        { credito: 50000, redutor50: 385, parcelaIntegral: 776 },
-        { credito: 55000, redutor50: 423, parcelaIntegral: 853 },
-        { credito: 60000, redutor50: 461, parcelaIntegral: 931 },
-        { credito: 65000, redutor50: 500, parcelaIntegral: 1008 },
-        { credito: 70000, redutor50: 538, parcelaIntegral: 1086 },
-        { credito: 75000, redutor50: 577, parcelaIntegral: 1163 },
-        { credito: 80000, redutor50: 615, parcelaIntegral: 1241 },
+        { id: 50000, credito: 50000, redutor50: 385,    parcelaIntegral: 776    },
+        { id: 55000, credito: 55000, redutor50: 423,    parcelaIntegral: 853    },
+        { id: 60000, credito: 60000, redutor50: 461,    parcelaIntegral: 931    },
+        { id: 65000, credito: 65000, redutor50: 500,    parcelaIntegral: 1008   },
+        { id: 70000, credito: 70000, redutor50: 538,    parcelaIntegral: 1086   },
+        { id: 75000, credito: 75000, redutor50: 577,    parcelaIntegral: 1163   },
+        { id: 80000, credito: 80000, redutor50: 615,    parcelaIntegral: 1241   },
+        { id: '50000_115', credito: 50000, redutor50: 366.99, parcelaIntegral: 733.97,  taxaAdm: 0.115 },
+        { id: '55000_115', credito: 55000, redutor50: 403.69, parcelaIntegral: 807.37,  taxaAdm: 0.115 },
+        { id: '60000_115', credito: 60000, redutor50: 440.39, parcelaIntegral: 880.77,  taxaAdm: 0.115 },
+        { id: '65000_115', credito: 65000, redutor50: 477.09, parcelaIntegral: 954.17,  taxaAdm: 0.115 },
+        { id: '70000_115', credito: 70000, redutor50: 513.78, parcelaIntegral: 1027.56, taxaAdm: 0.115 },
+        { id: '75000_115', credito: 75000, redutor50: 550.48, parcelaIntegral: 1100.96, taxaAdm: 0.115 },
+        { id: '80000_115', credito: 80000, redutor50: 587.18, parcelaIntegral: 1174.36, taxaAdm: 0.115 },
       ]
     }
   }

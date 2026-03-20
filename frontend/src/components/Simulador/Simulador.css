@@ -474,6 +474,36 @@
   border-left: 3px solid var(--cor-destaque);
 }
 
+/* Separador de grupo na tabela de cotas */
+.sim-tabela-grupo-header td {
+  padding: 8px 12px 4px;
+  background: transparent;
+  cursor: default;
+}
+
+.sim-tabela-grupo-header:hover td {
+  background: transparent !important;
+}
+
+.sim-taxa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #242424;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+}
+
+.sim-taxa-pill-label {
+  color: var(--texto-secundario);
+}
+
+.sim-taxa-pill-valor {
+  color: #ffffff;
+  font-weight: 600;
+}
+
 .sim-tabela .valor-destaque {
   color: var(--cor-destaque);
   font-weight: 600;
