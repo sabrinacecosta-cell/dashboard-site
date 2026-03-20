@@ -96,22 +96,39 @@ export const GRUPOS = {
 export const GRUPOS_CONTEMPLACAO_IMOVEL = {
   1038: {
     numero: 1038,
-    taxaAdm: 0.22,
-    fundoReserva: 0.05,
+    grupo: '1038',
     prazo: 200,
     prazoRestante: 119,
     lanceEmbutidoMax: 50,
     lanceTotalMax: 59,
-    indice: 'INPC',
-    tabela: [
-      { carta: 560959.98, parcelaReduzida: 2993.36,  parcelaNormal: 5986.72  },
-      { carta: 631079.96, parcelaReduzida: 3367.53,  parcelaNormal: 6735.06  },
-      { carta: 701199.96, parcelaReduzida: 3741.70,  parcelaNormal: 7483.39  },
-      { carta: 771319.96, parcelaReduzida: 4115.87,  parcelaNormal: 8231.73  },
-      { carta: 841439.96, parcelaReduzida: 4490.04,  parcelaNormal: 8980.07  },
-      { carta: 911559.95, parcelaReduzida: 4864.21,  parcelaNormal: 9728.41  },
-      { carta: 981679.94, parcelaReduzida: 5238.38,  parcelaNormal: 10476.75 },
-    ],
+    comReductor: {
+      taxaAdm: 0.22,
+      fundoReserva: 0.05,
+      taxaMes: 0.0011,   // 22% / 200 meses
+      tabela: [
+        { credito: 560959.98, redutor50: 2993.36,  parcelaIntegral: 5986.72  },
+        { credito: 631079.96, redutor50: 3367.53,  parcelaIntegral: 6735.06  },
+        { credito: 701199.96, redutor50: 3741.70,  parcelaIntegral: 7483.39  },
+        { credito: 771319.96, redutor50: 4115.87,  parcelaIntegral: 8231.73  },
+        { credito: 841439.96, redutor50: 4490.04,  parcelaIntegral: 8980.07  },
+        { credito: 911559.95, redutor50: 4864.21,  parcelaIntegral: 9728.41  },
+        { credito: 981679.94, redutor50: 5238.38,  parcelaIntegral: 10476.75 },
+      ],
+    },
+    semReductor: {
+      taxaAdm: 0.22,
+      fundoReserva: 0.05,
+      taxaMes: 0.0011,
+      tabela: [
+        { credito: 560959.98, redutor50: null, parcelaIntegral: 5986.72  },
+        { credito: 631079.96, redutor50: null, parcelaIntegral: 6735.06  },
+        { credito: 701199.96, redutor50: null, parcelaIntegral: 7483.39  },
+        { credito: 771319.96, redutor50: null, parcelaIntegral: 8231.73  },
+        { credito: 841439.96, redutor50: null, parcelaIntegral: 8980.07  },
+        { credito: 911559.95, redutor50: null, parcelaIntegral: 9728.41  },
+        { credito: 981679.94, redutor50: null, parcelaIntegral: 10476.75 },
+      ],
+    },
   },
 };
 

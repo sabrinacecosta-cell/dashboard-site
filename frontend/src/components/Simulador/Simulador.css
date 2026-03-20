@@ -954,6 +954,22 @@
   opacity: 0.9;
 }
 
+/* ─── Erro de validação de lance ─────────────────────────────────────────── */
+.sim-erro-lance {
+  margin: 8px 0 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #2a0a0a;
+  border: 1px solid #a03030;
+  color: #f08080;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sim-erro-lance p {
+  margin: 0;
+}
+
 /* ─── Contemplação Rápida Imóvel — Lance controls ─────────────────────────── */
 .cr-lance-painel {
   margin-bottom: 24px;
