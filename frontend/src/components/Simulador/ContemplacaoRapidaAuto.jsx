@@ -329,12 +329,17 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     y += cardH + 8;
 
     // ── Informações técnicas (linha única horizontal) ──
+    const gruposPDFForTech = gruposPresentes.length > 0 ? gruposPresentes : [2127, 2128];
+    const prazoRestanteValue = gruposPDFForTech.length === 1
+      ? `${({ 2127: G2127, 2128: G2128 })[gruposPDFForTech[0]].prazoRestante} meses`
+      : `2127: ${G2127.prazoRestante}m / 2128: ${G2128.prazoRestante}m`;
+
     const techItems = [
-      { label: 'TAXA ADM',       value: '18,0%'                   },
-      { label: 'TAXA/MÊS',       value: '0,063%'                  },
-      { label: 'FUNDO RESERVA',  value: '3,0%'                    },
-      { label: 'LANCE EMBUTIDO', value: '2127: 50% / 2128: 30%'   },
-      { label: 'PRAZO DO GRUPO', value: '80 meses'                 },
+      { label: 'TAXA ADM',       value: '18,0%'                 },
+      { label: 'TAXA/MÊS',       value: '0,063%'                },
+      { label: 'FUNDO RESERVA',  value: '3,0%'                  },
+      { label: 'LANCE EMBUTIDO', value: '2127: 50% / 2128: 30%' },
+      { label: 'PRAZO DO GRUPO', value: prazoRestanteValue       },
     ];
     const techH = 18;
     const techColW = (W - 2 * M) / techItems.length;
@@ -343,15 +348,15 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     doc.setLineWidth(0.3);
     doc.roundedRect(M, y, W - 2 * M, techH, 4, 4, 'FD');
     techItems.forEach((cell, i) => {
-      const cx = M + i * techColW + 7;
+      const cx = M + i * techColW + techColW / 2;
       doc.setFontSize(7);
       doc.setTextColor(...grey);
       doc.setFont('helvetica', 'normal');
-      doc.text(cell.label, cx, y + 7);
+      doc.text(cell.label, cx, y + 7, { align: 'center' });
       doc.setFontSize(9);
       doc.setTextColor(...white);
       doc.setFont('helvetica', 'bold');
-      doc.text(cell.value, cx, y + 14);
+      doc.text(cell.value, cx, y + 14, { align: 'center' });
     });
     y += techH + 5;
 
