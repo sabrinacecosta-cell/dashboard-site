@@ -343,22 +343,23 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
     doc.text('Alternativa para construção de patrimônio com custo controlado e parcelas acessíveis.', M + 7, y + 11);
-    y += 19;
+    y += 14;
 
     // ─── BOX COM BORDA AMARELA — redução 50% ───
     doc.setFillColor(25, 20, 0);
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.5);
-    doc.roundedRect(M, y, W - 2 * M, 16, 3, 3, 'FD');
-    doc.setFontSize(9.5);
+    doc.roundedRect(M, y, W - 2 * M, 21, 3, 3, 'FD');
+    doc.setFontSize(8.5);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Redução de 50% no valor das parcelas até a contemplação do crédito', W / 2, y + 6.5, { align: 'center' });
-    doc.setFontSize(8);
+    doc.text('Redução de 50% no valor das parcelas', W / 2, y + 6.5, { align: 'center' });
+    doc.text('até a contemplação ou metade do prazo do grupo, o que vier primeiro', W / 2, y + 12, { align: 'center' });
+    doc.setFontSize(7.5);
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 12.5, { align: 'center' });
-    y += 22;
+    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 17.5, { align: 'center' });
+    y += 27;
 
     // ─── CARDS LADO A LADO — 2 colunas ───
     const cardW = (W - 2 * M - 8) / 2;
@@ -404,13 +405,31 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
-    doc.text('até a contemplação do crédito', card2X + 7, y + 27);
+    const contemplLines = doc.splitTextToSize(
+      'até a contemplação ou metade do prazo do grupo, o que vier primeiro',
+      cardW - 14
+    );
+    doc.text(contemplLines, card2X + 7, y + 26);
     const economia = (linhaSelecionada?.parcelaIntegral || 0) - parcelaReduzida;
     doc.setFontSize(7);
     doc.setTextColor(...grey);
-    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 33);
+    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 34);
 
-    y += cardH + 9;
+    y += cardH + 7;
+
+    // ─── NOTA EXPLICATIVA — recálculo da parcela ───
+    const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
+    doc.setFontSize(7);
+    const notaLinhas = doc.splitTextToSize(notaTexto, W - 2 * M - 8);
+    const notaBarH = Math.max(14, 4 + notaLinhas.length * 3.6);
+    doc.setFillColor(...gold);
+    doc.rect(M, y, 3, notaBarH, 'F');
+    doc.setTextColor(...lightGrey);
+    doc.setFont('helvetica', 'normal');
+    notaLinhas.forEach((linha, i) => {
+      doc.text(linha, M + 7, y + 5 + i * 3.6);
+    });
+    y += notaBarH + 6;
 
     // ─── INFORMAÇÕES TÉCNICAS DO GRUPO ───
     const techCells = [
@@ -441,7 +460,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       doc.setFont('helvetica', 'bold');
       doc.text(cell.value, cx, cy + 6);
     });
-    y += techH + 8;
+    y += techH + 5;
 
     // ─── BLOCO REAJUSTE PRÉ-FIXADO ───
     doc.setFillColor(...gold);
@@ -454,7 +473,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
     doc.text('Pré-fixado de 5% ao ano.', M + 7, y + 12);
-    y += 20;
+    y += 16;
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — indicado para ───
     const indicados = [
@@ -463,7 +482,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       '• Planejamento de aquisições futuras',
       '• Estratégias familiares e sucessórias',
     ];
-    const barHeight2 = 8 + indicados.length * 5;
+    const barHeight2 = 8 + indicados.length * 4.5;
     doc.setFillColor(...gold);
     doc.rect(M, y, 3, barHeight2, 'F');
     doc.setFontSize(8);
@@ -474,9 +493,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
     indicados.forEach((linha, i) => {
-      doc.text(linha, M + 7, y + 11 + i * 5);
+      doc.text(linha, M + 7, y + 11 + i * 4.5);
     });
-    y += barHeight2 + 8;
+    y += barHeight2 + 5;
 
     // ─── BOX CTA ───
     doc.setFillColor(22, 18, 0);
@@ -488,7 +507,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFont('helvetica', 'bold');
     doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 7, { align: 'center' });
     doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 13.5, { align: 'center' });
-    y += 25;
+    y += 20;
 
     // ─── OBSERVAÇÕES LEGAIS (ancoradas acima do footer) ───
     const legalY = H - 28;
@@ -639,6 +658,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
               creditoSelecionado={creditoSelecionado}
               onSelectCredito={setCreditoSelecionado}
             />
+            <p className="sim-nota-parcela">
+              ✦ O valor reduzido é válido até a contemplação ou metade do prazo do grupo, o que vier primeiro. Após esse evento, a parcela é recalculada com base no saldo devedor atualizado.
+            </p>
           </div>
         </div>
       </div>

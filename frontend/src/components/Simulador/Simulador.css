@@ -553,6 +553,16 @@
   color: var(--texto-principal);
 }
 
+/* Nota explicativa abaixo da tabela de parcelas */
+.sim-nota-parcela {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--cor-destaque);
+  font-size: 11px;
+  color: var(--texto-secundario);
+  line-height: 1.5;
+}
+
 /* Modal Nome do Cliente */
 .sim-modal-overlay {
   position: fixed;
