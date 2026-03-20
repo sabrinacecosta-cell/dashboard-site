@@ -341,16 +341,12 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — estratégia ───
     doc.setFillColor(...gold);
-    doc.rect(M, y, 3, 13, 'F');
+    doc.rect(M, y, 3, 8, 'F');
     doc.setFontSize(10);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
-    doc.text('Consórcio XP como estratégia de diversificação patrimonial', M + 7, y + 5.5);
-    doc.setFontSize(8.5);
-    doc.setTextColor(...lightGrey);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Alternativa para construção de patrimônio com custo controlado e parcelas acessíveis.', M + 7, y + 11);
-    y += 14;
+    doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
+    y += 11;
 
     // ─── BOX COM BORDA AMARELA — redução 50% ───
     doc.setFillColor(25, 20, 0);
@@ -369,57 +365,66 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
 
     // ─── CARDS LADO A LADO — 2 colunas ───
     const cardW = (W - 2 * M - 8) / 2;
-    const cardH = 36;
+    const cardH = 44;
+    const parcelaReduzida = linhaSelecionada?.redutor50 || linhaSelecionada?.parcelaDesconto || parcelaInicial;
 
-    // Card esquerdo — Crédito + Parcela integral
+    // Card esquerdo — carta de crédito + crédito disponível (borda amarela)
+    doc.setFillColor(...darkCard);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CARTA DE CRÉDITO TOTAL', M + 7, y + 7);
+    doc.setFontSize(10);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(creditoSelecionado), M + 7, y + 13);
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CRÉDITO CONTEMPLADO', M + 7, y + 24);
+    doc.setFontSize(13);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(simulacao.creditoDisponivel), M + 7, y + 32);
+
+    // Card direito — lance embutido + lance próprio + parcela
+    const card2X = M + cardW + 8;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
     doc.setLineWidth(0.3);
-    doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CRÉDITO', M + 7, y + 7);
-    doc.setFontSize(14);
-    doc.setTextColor(...gold);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoedaInteiro(creditoSelecionado), M + 7, y + 15);
-    doc.setFontSize(7.5);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Parcela integral', M + 7, y + 25);
-    doc.setFontSize(10);
-    doc.setTextColor(...lightGrey);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(linhaSelecionada?.parcelaIntegral || 0), M + 7, y + 32);
-
-    // Card direito — Parcela reduzida 50%
-    const card2X = M + cardW + 8;
-    const parcelaReduzida = linhaSelecionada?.redutor50 || linhaSelecionada?.parcelaDesconto || parcelaInicial;
-    doc.setFillColor(...darkCard);
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.6);
     doc.roundedRect(card2X, y, cardW, cardH, 4, 4, 'FD');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...gold);
-    doc.setFont('helvetica', 'bold');
-    doc.text('PARCELA REDUZIDA (50%)', card2X + 7, y + 7);
-    doc.setFontSize(16);
-    doc.setTextColor(...white);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 18);
-    doc.setFontSize(7.5);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'normal');
-    const contemplLines = doc.splitTextToSize(
-      'até a contemplação ou metade do prazo do grupo, o que vier primeiro',
-      cardW - 14
-    );
-    doc.text(contemplLines, card2X + 7, y + 26);
-    const economia = (linhaSelecionada?.parcelaIntegral || 0) - parcelaReduzida;
+    // Sub-coluna 1: Lance embutido
     doc.setFontSize(7);
     doc.setTextColor(...grey);
-    doc.text(`Economia de ${formatarMoeda(economia)}/mês em relação à parcela integral`, card2X + 7, y + 34);
+    doc.setFont('helvetica', 'normal');
+    doc.text('LANCE EMBUTIDO', card2X + 7, y + 7);
+    doc.setFontSize(9);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(simulacao.lanceEmbutido), card2X + 7, y + 14);
+    // Sub-coluna 2: Lance próprio (condicional)
+    if (simulacao.lanceProprio > 0) {
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text('LANCE REC. PRÓPRIOS', card2X + cardW / 2 + 4, y + 7);
+      doc.setFontSize(9);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.text(formatarMoeda(simulacao.lanceProprio), card2X + cardW / 2 + 4, y + 14);
+    }
+    // Parcela inicial abaixo
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('PARCELA INICIAL', card2X + 7, y + 26);
+    doc.setFontSize(11);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 34);
 
     y += cardH + 7;
 
@@ -437,31 +442,29 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     });
     y += notaBarH + 6;
 
-    // ─── INFORMAÇÕES TÉCNICAS DO GRUPO ───
+    // ─── INFORMAÇÕES TÉCNICAS DO GRUPO (linha única horizontal) ───
     const techCells = [
-      { label: 'TAXA ADM', value: formatarPercentual(dadosPlano.taxaAdm) },
-      { label: 'TAXA/MÊS', value: formatarPercentual(dadosPlano.taxaMes) },
-      { label: 'FUNDO RESERVA', value: formatarPercentual(dadosPlano.fundoReserva) },
-      { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%` },
-      { label: 'LANCE FIXO', value: `${lanceProprioPercent}%` },
-      { label: 'PRAZO', value: `${grupo.prazo} meses` },
+      { label: 'TAXA ADM',       value: formatarPercentual(dadosPlano.taxaAdm)      },
+      { label: 'TAXA/MÊS',       value: formatarPercentual(dadosPlano.taxaMes)      },
+      { label: 'FUNDO RESERVA',  value: formatarPercentual(dadosPlano.fundoReserva) },
+      { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%`                 },
+      { label: 'LANCE FIXO',     value: `${lanceProprioPercent}%`                  },
+      { label: 'PRAZO',          value: `${grupo.prazo} meses`                     },
     ];
-    const techH = 27;
-    const techColW = (W - 2 * M) / 3;
+    const techH = 18;
+    const techColW = (W - 2 * M) / techCells.length;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
     doc.setLineWidth(0.3);
     doc.roundedRect(M, y, W - 2 * M, techH, 4, 4, 'FD');
     techCells.forEach((cell, i) => {
-      const col = i % 3;
-      const row = Math.floor(i / 3);
-      const cx = M + col * techColW + 7;
-      const cy = y + 8 + row * 13;
+      const cx = M + i * techColW + 7;
+      const cy = y + 7;
       doc.setFontSize(7);
       doc.setTextColor(...grey);
       doc.setFont('helvetica', 'normal');
       doc.text(cell.label, cx, cy);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(...white);
       doc.setFont('helvetica', 'bold');
       doc.text(cell.value, cx, cy + 6);

@@ -648,6 +648,45 @@
   text-align: right;
 }
 
+/* Linha de adição com quantidade */
+.cr-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.cr-qtde-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cr-qtde-label {
+  font-size: 10px;
+  color: var(--texto-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.cr-input-qtde {
+  width: 44px;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  color: var(--texto-principal);
+  font-size: 13px;
+  padding: 4px 4px;
+}
+
+.cr-input-qtde::-webkit-inner-spin-button,
+.cr-input-qtde::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
 /* Botão Add */
 .cr-btn-add {
   background: transparent;

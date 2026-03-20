@@ -5,6 +5,41 @@ import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 const G2127 = GRUPOS_CONTEMPLACAO_AUTO[2127];
 const G2128 = GRUPOS_CONTEMPLACAO_AUTO[2128];
 
+// ─── Linha de cota com quantidade local ──────────────────────────────────────
+function CotaRow({ cota, tipoParcela, onAdd }) {
+  const [qtde, setQtde] = useState(1);
+  return (
+    <tr>
+      <td>{formatarMoeda(cota.carta)}</td>
+      <td className="valor-destaque">
+        {formatarMoeda(tipoParcela === 'reduzida' ? cota.parcelaReduzida : cota.parcelaNormal)}
+      </td>
+      <td>
+        <div className="cr-add-row">
+          <div className="cr-qtde-wrapper">
+            <label className="cr-qtde-label">Qtde</label>
+            <input
+              type="number"
+              className="cr-input-qtde"
+              min={1}
+              max={99}
+              value={qtde}
+              onChange={e => setQtde(Math.min(99, Math.max(1, Number(e.target.value))))}
+            />
+          </div>
+          <button
+            type="button"
+            className="cr-btn-add"
+            onClick={() => onAdd(cota, qtde)}
+          >
+            + Add
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 // ─── Card de um grupo com tabela de cotas ────────────────────────────────────
 function CardGrupo({ grupo, tipoParcela, onAdd }) {
   return (
@@ -30,21 +65,12 @@ function CardGrupo({ grupo, tipoParcela, onAdd }) {
           </thead>
           <tbody>
             {grupo.tabela.map((cota, i) => (
-              <tr key={i}>
-                <td>{formatarMoeda(cota.carta)}</td>
-                <td className="valor-destaque">
-                  {formatarMoeda(tipoParcela === 'reduzida' ? cota.parcelaReduzida : cota.parcelaNormal)}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="cr-btn-add"
-                    onClick={() => onAdd(grupo, cota)}
-                  >
-                    + Add
-                  </button>
-                </td>
-              </tr>
+              <CotaRow
+                key={i}
+                cota={cota}
+                tipoParcela={tipoParcela}
+                onAdd={(cota, qtde) => onAdd(grupo, cota, qtde)}
+              />
             ))}
           </tbody>
         </table>
@@ -102,17 +128,29 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
   const [showModalNome,    setShowModalNome]    = useState(false);
   const [nomeClienteInput, setNomeClienteInput] = useState('');
 
-  const adicionarLinha = (grupo, cota) => {
-    setLinhas(prev => [...prev, {
-      id: Date.now() + Math.random(),
-      grupo:               grupo.numero,
-      lanceEmbutidoPercent: grupo.lanceEmbutido,
-      carta:               cota.carta,
-      parcela:             tipoParcela === 'reduzida' ? cota.parcelaReduzida : cota.parcelaNormal,
-      redutor:             tipoParcela === 'reduzida' ? 50 : 0,
-      qtde:                1,
-      recProprios:         0,
-    }]);
+  const adicionarLinha = (grupo, cota, qtde = 1) => {
+    setLinhas(prev => {
+      const existente = prev.find(
+        l => l.grupo === grupo.numero && l.carta === cota.carta
+      );
+      if (existente) {
+        return prev.map(l =>
+          l.id === existente.id
+            ? { ...l, qtde: Math.min(99, l.qtde + qtde) }
+            : l
+        );
+      }
+      return [...prev, {
+        id: Date.now() + Math.random(),
+        grupo:               grupo.numero,
+        lanceEmbutidoPercent: grupo.lanceEmbutido,
+        carta:               cota.carta,
+        parcela:             tipoParcela === 'reduzida' ? cota.parcelaReduzida : cota.parcelaNormal,
+        redutor:             tipoParcela === 'reduzida' ? 50 : 0,
+        qtde,
+        recProprios:         0,
+      }];
+    });
   };
 
   const removerLinha  = (id) => setLinhas(prev => prev.filter(l => l.id !== id));
@@ -203,16 +241,12 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
 
     // ── Bloco estratégia ──
     doc.setFillColor(...gold);
-    doc.rect(M, y, 3, 11, 'F');
+    doc.rect(M, y, 3, 8, 'F');
     doc.setFontSize(9.5);
     doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
-    doc.text('Consórcio XP como estratégia de diversificação patrimonial', M + 7, y + 5.5);
-    doc.setFontSize(8);
-    doc.setTextColor(...lightGrey);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Alternativa para aquisição de veículo com custo controlado e parcelas acessíveis.', M + 7, y + 10);
-    y += 15;
+    doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
+    y += 12;
 
     // ── Box 50% (somente parcela reduzida) ──
     if (tipoParcela === 'reduzida') {
@@ -233,103 +267,91 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
 
     // ── Cards 2 colunas ──
     const cardW = (W - 2 * M - 8) / 2;
-    const cardH = 34;
+    const cardH = 44;
 
-    // Card esquerdo — crédito contemplado
+    // Card esquerdo — carta total + crédito contemplado (borda amarela)
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.5);
     doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...gold);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CRÉDITO CONTEMPLADO', M + 7, y + 7);
-    doc.setFontSize(13);
-    doc.setTextColor(...gold);
-    doc.text(formatarMoedaInteiro(totais.creditoContemplado), M + 7, y + 16);
-    doc.setFontSize(7.5);
+    doc.setFontSize(7);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Parcela inicial', M + 7, y + 25);
-    doc.setFontSize(9);
-    doc.setTextColor(...lightGrey);
+    doc.text('CARTA DE CRÉDITO TOTAL', M + 7, y + 7);
+    doc.setFontSize(10);
+    doc.setTextColor(...white);
     doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(totais.parcelaInicial), M + 7, y + 31);
+    doc.text(formatarMoeda(totais.cartaTotal), M + 7, y + 13);
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CRÉDITO CONTEMPLADO', M + 7, y + 24);
+    doc.setFontSize(13);
+    doc.setTextColor(...gold);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totais.creditoContemplado), M + 7, y + 32);
 
-    // Card direito — lance / recursos
+    // Card direito — lance embutido + rec. próprios + parcela inicial
     const card2X = M + cardW + 8;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
     doc.setLineWidth(0.3);
     doc.roundedRect(card2X, y, cardW, cardH, 4, 4, 'FD');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'bold');
-    doc.text('LANCE EMBUTIDO', card2X + 7, y + 7);
-    doc.setFontSize(10);
-    doc.setTextColor(...white);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(totais.lanceEmb), card2X + 7, y + 15);
-    doc.setFontSize(7.5);
+    // Sub-coluna 1: Lance embutido
+    doc.setFontSize(7);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
+    doc.text('LANCE EMBUTIDO', card2X + 7, y + 7);
+    doc.setFontSize(9);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totais.lanceEmb), card2X + 7, y + 14);
+    // Sub-coluna 2: Rec. próprios (condicional)
     if (totais.recProprios > 0) {
-      doc.text('Recursos próprios', card2X + 7, y + 24);
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text('LANCE REC. PRÓPRIOS', card2X + cardW / 2 + 4, y + 7);
       doc.setFontSize(9);
-      doc.setTextColor(...lightGrey);
+      doc.setTextColor(...white);
       doc.setFont('helvetica', 'bold');
-      doc.text(formatarMoeda(totais.recProprios), card2X + 7, y + 30);
-    } else {
-      doc.text('Carta de crédito total', card2X + 7, y + 24);
-      doc.setFontSize(9);
-      doc.setTextColor(...lightGrey);
-      doc.setFont('helvetica', 'bold');
-      doc.text(formatarMoeda(totais.cartaTotal), card2X + 7, y + 30);
+      doc.text(formatarMoeda(totais.recProprios), card2X + cardW / 2 + 4, y + 14);
     }
+    // Parcela inicial abaixo
+    doc.setFontSize(7);
+    doc.setTextColor(...grey);
+    doc.setFont('helvetica', 'normal');
+    doc.text('PARCELA INICIAL', card2X + 7, y + 26);
+    doc.setFontSize(11);
+    doc.setTextColor(...white);
+    doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totais.parcelaInicial), card2X + 7, y + 34);
     y += cardH + 8;
 
-    // ── Informações técnicas (grid 3 colunas) ──
-    const techRow1 = [
-      { label: 'TAXA ADM',      value: '18,0%'   },
-      { label: 'TAXA/MÊS',      value: '0,063%'  },
-      { label: 'FUNDO RESERVA', value: '3,0%'    },
+    // ── Informações técnicas (linha única horizontal) ──
+    const techItems = [
+      { label: 'TAXA ADM',       value: '18,0%'                   },
+      { label: 'TAXA/MÊS',       value: '0,063%'                  },
+      { label: 'FUNDO RESERVA',  value: '3,0%'                    },
+      { label: 'LANCE EMBUTIDO', value: '2127: 50% / 2128: 30%'   },
+      { label: 'PRAZO DO GRUPO', value: '80 meses'                 },
     ];
-    const techH = 27;
-    const techColW = (W - 2 * M) / 3;
+    const techH = 18;
+    const techColW = (W - 2 * M) / techItems.length;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
     doc.setLineWidth(0.3);
     doc.roundedRect(M, y, W - 2 * M, techH, 4, 4, 'FD');
-
-    // Linha 1
-    techRow1.forEach((cell, i) => {
+    techItems.forEach((cell, i) => {
       const cx = M + i * techColW + 7;
       doc.setFontSize(7);
       doc.setTextColor(...grey);
       doc.setFont('helvetica', 'normal');
-      doc.text(cell.label, cx, y + 8);
-      doc.setFontSize(9.5);
-      doc.setTextColor(...white);
-      doc.setFont('helvetica', 'bold');
-      doc.text(cell.value, cx, y + 15);
-    });
-
-    // Linha 2 — 2 células (lance emb. e prazo)
-    const techRow2 = [
-      { label: 'LANCE EMBUTIDO', value: '2127: 50% / 2128: 30%' },
-      { label: 'PRAZO DO GRUPO', value: '80 meses'              },
-    ];
-    const halfW = (W - 2 * M) / 2;
-    techRow2.forEach((cell, i) => {
-      const cx = M + i * halfW + 7;
-      doc.setFontSize(7);
-      doc.setTextColor(...grey);
-      doc.setFont('helvetica', 'normal');
-      doc.text(cell.label, cx, y + 21);
+      doc.text(cell.label, cx, y + 7);
       doc.setFontSize(9);
       doc.setTextColor(...white);
       doc.setFont('helvetica', 'bold');
-      doc.text(cell.value, cx, y + 26);
+      doc.text(cell.value, cx, y + 14);
     });
     y += techH + 5;
 
