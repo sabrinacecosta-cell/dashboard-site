@@ -349,17 +349,16 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     doc.setFillColor(25, 20, 0);
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.5);
-    doc.roundedRect(M, y, W - 2 * M, 21, 3, 3, 'FD');
-    doc.setFontSize(8.5);
+    doc.roundedRect(M, y, W - 2 * M, 16, 3, 3, 'FD');
+    doc.setFontSize(9);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Redução de 50% no valor das parcelas', W / 2, y + 6.5, { align: 'center' });
-    doc.text('até a contemplação ou metade do prazo do grupo, o que vier primeiro', W / 2, y + 12, { align: 'center' });
+    doc.text('Redução de 50% no valor das parcelas', W / 2, y + 7, { align: 'center' });
     doc.setFontSize(7.5);
     doc.setTextColor(...lightGrey);
     doc.setFont('helvetica', 'normal');
-    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 17.5, { align: 'center' });
-    y += 27;
+    doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 13, { align: 'center' });
+    y += 22;
 
     // ─── CARDS LADO A LADO — 2 colunas ───
     const cardW = (W - 2 * M - 8) / 2;
@@ -476,12 +475,19 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += 16;
 
     // ─── BLOCO COM BARRA VERTICAL AMARELA — indicado para ───
-    const indicados = [
-      '• Construção gradual de patrimônio imobiliário',
-      '• Diversificação em ativos reais',
-      '• Planejamento de aquisições futuras',
-      '• Estratégias familiares e sucessórias',
-    ];
+    const indicados = modalidade === 'imovel'
+      ? [
+          '• Construção gradual de patrimônio imobiliário',
+          '• Diversificação em ativos reais',
+          '• Planejamento de aquisições futuras',
+          '• Estratégias familiares e sucessórias',
+          '• Preservação de liquidez e rentabilidade dos investimentos',
+        ]
+      : [
+          '• Planejamento de aquisições futuras',
+          '• Estratégias familiares e sucessórias',
+          '• Preservação de liquidez e rentabilidade dos investimentos',
+        ];
     const barHeight2 = 8 + indicados.length * 4.5;
     doc.setFillColor(...gold);
     doc.rect(M, y, 3, barHeight2, 'F');
