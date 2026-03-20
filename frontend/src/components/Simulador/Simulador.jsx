@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { GRUPOS, ESTRATEGIAS, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
+import { EtapaContemplacaoRapidaImovel } from './ContemplacaoRapidaImovel';
 import './Simulador.css';
 
 // Etapa 1 - Seleção de Modalidade
@@ -28,7 +29,9 @@ function EtapaEstrategia({ modalidade, onSelect, onVoltar }) {
   // Contemplação rápida disponível apenas para automóvel
   const estrategiasVisiveis = ESTRATEGIAS.map(est => ({
     ...est,
-    disponivel: est.id === 'contemplacao' ? modalidade === 'automovel' : est.disponivel,
+    disponivel: est.id === 'contemplacao'
+        ? (modalidade === 'automovel' || modalidade === 'imovel')
+        : est.disponivel,
   }));
 
   return (
@@ -1272,7 +1275,9 @@ function Simulador() {
       {etapa === 3 && (
         modalidade === 'automovel' && estrategia === 'contemplacao'
           ? <EtapaContemplacaoRapidaAuto onVoltar={handleVoltar} />
-          : <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />
+          : modalidade === 'imovel' && estrategia === 'contemplacao'
+            ? <EtapaContemplacaoRapidaImovel onVoltar={handleVoltar} />
+            : <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />
       )}
     </div>
   );
