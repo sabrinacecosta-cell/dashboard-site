@@ -169,7 +169,14 @@ function Grupos() {
                   <th style={{ textAlign: 'right' }}>Qnt Lances</th>
                   <th style={{ textAlign: 'right' }}>Contemplados</th>
                   <th style={{ textAlign: 'right' }}>Contemp. Mensal</th>
-                  <th style={{ textAlign: 'right' }}>Média Contemp.</th>
+                  {tipoSelecionado === 'imovel' ? (
+                    <>
+                      <th style={{ textAlign: 'right' }}>Média Contemp. (11 meses)</th>
+                      <th style={{ textAlign: 'right' }}>Média Contemp. (6 meses)</th>
+                    </>
+                  ) : (
+                    <th style={{ textAlign: 'right' }}>Média Contemp.</th>
+                  )}
                   <th style={{ textAlign: 'right' }}>Média Lance</th>
                 </tr>
               </thead>
@@ -181,7 +188,14 @@ function Grupos() {
                     <td style={{ textAlign: 'right' }}>{r.qnt_lances}</td>
                     <td style={{ textAlign: 'right' }}>{r.contemplados}</td>
                     <td style={{ textAlign: 'right' }}>{r.contemplacao_mensal || '-'}</td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                    {tipoSelecionado === 'imovel' ? (
+                      <>
+                        <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                        <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao_6m || '-'}</td>
+                      </>
+                    ) : (
+                      <td style={{ textAlign: 'right' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                    )}
                     <td style={{ textAlign: 'right' }}>{r.media_lance_percent ? `${r.media_lance_percent}%` : '-'}</td>
                   </tr>
                 ))}
