@@ -3,6 +3,7 @@ import { GRUPOS, ESTRATEGIAS, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
 import { EtapaContemplacaoRapidaImovel } from './ContemplacaoRapidaImovel';
+import { EtapaMedioPrazo } from './MedioPrazoImovel';
 import './Simulador.css';
 
 // Etapa 1 - Seleção de Modalidade
@@ -26,12 +27,12 @@ function EtapaModalidade({ onSelect }) {
 
 // Etapa 2 - Seleção de Estratégia
 function EtapaEstrategia({ modalidade, onSelect, onVoltar }) {
-  // Contemplação rápida disponível apenas para automóvel
   const estrategiasVisiveis = ESTRATEGIAS.map(est => ({
     ...est,
-    disponivel: est.id === 'contemplacao'
-        ? (modalidade === 'automovel' || modalidade === 'imovel')
-        : est.disponivel,
+    disponivel:
+      est.id === 'contemplacao' ? (modalidade === 'automovel' || modalidade === 'imovel') :
+      est.id === 'medio-prazo'  ? modalidade === 'imovel' :
+      est.disponivel,
   }));
 
   return (
@@ -1242,7 +1243,9 @@ function Simulador() {
           ? <EtapaContemplacaoRapidaAuto onVoltar={handleVoltar} />
           : modalidade === 'imovel' && estrategia === 'contemplacao'
             ? <EtapaContemplacaoRapidaImovel onVoltar={handleVoltar} />
-            : <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />
+            : estrategia === 'medio-prazo'
+              ? <EtapaMedioPrazo onVoltar={handleVoltar} />
+              : <EtapaSimulacao modalidade={modalidade} onVoltar={handleVoltar} />
       )}
     </div>
   );
