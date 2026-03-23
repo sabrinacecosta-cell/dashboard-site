@@ -316,12 +316,15 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   );
 }
 
+const LANCE_EMBUTIDO_MAX = { '1038': 50, '1054': 30, '2133': 30 };
+
 // Etapa 3 - Simulação
 function EtapaSimulacao({ modalidade, onVoltar }) {
   const grupo = GRUPOS[modalidade];
+  const lanceEmbutidoMax = LANCE_EMBUTIDO_MAX[grupo.grupo] ?? 30;
   const [plano, setPlano] = useState('taxaReduzida');
-  const [lanceProprioPercent, setLanceProprioPercent] = useState(30);
-  const [lanceEmbutidoPercent, setLanceEmbutidoPercent] = useState(30);
+  const lanceProprioPercent = 30;
+  const lanceEmbutidoPercent = 30;
   const [showModalNome,       setShowModalNome]       = useState(false);
   const [nomeClienteInput,    setNomeClienteInput]    = useState('');
   const [linhasSim,           setLinhasSim]           = useState([]);
@@ -977,8 +980,12 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
                 <span className="sim-info-valor">{formatarPercentual(dadosPlano.fundoReserva)}</span>
               </div>
               <div className="sim-info-item">
-                <span className="sim-info-label">Lance embutido</span>
-                <span className="sim-info-valor">30%</span>
+                <span className="sim-info-label">Lance emb. máx.</span>
+                <span className="sim-info-valor">{lanceEmbutidoMax}%</span>
+              </div>
+              <div className="sim-info-item">
+                <span className="sim-info-label">Lance máx. contemp.</span>
+                <span className="sim-info-valor">59%</span>
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Lance fixo</span>
@@ -990,55 +997,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
               </div>
             </div>
 
-            <div className="sim-inputs">
-              <div className="sim-input-grupo">
-                <label>Lance recursos próprios (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={lanceProprioPercent}
-                  onChange={(e) => setLanceProprioPercent(Number(e.target.value))}
-                />
-              </div>
-              <div className="sim-input-grupo">
-                <label>Lance embutido (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={lanceEmbutidoPercent}
-                  onChange={(e) => setLanceEmbutidoPercent(Number(e.target.value))}
-                />
-              </div>
-            </div>
-
             <div className="sim-reajuste">
               Reajuste anual → <strong>Pré-fixado 5%</strong>
             </div>
 
-            <div className="sim-resultados">
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance próprio</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.lanceProprio)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance embutido</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.lanceEmbutido)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance total</span>
-                <span className="sim-resultado-valor valor-cobre">{formatarMoedaInteiro(simulacao.lanceTotal)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Crédito disponível pós contemplação</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.creditoDisponivel)}</span>
-              </div>
-            </div>
-
-            <button className="sim-btn-pdf" onClick={() => setShowModalNome(true)}>
-              Gerar PDF da proposta
-            </button>
+            <p className="sim-info-contemplacao">
+              Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.
+            </p>
 
             <p className="sim-observacao">
               {OBSERVACOES_LEGAIS[modalidade]}

@@ -414,6 +414,15 @@
   opacity: 0.9;
 }
 
+/* Texto informativo de contemplação */
+.sim-info-contemplacao {
+  font-size: 12px;
+  color: var(--texto-secundario);
+  line-height: 1.6;
+  padding: 12px 0;
+  margin-bottom: 16px;
+}
+
 /* Observação Legal */
 .sim-observacao {
   font-size: 10px;

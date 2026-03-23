@@ -237,8 +237,8 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
   const [plano, setPlano]                         = useState('comReductor');
-  const [lanceProprioPercent, setLanceProprioPercent] = useState(0);
-  const [lanceEmbutidoPercent, setLanceEmbutidoPercent] = useState(30);
+  const lanceProprioPercent = 0;
+  const lanceEmbutidoPercent = GRUPO.lanceEmbutidoMax;
   const [showModalNome, setShowModalNome]         = useState(false);
   const [nomeClienteInput, setNomeClienteInput]   = useState('');
   const [linhasSim, setLinhasSim]                 = useState([]);
@@ -676,8 +676,12 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
                 <span className="sim-info-valor">{formatarPercentual(dadosPlano.fundoReserva)}</span>
               </div>
               <div className="sim-info-item">
-                <span className="sim-info-label">Lance embutido</span>
-                <span className="sim-info-valor">{lanceEmbutidoPercent}%</span>
+                <span className="sim-info-label">Lance emb. máx.</span>
+                <span className="sim-info-valor">{GRUPO.lanceEmbutidoMax}%</span>
+              </div>
+              <div className="sim-info-item">
+                <span className="sim-info-label">Lance máx. contemp.</span>
+                <span className="sim-info-valor">59%</span>
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Prazo</span>
@@ -685,71 +689,13 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
               </div>
             </div>
 
-            <div className="sim-inputs">
-              <div className="sim-input-grupo">
-                <label>Lance recursos próprios (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={lanceProprioPercent}
-                  onChange={e => setLanceProprioPercent(Math.max(0, Number(e.target.value)))}
-                />
-              </div>
-              <div className="sim-input-grupo">
-                <label>Lance embutido (%) — máx. {GRUPO.lanceEmbutidoMax}%</label>
-                <input
-                  type="number"
-                  min="0"
-                  max={GRUPO.lanceEmbutidoMax}
-                  value={lanceEmbutidoPercent}
-                  onChange={e =>
-                    setLanceEmbutidoPercent(
-                      Math.min(GRUPO.lanceEmbutidoMax, Math.max(0, Number(e.target.value)))
-                    )
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Validação 59% */}
-            {(excedeLimite || embutidoExcede) && (
-              <div className="sim-erro-lance">
-                {embutidoExcede && (
-                  <p>⚠ Lance embutido máximo: {GRUPO.lanceEmbutidoMax}%.</p>
-                )}
-                {excedeLimite && (
-                  <p>⚠ Lance embutido ({lanceEmbutidoPercent}%) + Recursos próprios ({lanceProprioPercent}%) = {lanceTotalPercent}% — limite máximo é {GRUPO.lanceTotalMax}% da cota.</p>
-                )}
-              </div>
-            )}
-
             <div className="sim-reajuste">
               Reajuste anual → <strong>INPC</strong>
             </div>
 
-            <div className="sim-resultados">
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance próprio</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.lanceProprio)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance embutido</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.lanceEmbutido)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Lance total</span>
-                <span className="sim-resultado-valor valor-cobre">{formatarMoedaInteiro(simulacao.lanceTotal)}</span>
-              </div>
-              <div className="sim-resultado-item">
-                <span className="sim-resultado-label">Crédito disponível pós contemplação</span>
-                <span className="sim-resultado-valor">{formatarMoedaInteiro(simulacao.creditoDisponivel)}</span>
-              </div>
-            </div>
-
-            <button className="sim-btn-pdf" onClick={() => setShowModalNome(true)}>
-              Gerar PDF da proposta
-            </button>
+            <p className="sim-info-contemplacao">
+              Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.
+            </p>
 
             <p className="sim-observacao">
               {OBSERVACOES_LEGAIS.imovel}
