@@ -276,7 +276,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     doc.setFontSize(7.5);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
-    doc.text('CONTEMPLAÇÃO RÁPIDA | PLANEJAMENTO PATRIMONIAL', M, y);
+    doc.text('CURTO PRAZO | PLANEJAMENTO PATRIMONIAL', M, y);
     y += 10;
 
     // ── Título ──

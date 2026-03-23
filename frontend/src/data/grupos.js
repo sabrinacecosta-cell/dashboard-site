@@ -261,7 +261,7 @@ export const GRUPOS_MEDIO_PRAZO = {
 
 export const ESTRATEGIAS = [
   { id: 'lancamento',  nome: 'Grupo lançamento',    disponivel: true  },
-  { id: 'contemplacao', nome: 'Contemplação rápida', disponivel: false },
+  { id: 'contemplacao', nome: 'Curto prazo', disponivel: false },
   { id: 'medio-prazo', nome: 'Médio prazo',          disponivel: false },
 ];
 
