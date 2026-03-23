@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { GRUPOS_MEDIO_PRAZO, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 
@@ -79,10 +80,11 @@ function TabelaMedioPrazo({ grupo, plano, onAdd }) {
 }
 
 // ─── Linha da tabela "Monte sua simulação" ────────────────────────────────────
-function LinhaSimulacaoMP({ linha, onRemove, onUpdate }) {
+function LinhaSimulacaoMP({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal         = linha.cota * linha.qtde;
   const parcelaInicial     = linha.parcela * linha.qtde;
-  const lanceEmb           = cartaTotal * 0.30;
+  const lanceEmb           = cartaTotal * (linha.lanceEmbutidoPercent / 100);
+  const lanceTotal         = (linha.recProprios || 0) + lanceEmb;
   const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
   return (
@@ -99,9 +101,30 @@ function LinhaSimulacaoMP({ linha, onRemove, onUpdate }) {
       </td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
-      <td>{linha.redutor === 50 ? '50%' : '0%'}</td>
-      <td>{formatarMoeda(lanceEmb)} (30%)</td>
-      <td>{formatarMoeda(lanceEmb)}</td>
+      <td>{redutorDisplay === 50 ? '50%' : '0%'}</td>
+      <td>
+        <input
+          type="number"
+          className="cr-input-celula"
+          min={0}
+          value={linha.recProprios || 0}
+          onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
+        />
+      </td>
+      <td>
+        <div className="cr-lance-emb-cell">
+          <input
+            type="number"
+            className="cr-input-celula cr-input-lance-emb"
+            min={0}
+            max={linha.lanceEmbutidoMax}
+            value={linha.lanceEmbutidoPercent}
+            onChange={e => onUpdate(linha.id, 'lanceEmbutidoPercent', Math.min(linha.lanceEmbutidoMax, Math.max(0, Number(e.target.value))))}
+          />
+          <span className="cr-lance-emb-label">% · {formatarMoeda(lanceEmb)}</span>
+        </div>
+      </td>
+      <td>{formatarMoeda(lanceTotal)}</td>
       <td className="cr-credito-contemplado">{formatarMoeda(creditoContemplado)}</td>
       <td>
         <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)}>✕</button>
@@ -128,12 +151,15 @@ export function EtapaMedioPrazo({ onVoltar }) {
         );
       }
       return [...prev, {
-        id:      Date.now() + Math.random(),
-        simKey:  key,
-        grupo:   grupoNum,
-        cota:    row.cota,
-        parcela: plano === 'reduzida' ? row.parcelaReduzida : row.parcelaCheia,
-        redutor: plano === 'reduzida' ? 50 : 0,
+        id:                   Date.now() + Math.random(),
+        simKey:               key,
+        grupo:                grupoNum,
+        cota:                 row.cota,
+        parcela:              plano === 'reduzida' ? row.parcelaReduzida : row.parcelaCheia,
+        redutor:              plano === 'reduzida' ? 50 : 0,
+        lanceEmbutidoPercent: 30,
+        lanceEmbutidoMax:     30,
+        recProprios:          0,
         qtde,
       }];
     });
@@ -143,18 +169,56 @@ export function EtapaMedioPrazo({ onVoltar }) {
   const atualizarLinhaSim = (id, campo, valor) =>
     setLinhasSim(prev => prev.map(l => l.id === id ? { ...l, [campo]: valor } : l));
 
-  const totaisSim = useMemo(() => linhasSim.reduce((acc, l) => {
+  const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const cartaTotal         = l.cota * l.qtde;
     const parcelaInicial     = l.parcela * l.qtde;
-    const lanceEmb           = cartaTotal * 0.30;
+    const lanceEmb           = cartaTotal * (l.lanceEmbutidoPercent / 100);
+    const lanceTotal         = (l.recProprios || 0) + lanceEmb;
     const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
-    return {
-      cartaTotal:          acc.cartaTotal          + cartaTotal,
-      parcelaInicial:      acc.parcelaInicial      + parcelaInicial,
-      lanceEmb:            acc.lanceEmb            + lanceEmb,
-      creditoContemplado:  acc.creditoContemplado  + creditoContemplado,
-    };
-  }, { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, creditoContemplado: 0 }), [linhasSim]);
+    return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal, creditoContemplado };
+  }), [linhasSim]);
+
+  const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
+    cartaTotal:         acc.cartaTotal         + l.cartaTotal,
+    parcelaInicial:     acc.parcelaInicial     + l.parcelaInicial,
+    lanceEmb:           acc.lanceEmb           + l.lanceEmb,
+    lanceTotal:         acc.lanceTotal         + l.lanceTotal,
+    recProprios:        acc.recProprios        + (l.recProprios || 0),
+    creditoContemplado: acc.creditoContemplado + l.creditoContemplado,
+  }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0 }), [linhasSimCalc]);
+
+  const redutorDisplay = plano === 'reduzida' ? 50 : 0;
+
+  const gerarExcel = () => {
+    const dados = linhasSimCalc.map(l => ({
+      'Grupo':                   l.grupo,
+      'Qtde Cotas':              l.qtde,
+      'Carta Total (R$)':        l.cartaTotal,
+      'Parcela Inicial (R$)':    l.parcelaInicial,
+      'Redutor':                 redutorDisplay === 50 ? '50%' : '0%',
+      'Rec. Próprios (R$)':      l.recProprios || 0,
+      'Lance Emb. (%)':          l.lanceEmbutidoPercent,
+      'Lance Emb. (R$)':         l.lanceEmb,
+      'Lance Total (R$)':        l.lanceTotal,
+      'Crédito Contemplado (R$)': l.creditoContemplado,
+    }));
+    dados.push({
+      'Grupo':                   'TOTAL',
+      'Qtde Cotas':              '',
+      'Carta Total (R$)':        totaisSim.cartaTotal,
+      'Parcela Inicial (R$)':    totaisSim.parcelaInicial,
+      'Redutor':                 '',
+      'Rec. Próprios (R$)':      totaisSim.recProprios,
+      'Lance Emb. (%)':          '',
+      'Lance Emb. (R$)':         totaisSim.lanceEmb,
+      'Lance Total (R$)':        totaisSim.lanceTotal,
+      'Crédito Contemplado (R$)': totaisSim.creditoContemplado,
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
+    XLSX.writeFile(wb, `simulacao-xp-imovel-medio-prazo.xlsx`);
+  };
 
   return (
     <div className="sim-etapa sim-etapa-simulacao">
@@ -263,6 +327,7 @@ export function EtapaMedioPrazo({ onVoltar }) {
                   <th>Carta Total</th>
                   <th>Parcela Inicial</th>
                   <th>Redutor</th>
+                  <th>Rec. Próprios (R$)</th>
                   <th>Lance Emb.</th>
                   <th>Lance Total</th>
                   <th>Crédito Contemplado</th>
@@ -270,12 +335,13 @@ export function EtapaMedioPrazo({ onVoltar }) {
                 </tr>
               </thead>
               <tbody>
-                {linhasSim.map(linha => (
+                {linhasSimCalc.map(linha => (
                   <LinhaSimulacaoMP
                     key={linha.id}
                     linha={linha}
                     onRemove={removerLinhaSim}
                     onUpdate={atualizarLinhaSim}
+                    redutorDisplay={redutorDisplay}
                   />
                 ))}
               </tbody>
@@ -285,8 +351,9 @@ export function EtapaMedioPrazo({ onVoltar }) {
                   <td>{formatarMoeda(totaisSim.cartaTotal)}</td>
                   <td>{formatarMoeda(totaisSim.parcelaInicial)}</td>
                   <td>—</td>
+                  <td>{totaisSim.recProprios > 0 ? formatarMoeda(totaisSim.recProprios) : '—'}</td>
                   <td>{formatarMoeda(totaisSim.lanceEmb)}</td>
-                  <td>{formatarMoeda(totaisSim.lanceEmb)}</td>
+                  <td>{formatarMoeda(totaisSim.lanceTotal)}</td>
                   <td className="cr-credito-contemplado">{formatarMoeda(totaisSim.creditoContemplado)}</td>
                   <td></td>
                 </tr>
@@ -310,7 +377,7 @@ export function EtapaMedioPrazo({ onVoltar }) {
             </div>
             <div className="cr-resumo-item">
               <span className="cr-resumo-label">Lance total</span>
-              <span className="cr-resumo-valor">{formatarMoeda(totaisSim.lanceEmb)}</span>
+              <span className="cr-resumo-valor">{formatarMoeda(totaisSim.lanceTotal)}</span>
             </div>
             <div className="cr-resumo-item">
               <span className="cr-resumo-label">Carta de crédito total</span>
@@ -318,9 +385,17 @@ export function EtapaMedioPrazo({ onVoltar }) {
             </div>
           </div>
           <p className="sim-observacao cr-nota-rodape" style={{ marginTop: '12px' }}>
-            * Crédito contemplado = carta total − lance embutido (30%).<br />
+            * Crédito contemplado = carta total − lance embutido.<br />
             * Parcela inicial válida até a contemplação ou metade do prazo do grupo, o que vier primeiro.
           </p>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
+            <button
+              className="sim-btn-pdf sim-btn-excel"
+              onClick={gerarExcel}
+            >
+              Gerar Excel da proposta
+            </button>
+          </div>
         </div>
       )}
     </div>

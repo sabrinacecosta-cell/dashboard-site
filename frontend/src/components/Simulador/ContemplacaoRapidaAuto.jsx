@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { GRUPOS_CONTEMPLACAO_AUTO } from '../../data/grupos';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 
@@ -80,11 +81,11 @@ function CardGrupo({ grupo, tipoParcela, onAdd }) {
 }
 
 // ─── Linha editável da tabela de simulação ───────────────────────────────────
-function LinhaSimulacao({ linha, onRemove, onUpdate }) {
+function LinhaSimulacao({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal        = linha.carta * linha.qtde;
   const parcelaInicial    = linha.parcela * linha.qtde;
   const lanceEmb          = cartaTotal * (linha.lanceEmbutidoPercent / 100);
-  const lanceTotal        = lanceEmb;
+  const lanceTotal        = (linha.recProprios || 0) + lanceEmb;
   const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
   return (
@@ -101,7 +102,7 @@ function LinhaSimulacao({ linha, onRemove, onUpdate }) {
       </td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
-      <td>{linha.redutor === 50 ? '50%' : '0%'}</td>
+      <td>{redutorDisplay === 50 ? '50%' : '0%'}</td>
       <td>
         <input
           type="number"
@@ -111,7 +112,19 @@ function LinhaSimulacao({ linha, onRemove, onUpdate }) {
           onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
         />
       </td>
-      <td>{formatarMoeda(lanceEmb)} ({linha.lanceEmbutidoPercent}%)</td>
+      <td>
+        <div className="cr-lance-emb-cell">
+          <input
+            type="number"
+            className="cr-input-celula cr-input-lance-emb"
+            min={0}
+            max={linha.lanceEmbutidoMax}
+            value={linha.lanceEmbutidoPercent}
+            onChange={e => onUpdate(linha.id, 'lanceEmbutidoPercent', Math.min(linha.lanceEmbutidoMax, Math.max(0, Number(e.target.value))))}
+          />
+          <span className="cr-lance-emb-label">% · {formatarMoeda(lanceEmb)}</span>
+        </div>
+      </td>
       <td>{formatarMoeda(lanceTotal)}</td>
       <td className="cr-credito-contemplado">{formatarMoeda(creditoContemplado)}</td>
       <td>
@@ -144,6 +157,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
         id: Date.now() + Math.random(),
         grupo:               grupo.numero,
         lanceEmbutidoPercent: grupo.lanceEmbutido,
+        lanceEmbutidoMax:    grupo.lanceEmbutido,
         carta:               cota.carta,
         parcela:             tipoParcela === 'reduzida' ? cota.parcelaReduzida : cota.parcelaNormal,
         redutor:             tipoParcela === 'reduzida' ? 50 : 0,
@@ -162,7 +176,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     const parcelaInicial    = l.parcela * l.qtde;
     const lanceEmb          = cartaTotal * (l.lanceEmbutidoPercent / 100);
     const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
-    return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal: lanceEmb, creditoContemplado };
+    return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal: (l.recProprios || 0) + lanceEmb, creditoContemplado };
   }), [linhas]);
 
   const totais = useMemo(() => linhasCalculadas.reduce((acc, l) => ({
@@ -179,6 +193,39 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     () => [...new Set(linhas.map(l => l.grupo))].sort(),
     [linhas]
   );
+
+  const redutorDisplay = tipoParcela === 'reduzida' ? 50 : 0;
+
+  const gerarExcel = () => {
+    const dados = linhasCalculadas.map(l => ({
+      'Grupo':                   l.grupo,
+      'Qtde Cotas':              l.qtde,
+      'Carta Total (R$)':        l.cartaTotal,
+      'Parcela Inicial (R$)':    l.parcelaInicial,
+      'Redutor':                 redutorDisplay === 50 ? '50%' : '0%',
+      'Rec. Próprios (R$)':      l.recProprios || 0,
+      'Lance Emb. (%)':          l.lanceEmbutidoPercent,
+      'Lance Emb. (R$)':         l.lanceEmb,
+      'Lance Total (R$)':        l.lanceTotal,
+      'Crédito Contemplado (R$)': l.creditoContemplado,
+    }));
+    dados.push({
+      'Grupo':                   'TOTAL',
+      'Qtde Cotas':              '',
+      'Carta Total (R$)':        totais.cartaTotal,
+      'Parcela Inicial (R$)':    totais.parcelaInicial,
+      'Redutor':                 '',
+      'Rec. Próprios (R$)':      totais.recProprios,
+      'Lance Emb. (%)':          '',
+      'Lance Emb. (R$)':         totais.lanceEmb,
+      'Lance Total (R$)':        totais.lanceTotal,
+      'Crédito Contemplado (R$)': totais.creditoContemplado,
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
+    XLSX.writeFile(wb, `simulacao-xp-auto-contemplacao.xlsx`);
+  };
 
   // ─── Geração de PDF ────────────────────────────────────────────────────────
   const gerarPDF = async (nomeCliente) => {
@@ -507,6 +554,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
                     linha={linha}
                     onRemove={removerLinha}
                     onUpdate={atualizarLinha}
+                    redutorDisplay={redutorDisplay}
                   />
                 ))}
               </tbody>
@@ -573,13 +621,20 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
             * Parcela inicial válida até a contemplação ou metade do prazo do grupo, o que vier primeiro.<br />
             * Após esse evento, a parcela será recalculada sobre o saldo devedor atualizado dividido pelo prazo restante.
           </p>
-          <button
-            className="sim-btn-pdf"
-            style={{ marginTop: '20px' }}
-            onClick={() => setShowModalNome(true)}
-          >
-            Gerar PDF da proposta
-          </button>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
+            <button
+              className="sim-btn-pdf"
+              onClick={() => setShowModalNome(true)}
+            >
+              Gerar PDF da proposta
+            </button>
+            <button
+              className="sim-btn-pdf sim-btn-excel"
+              onClick={gerarExcel}
+            >
+              Gerar Excel da proposta
+            </button>
+          </div>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { GRUPOS, ESTRATEGIAS, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
@@ -277,10 +278,11 @@ function ResumoProposta({ simulacao }) {
 }
 
 // Linha editável da tabela "Monte sua simulação"
-function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
+function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal         = linha.credito * linha.qtde;
   const parcelaInicial     = linha.parcela  * linha.qtde;
   const lanceEmb           = cartaTotal * (linha.lanceEmbutidoPercent / 100);
+  const lanceTotal         = (linha.recProprios || 0) + lanceEmb;
   const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
   return (
@@ -297,7 +299,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
       </td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
-      <td>{linha.redutor === 50 ? '50%' : '0%'}</td>
+      <td>{redutorDisplay === 50 ? '50%' : '0%'}</td>
       <td>
         <input
           type="number"
@@ -307,8 +309,20 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
           onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
         />
       </td>
-      <td>{formatarMoeda(lanceEmb)} ({linha.lanceEmbutidoPercent}%)</td>
-      <td>{formatarMoeda(lanceEmb)}</td>
+      <td>
+        <input
+          type="number"
+          className="cr-input-celula cr-input-pct"
+          min={0}
+          max={linha.lanceEmbutidoMax}
+          value={linha.lanceEmbutidoPercent}
+          onChange={e => onUpdate(linha.id, 'lanceEmbutidoPercent',
+            Math.min(linha.lanceEmbutidoMax, Math.max(0, Number(e.target.value)))
+          )}
+        />
+        <span className="cr-lance-emb-label">% · {formatarMoeda(lanceEmb)}</span>
+      </td>
+      <td>{formatarMoeda(lanceTotal)}</td>
       <td className="cr-credito-contemplado">{formatarMoeda(creditoContemplado)}</td>
       <td>
         <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)}>✕</button>
@@ -392,6 +406,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
         parcela,
         redutor,
         lanceEmbutidoPercent,
+        lanceEmbutidoMax:    lanceEmbutidoMax,
         taxaAdm:             row.taxaAdm ?? dadosPlano.taxaAdm,
         qtde,
         recProprios:         0,
@@ -407,8 +422,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     const cartaTotal         = l.credito * l.qtde;
     const parcelaInicialSim  = l.parcela  * l.qtde;
     const lanceEmb           = cartaTotal * (l.lanceEmbutidoPercent / 100);
+    const lanceTotal         = (l.recProprios || 0) + lanceEmb;
     const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
-    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal: lanceEmb, creditoContemplado };
+    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado };
   }), [linhasSim]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
@@ -420,6 +436,39 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     creditoContemplado: acc.creditoContemplado + l.creditoContemplado,
   }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0 }),
   [linhasSimCalc]);
+
+  const redutorDisplay = (plano === 'taxaReduzida' && modalidade === 'imovel') ? 0 : 50;
+
+  const gerarExcel = () => {
+    const dados = linhasSimCalc.map(l => ({
+      'Grupo':                  l.grupo,
+      'Qtde Cotas':             l.qtde,
+      'Carta Total (R$)':       l.cartaTotal,
+      'Parcela Inicial (R$)':   l.parcelaInicialSim,
+      'Redutor':                redutorDisplay === 50 ? '50%' : '0%',
+      'Rec. Próprios (R$)':     l.recProprios || 0,
+      'Lance Emb. (%)':         l.lanceEmbutidoPercent,
+      'Lance Emb. (R$)':        l.lanceEmb,
+      'Lance Total (R$)':       l.lanceTotal,
+      'Crédito Contemplado (R$)': l.creditoContemplado,
+    }));
+    dados.push({
+      'Grupo':                  'TOTAL',
+      'Qtde Cotas':             '',
+      'Carta Total (R$)':       totaisSim.cartaTotal,
+      'Parcela Inicial (R$)':   totaisSim.parcelaInicialSim,
+      'Redutor':                '—',
+      'Rec. Próprios (R$)':     totaisSim.recProprios,
+      'Lance Emb. (%)':         '',
+      'Lance Emb. (R$)':        totaisSim.lanceEmb,
+      'Lance Total (R$)':       totaisSim.lanceTotal,
+      'Crédito Contemplado (R$)': totaisSim.creditoContemplado,
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
+    XLSX.writeFile(wb, `simulacao-xp-${modalidade}-grupo${grupo.grupo}.xlsx`);
+  };
 
   // ── PDF da simulação multi-cota ────────────────────────────────────────────
   const gerarPDFSim = async (nomeCliente) => {
@@ -1057,6 +1106,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
                     linha={linha}
                     onRemove={removerLinhaSim}
                     onUpdate={atualizarLinhaSim}
+                    redutorDisplay={redutorDisplay}
                   />
                 ))}
               </tbody>
@@ -1115,6 +1165,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
             onClick={() => setShowModalNomeSim(true)}
           >
             Gerar PDF da proposta
+          </button>
+          <button
+            className="sim-btn-pdf"
+            style={{ marginTop: '12px' }}
+            onClick={gerarExcel}
+          >
+            Gerar Excel da proposta
           </button>
         </div>
       )}
