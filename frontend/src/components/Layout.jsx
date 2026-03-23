@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    return localStorage.getItem('sidebarOpen') !== 'false';
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebarOpen', String(next));
+      return next;
+    });
+  };
 
   const handleLogout = () => {
     logout();
@@ -21,7 +32,7 @@ function Layout({ children }) {
   return (
     <div className="layout">
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-logo">
           <span className="logo-icon">◆</span>
           <span className="logo-text">Dashboard</span>
@@ -52,8 +63,18 @@ function Layout({ children }) {
         </div>
       </aside>
 
+      {/* Toggle button */}
+      <button
+        className={`sidebar-toggle${sidebarOpen ? '' : ' sidebar-toggle-closed'}`}
+        onClick={toggleSidebar}
+        aria-label={sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar'}
+        title={sidebarOpen ? 'Ocultar sidebar' : 'Mostrar sidebar'}
+      >
+        {sidebarOpen ? '‹' : '›'}
+      </button>
+
       {/* Main Content */}
-      <div className="main-wrapper">
+      <div className={`main-wrapper${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         {/* Header */}
         <header className="header">
           <div className="header-title">
