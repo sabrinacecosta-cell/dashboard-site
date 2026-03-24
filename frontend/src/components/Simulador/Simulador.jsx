@@ -154,6 +154,7 @@ function AddCell({ onAdd }) {
 function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, defaultTaxaAdm, onAdd }) {
   const isTaxaReduzida = plano === 'taxaReduzida';
   const isImovelTaxaReduzida = isTaxaReduzida && tabela[0]?.parcelaDesconto !== undefined;
+  const hasRedutorRows = tabela.some(r => r.redutor === 0);
   const rowKey = (row) => row.id ?? row.credito;
 
   return (
@@ -169,7 +170,7 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, de
               </>
             ) : (
               <>
-                <th>Redutor 50%</th>
+                <th>Parcela com redutor</th>
                 <th>Parcela integral</th>
               </>
             )}
@@ -182,7 +183,10 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, de
             const prevRow = index > 0 ? tabela[index - 1] : null;
             const curTaxa = row.taxaAdm ?? defaultTaxaAdm;
             const prevTaxa = prevRow ? (prevRow.taxaAdm ?? defaultTaxaAdm) : null;
-            const showPill = index === 0 || curTaxa !== prevTaxa;
+            const curReductor = row.redutor ?? 50;
+            const prevReductor = prevRow ? (prevRow.redutor ?? 50) : null;
+            const showPill = index === 0 || curTaxa !== prevTaxa || curReductor !== prevReductor;
+            const isReductor0 = curReductor === 0;
 
             return (
               <React.Fragment key={rowKey(row)}>
@@ -192,6 +196,13 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, de
                       <span className="sim-taxa-pill">
                         <span className="sim-taxa-pill-label">Taxa ADM</span>
                         <span className="sim-taxa-pill-valor">{formatarPercentual(curTaxa)}</span>
+                        {hasRedutorRows && (
+                          <>
+                            <span className="sim-taxa-pill-sep">·</span>
+                            <span className="sim-taxa-pill-label">Redutor</span>
+                            <span className="sim-taxa-pill-valor">{isReductor0 ? '0%' : '50%'}</span>
+                          </>
+                        )}
                       </span>
                     </td>
                   </tr>
@@ -205,6 +216,11 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, de
                     <>
                       <td className="valor-destaque">{formatarMoeda(row.parcelaDesconto)}</td>
                       <td className="valor-riscado">{formatarMoeda(row.parcelaIntegral)}</td>
+                    </>
+                  ) : isReductor0 ? (
+                    <>
+                      <td className="valor-destaque">{formatarMoeda(row.parcelaIntegral)}</td>
+                      <td>—</td>
                     </>
                   ) : (
                     <>
@@ -971,8 +987,14 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
                 <span className="sim-info-label">Lance fixo</span>
                 <span className="sim-info-valor">30%</span>
               </div>
+              {grupo.prazoRestante && (
+                <div className="sim-info-item">
+                  <span className="sim-info-label">Prazo restante</span>
+                  <span className="sim-info-valor">{grupo.prazoRestante} meses</span>
+                </div>
+              )}
               <div className="sim-info-item">
-                <span className="sim-info-label">Prazo</span>
+                <span className="sim-info-label">{grupo.prazoRestante ? 'Prazo total' : 'Prazo'}</span>
                 <span className="sim-info-valor">{grupo.prazo} meses</span>
               </div>
             </div>

@@ -513,6 +513,11 @@
   font-weight: 600;
 }
 
+.sim-taxa-pill-sep {
+  color: var(--texto-secundario);
+  margin: 0 2px;
+}
+
 .sim-tabela .valor-destaque {
   color: var(--cor-destaque);
   font-weight: 600;

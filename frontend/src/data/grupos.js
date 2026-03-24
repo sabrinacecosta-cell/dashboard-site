@@ -47,7 +47,8 @@ export const GRUPOS = {
     id: 'automovel',
     nome: 'Automóvel',
     grupo: '2133',
-    prazo: 78,
+    prazo: 80,
+    prazoRestante: 77,
     taxaReduzida: {
       taxaAdm: 0.17,        // 17%
       fundoReserva: 0.03,   // 3%
