@@ -151,7 +151,7 @@ export const GRUPOS_CONTEMPLACAO_IMOVEL = {
     prazoRestante: 119,
     lanceEmbutidoMax: 50,
     lanceTotalMax: 59,
-    observacao: 'Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.',
+    observacao: 'Média de contemplações nos últimos 11 meses: 7%.\nMédia de contemplações nos últimos 6 meses: 6%.',
     comReductor: {
       taxaAdm: 0.22,
       fundoReserva: 0.05,
