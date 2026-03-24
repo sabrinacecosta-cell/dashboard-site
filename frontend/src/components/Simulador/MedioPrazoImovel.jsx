@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS_MEDIO_PRAZO, OBSERVACOES_LEGAIS } from '../../data/grupos';
-import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
+import { formatarMoeda, formatarMoedaInteiro, formatarPercentual, calcularCustos } from '../../business/calculos';
+import { ResumoProposta } from './ResumoProposta';
 
 // ─── Pills Toggle ─────────────────────────────────────────────────────────────
 function PillsToggle({ options, value, onChange }) {
@@ -190,6 +191,20 @@ export function EtapaMedioPrazo({ onVoltar }) {
   }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0 }), [linhasSimCalc]);
 
   const redutorDisplay = plano === 'reduzida' ? 50 : 0;
+
+  const simulacaoResumida = useMemo(() => {
+    const credito = totaisSim.cartaTotal;
+    const custos  = calcularCustos(credito, grupo.taxaAdm, grupo.fundoReserva);
+    return {
+      credito,
+      parcelaInicial:    totaisSim.parcelaInicial,
+      creditoDisponivel: totaisSim.creditoContemplado,
+      lanceProprio:      totaisSim.recProprios,
+      lanceEmbutido:     totaisSim.lanceEmb,
+      lanceTotal:        totaisSim.lanceTotal,
+      ...custos,
+    };
+  }, [totaisSim, grupo]);
 
   const gerarExcel = () => {
     const redutor = redutorDisplay === 50 ? '50%' : '0%';
@@ -413,10 +428,6 @@ export function EtapaMedioPrazo({ onVoltar }) {
                 <span className="sim-info-valor">30%</span>
               </div>
               <div className="sim-info-item">
-                <span className="sim-info-label">Lance máx. contemp.</span>
-                <span className="sim-info-valor">59%</span>
-              </div>
-              <div className="sim-info-item">
                 <span className="sim-info-label">Prazo total</span>
                 <span className="sim-info-valor">200 meses</span>
               </div>
@@ -539,6 +550,13 @@ export function EtapaMedioPrazo({ onVoltar }) {
           >
             Gerar Excel da proposta
           </button>
+        </div>
+      )}
+
+      {linhasSim.length > 0 && (
+        <div className="sim-painel sim-painel-resumo" style={{ marginTop: '24px' }}>
+          <h3 className="sim-titulo-secao">Resumo da proposta</h3>
+          <ResumoProposta simulacao={simulacaoResumida} />
         </div>
       )}
 

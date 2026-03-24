@@ -5,6 +5,7 @@ import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercent
 import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
 import { EtapaContemplacaoRapidaImovel } from './ContemplacaoRapidaImovel';
 import { EtapaMedioPrazo } from './MedioPrazoImovel';
+import { ResumoProposta } from './ResumoProposta';
 import './Simulador.css';
 
 // Etapa 1 - Seleção de Modalidade
@@ -222,61 +223,6 @@ function TabelaParcelas({ tabela, plano, creditoSelecionado, onSelectCredito, de
   );
 }
 
-// Resumo da Proposta
-function ResumoProposta({ simulacao }) {
-  return (
-    <div className="sim-resumo">
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Crédito e parcelas</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Carta de crédito</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.credito)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Parcela inicial</span>
-          <span className="sim-resumo-valor">{formatarMoeda(simulacao.parcelaInicial)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Crédito disponível pós contemplação</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.creditoDisponivel)}</span>
-        </div>
-      </div>
-
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Lance</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance recursos próprios</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.lanceProprio)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance embutido</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.lanceEmbutido)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance total</span>
-          <span className="sim-resumo-valor valor-cobre">{formatarMoedaInteiro(simulacao.lanceTotal)}</span>
-        </div>
-      </div>
-
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Custos</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Total fundo de reserva (FR)</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.totalFundoReserva)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Total taxas (TA + FR)</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.totalTaxas)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Saldo devedor inicial</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.saldoDevedor)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Linha editável da tabela "Monte sua simulação"
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal         = linha.credito * linha.qtde;
@@ -299,7 +245,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
       </td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
-      <td>{redutorDisplay === 50 ? '50%' : '0%'}</td>
+      <td>{linha.redutor === 0 ? '0%' : '50%'}</td>
       <td>
         <input
           type="number"
@@ -396,8 +342,10 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
         );
       }
       const isImovelTR = modalidade === 'imovel' && plano === 'taxaReduzida';
-      const parcela = isImovelTR ? (row.parcelaDesconto || 0) : (row.redutor50 || 0);
-      const redutor  = isImovelTR ? 0 : 50;
+      const redutor = isImovelTR ? 0 : (row.redutor ?? 50);
+      const parcela = isImovelTR
+        ? (row.parcelaDesconto || 0)
+        : redutor === 0 ? (row.parcelaIntegral || 0) : (row.redutor50 || 0);
       return [...prev, {
         id:                  Date.now() + Math.random(),
         simKey:              key,
@@ -440,14 +388,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
   const redutorDisplay = (plano === 'taxaReduzida' && modalidade === 'imovel') ? 0 : 50;
 
   const gerarExcel = () => {
-    const redutor = redutorDisplay === 50 ? '50%' : '0%';
     gerarExcelSimulacao({
       rows: linhasSimCalc.map(l => ({
         grupo:             l.grupo,
         qtde:              l.qtde,
         cartaTotal:        l.cartaTotal,
         parcelaInicial:    l.parcelaInicialSim,
-        redutor:           redutor,
+        redutor:           l.redutor === 0 ? '0%' : '50%',
         recProprios:       l.recProprios || 0,
         lanceEmbPerc:      l.lanceEmbutidoPercent,
         lanceEmb:          l.lanceEmb,
@@ -986,16 +933,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       {/* Filtros */}
       <div className="sim-filtros">
         <div className="sim-filtro-grupo">
-          <span className="sim-filtro-label">Carta de crédito</span>
-          <CustomDropdown
-            options={tabela}
-            value={creditoSelecionado}
-            onChange={setCreditoSelecionado}
-            formatLabel={(opt) => opt.taxaAdm
-              ? `${formatarMoedaInteiro(opt.credito)} · TA ${formatarPercentual(opt.taxaAdm)}`
-              : formatarMoedaInteiro(opt.credito)
-            }
-          />
+          <span className="sim-filtro-label">Grupo {grupo.grupo}</span>
         </div>
         <PillsToggle
           options={[
@@ -1028,10 +966,6 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
               <div className="sim-info-item">
                 <span className="sim-info-label">Lance emb. máx.</span>
                 <span className="sim-info-valor">{lanceEmbutidoMax}%</span>
-              </div>
-              <div className="sim-info-item">
-                <span className="sim-info-label">Lance máx. contemp.</span>
-                <span className="sim-info-valor">59%</span>
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Lance fixo</span>

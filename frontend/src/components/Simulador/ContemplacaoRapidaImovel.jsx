@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS_CONTEMPLACAO_IMOVEL, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
+import { ResumoProposta } from './ResumoProposta';
 
 const GRUPO = GRUPOS_CONTEMPLACAO_IMOVEL[1038];
 
@@ -142,58 +143,6 @@ function TabelaParcelas1038({ tabela, plano, creditoSelecionado, onSelectCredito
 }
 
 // ─── Resumo da Proposta (igual ao do Simulador principal) ─────────────────────
-function ResumoProposta({ simulacao }) {
-  return (
-    <div className="sim-resumo">
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Crédito e parcelas</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Carta de crédito</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.credito)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Parcela inicial</span>
-          <span className="sim-resumo-valor">{formatarMoeda(simulacao.parcelaInicial)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Crédito disponível pós contemplação</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.creditoDisponivel)}</span>
-        </div>
-      </div>
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Lance</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance recursos próprios</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.lanceProprio)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance embutido</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.lanceEmbutido)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Lance total</span>
-          <span className="sim-resumo-valor valor-cobre">{formatarMoedaInteiro(simulacao.lanceTotal)}</span>
-        </div>
-      </div>
-      <div className="sim-resumo-secao">
-        <h3 className="sim-resumo-titulo">Custos</h3>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Total fundo de reserva (FR)</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.totalFundoReserva)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Total taxas (TA + FR)</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.totalTaxas)}</span>
-        </div>
-        <div className="sim-resumo-linha">
-          <span className="sim-resumo-label">Saldo devedor inicial</span>
-          <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.saldoDevedor)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Linha editável da tabela "Monte sua simulação" ───────────────────────────
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal         = linha.credito * linha.qtde;

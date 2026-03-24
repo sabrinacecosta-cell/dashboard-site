@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS_CONTEMPLACAO_AUTO } from '../../data/grupos';
-import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
+import { formatarMoeda, formatarMoedaInteiro, calcularCustos } from '../../business/calculos';
+import { ResumoProposta } from './ResumoProposta';
 
 const G2127 = GRUPOS_CONTEMPLACAO_AUTO[2127];
 const G2128 = GRUPOS_CONTEMPLACAO_AUTO[2128];
@@ -195,6 +196,20 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
   );
 
   const redutorDisplay = tipoParcela === 'reduzida' ? 50 : 0;
+
+  const simulacaoResumida = useMemo(() => {
+    const credito          = totais.cartaTotal;
+    const custos           = calcularCustos(credito, G2127.taxaAdm, G2127.fundoReserva);
+    return {
+      credito,
+      parcelaInicial:    totais.parcelaInicial,
+      creditoDisponivel: totais.creditoContemplado,
+      lanceProprio:      totais.recProprios,
+      lanceEmbutido:     totais.lanceEmb,
+      lanceTotal:        totais.lanceTotal,
+      ...custos,
+    };
+  }, [totais]);
 
   const gerarExcel = () => {
     const redutor = redutorDisplay === 50 ? '50%' : '0%';
@@ -631,6 +646,13 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
               Gerar Excel da proposta
             </button>
           </div>
+        </div>
+      )}
+
+      {linhas.length > 0 && (
+        <div className="sim-painel sim-painel-resumo" style={{ marginTop: '24px' }}>
+          <h3 className="sim-titulo-secao">Resumo da proposta</h3>
+          <ResumoProposta simulacao={simulacaoResumida} />
         </div>
       )}
 
