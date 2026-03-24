@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS, ESTRATEGIAS, OBSERVACOES_LEGAIS } from '../../data/grupos';
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { EtapaContemplacaoRapidaAuto } from './ContemplacaoRapidaAuto';
@@ -440,34 +440,30 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
   const redutorDisplay = (plano === 'taxaReduzida' && modalidade === 'imovel') ? 0 : 50;
 
   const gerarExcel = () => {
-    const dados = linhasSimCalc.map(l => ({
-      'Grupo':                  l.grupo,
-      'Qtde Cotas':             l.qtde,
-      'Carta Total (R$)':       l.cartaTotal,
-      'Parcela Inicial (R$)':   l.parcelaInicialSim,
-      'Redutor':                redutorDisplay === 50 ? '50%' : '0%',
-      'Rec. Próprios (R$)':     l.recProprios || 0,
-      'Lance Emb. (%)':         l.lanceEmbutidoPercent,
-      'Lance Emb. (R$)':        l.lanceEmb,
-      'Lance Total (R$)':       l.lanceTotal,
-      'Crédito Contemplado (R$)': l.creditoContemplado,
-    }));
-    dados.push({
-      'Grupo':                  'TOTAL',
-      'Qtde Cotas':             '',
-      'Carta Total (R$)':       totaisSim.cartaTotal,
-      'Parcela Inicial (R$)':   totaisSim.parcelaInicialSim,
-      'Redutor':                '—',
-      'Rec. Próprios (R$)':     totaisSim.recProprios,
-      'Lance Emb. (%)':         '',
-      'Lance Emb. (R$)':        totaisSim.lanceEmb,
-      'Lance Total (R$)':       totaisSim.lanceTotal,
-      'Crédito Contemplado (R$)': totaisSim.creditoContemplado,
+    const redutor = redutorDisplay === 50 ? '50%' : '0%';
+    gerarExcelSimulacao({
+      rows: linhasSimCalc.map(l => ({
+        grupo:             l.grupo,
+        qtde:              l.qtde,
+        cartaTotal:        l.cartaTotal,
+        parcelaInicial:    l.parcelaInicialSim,
+        redutor:           redutor,
+        recProprios:       l.recProprios || 0,
+        lanceEmbPerc:      l.lanceEmbutidoPercent,
+        lanceEmb:          l.lanceEmb,
+        lanceTotal:        l.lanceTotal,
+        creditoContemplado: l.creditoContemplado,
+      })),
+      totais: {
+        cartaTotal:        totaisSim.cartaTotal,
+        parcelaInicial:    totaisSim.parcelaInicialSim,
+        recProprios:       totaisSim.recProprios,
+        lanceEmb:          totaisSim.lanceEmb,
+        lanceTotal:        totaisSim.lanceTotal,
+        creditoContemplado: totaisSim.creditoContemplado,
+      },
+      nomeArquivo: `simulacao-xp-${modalidade}-grupo${grupo.grupo}.xlsx`,
     });
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
-    XLSX.writeFile(wb, `simulacao-xp-${modalidade}-grupo${grupo.grupo}.xlsx`);
   };
 
   // ── PDF da simulação multi-cota ────────────────────────────────────────────
@@ -1050,10 +1046,6 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
             <div className="sim-reajuste">
               Reajuste anual → <strong>Pré-fixado 5%</strong>
             </div>
-
-            <p className="sim-info-contemplacao">
-              Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.
-            </p>
 
             <p className="sim-observacao">
               {OBSERVACOES_LEGAIS[modalidade]}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS_CONTEMPLACAO_AUTO } from '../../data/grupos';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 
@@ -197,34 +197,30 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
   const redutorDisplay = tipoParcela === 'reduzida' ? 50 : 0;
 
   const gerarExcel = () => {
-    const dados = linhasCalculadas.map(l => ({
-      'Grupo':                   l.grupo,
-      'Qtde Cotas':              l.qtde,
-      'Carta Total (R$)':        l.cartaTotal,
-      'Parcela Inicial (R$)':    l.parcelaInicial,
-      'Redutor':                 redutorDisplay === 50 ? '50%' : '0%',
-      'Rec. Próprios (R$)':      l.recProprios || 0,
-      'Lance Emb. (%)':          l.lanceEmbutidoPercent,
-      'Lance Emb. (R$)':         l.lanceEmb,
-      'Lance Total (R$)':        l.lanceTotal,
-      'Crédito Contemplado (R$)': l.creditoContemplado,
-    }));
-    dados.push({
-      'Grupo':                   'TOTAL',
-      'Qtde Cotas':              '',
-      'Carta Total (R$)':        totais.cartaTotal,
-      'Parcela Inicial (R$)':    totais.parcelaInicial,
-      'Redutor':                 '',
-      'Rec. Próprios (R$)':      totais.recProprios,
-      'Lance Emb. (%)':          '',
-      'Lance Emb. (R$)':         totais.lanceEmb,
-      'Lance Total (R$)':        totais.lanceTotal,
-      'Crédito Contemplado (R$)': totais.creditoContemplado,
+    const redutor = redutorDisplay === 50 ? '50%' : '0%';
+    gerarExcelSimulacao({
+      rows: linhasCalculadas.map(l => ({
+        grupo:             l.grupo,
+        qtde:              l.qtde,
+        cartaTotal:        l.cartaTotal,
+        parcelaInicial:    l.parcelaInicial,
+        redutor:           redutor,
+        recProprios:       l.recProprios || 0,
+        lanceEmbPerc:      l.lanceEmbutidoPercent,
+        lanceEmb:          l.lanceEmb,
+        lanceTotal:        l.lanceTotal,
+        creditoContemplado: l.creditoContemplado,
+      })),
+      totais: {
+        cartaTotal:        totais.cartaTotal,
+        parcelaInicial:    totais.parcelaInicial,
+        recProprios:       totais.recProprios,
+        lanceEmb:          totais.lanceEmb,
+        lanceTotal:        totais.lanceTotal,
+        creditoContemplado: totais.creditoContemplado,
+      },
+      nomeArquivo: 'simulacao-xp-auto-contemplacao.xlsx',
     });
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
-    XLSX.writeFile(wb, `simulacao-xp-auto-contemplacao.xlsx`);
   };
 
   // ─── Geração de PDF ────────────────────────────────────────────────────────

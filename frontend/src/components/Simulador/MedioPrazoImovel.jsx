@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
+import { gerarExcelSimulacao } from '../../business/excelExport';
 import { GRUPOS_MEDIO_PRAZO, OBSERVACOES_LEGAIS } from '../../data/grupos';
-import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
+import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 
 // ─── Pills Toggle ─────────────────────────────────────────────────────────────
 function PillsToggle({ options, value, onChange }) {
@@ -135,9 +135,11 @@ function LinhaSimulacaoMP({ linha, onRemove, onUpdate, redutorDisplay }) {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export function EtapaMedioPrazo({ onVoltar }) {
-  const [grupoAtivo, setGrupoAtivo] = useState(1047);
-  const [plano,      setPlano]      = useState('reduzida');
-  const [linhasSim,  setLinhasSim]  = useState([]);
+  const [grupoAtivo,       setGrupoAtivo]       = useState(1047);
+  const [plano,            setPlano]            = useState('reduzida');
+  const [linhasSim,        setLinhasSim]        = useState([]);
+  const [showModalNome,    setShowModalNome]    = useState(false);
+  const [nomeClienteInput, setNomeClienteInput] = useState('');
 
   const grupo = GRUPOS_MEDIO_PRAZO[grupoAtivo];
 
@@ -190,34 +192,173 @@ export function EtapaMedioPrazo({ onVoltar }) {
   const redutorDisplay = plano === 'reduzida' ? 50 : 0;
 
   const gerarExcel = () => {
-    const dados = linhasSimCalc.map(l => ({
-      'Grupo':                   l.grupo,
-      'Qtde Cotas':              l.qtde,
-      'Carta Total (R$)':        l.cartaTotal,
-      'Parcela Inicial (R$)':    l.parcelaInicial,
-      'Redutor':                 redutorDisplay === 50 ? '50%' : '0%',
-      'Rec. Próprios (R$)':      l.recProprios || 0,
-      'Lance Emb. (%)':          l.lanceEmbutidoPercent,
-      'Lance Emb. (R$)':         l.lanceEmb,
-      'Lance Total (R$)':        l.lanceTotal,
-      'Crédito Contemplado (R$)': l.creditoContemplado,
-    }));
-    dados.push({
-      'Grupo':                   'TOTAL',
-      'Qtde Cotas':              '',
-      'Carta Total (R$)':        totaisSim.cartaTotal,
-      'Parcela Inicial (R$)':    totaisSim.parcelaInicial,
-      'Redutor':                 '',
-      'Rec. Próprios (R$)':      totaisSim.recProprios,
-      'Lance Emb. (%)':          '',
-      'Lance Emb. (R$)':         totaisSim.lanceEmb,
-      'Lance Total (R$)':        totaisSim.lanceTotal,
-      'Crédito Contemplado (R$)': totaisSim.creditoContemplado,
+    const redutor = redutorDisplay === 50 ? '50%' : '0%';
+    gerarExcelSimulacao({
+      rows: linhasSimCalc.map(l => ({
+        grupo:             l.grupo,
+        qtde:              l.qtde,
+        cartaTotal:        l.cartaTotal,
+        parcelaInicial:    l.parcelaInicial,
+        redutor:           redutor,
+        recProprios:       l.recProprios || 0,
+        lanceEmbPerc:      l.lanceEmbutidoPercent,
+        lanceEmb:          l.lanceEmb,
+        lanceTotal:        l.lanceTotal,
+        creditoContemplado: l.creditoContemplado,
+      })),
+      totais: {
+        cartaTotal:        totaisSim.cartaTotal,
+        parcelaInicial:    totaisSim.parcelaInicial,
+        recProprios:       totaisSim.recProprios,
+        lanceEmb:          totaisSim.lanceEmb,
+        lanceTotal:        totaisSim.lanceTotal,
+        creditoContemplado: totaisSim.creditoContemplado,
+      },
+      nomeArquivo: 'simulacao-xp-imovel-medio-prazo.xlsx',
     });
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Simulação');
-    XLSX.writeFile(wb, `simulacao-xp-imovel-medio-prazo.xlsx`);
+  };
+
+  const gerarPDF = async (nomeCliente) => {
+    const { default: jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+    const W = 210, H = 297, M = 12;
+    let y = M;
+    const gold = [245, 192, 0], white = [255, 255, 255], black = [10, 10, 10];
+    const grey = [153, 153, 153], lightGrey = [200, 200, 200];
+    const darkCard = [30, 30, 30], darkBorder = [46, 46, 46];
+
+    doc.setFillColor(...black); doc.rect(0, 0, W, H, 'F');
+    doc.setFillColor(...gold);
+    doc.lines([[-65, 0], [65, 65], [0, -65]], W, 0, [1, 1], 'F', true);
+    doc.setFillColor(200, 155, 0);
+    doc.lines([[-35, 0], [35, 35], [0, -35]], W, 0, [1, 1], 'F', true);
+
+    doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
+    doc.text(`GRUPO ${grupo.numero} | IMOBILIÁRIO`, M, y + 5);
+    y += nomeCliente ? 10 : 13;
+
+    if (nomeCliente) {
+      doc.setFontSize(10); doc.setTextColor(...white); doc.setFont('helvetica', 'normal');
+      doc.text(`Olá, ${nomeCliente}. Segue o planejamento imobiliário feito para você.`, M, y + 5);
+      y += 11;
+    }
+
+    const planoLabel = plano === 'reduzida' ? 'COM REDUTOR 50%' : 'SEM REDUTOR';
+    doc.setFontSize(7.5); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text(`${planoLabel} | PLANEJAMENTO PATRIMONIAL DE MÉDIO PRAZO`, M, y);
+    y += 12;
+
+    doc.setFontSize(20); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+    doc.text('CONSÓRCIO IMOBILIÁRIO XP', M, y);
+    y += 16;
+
+    doc.setFillColor(...gold); doc.rect(M, y, 3, 8, 'F');
+    doc.setFontSize(9.5); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+    doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
+    y += 12;
+
+    if (plano === 'reduzida') {
+      doc.setFillColor(25, 20, 0); doc.setDrawColor(...gold); doc.setLineWidth(0.5);
+      doc.roundedRect(M, y, W - 2 * M, 14, 3, 3, 'FD');
+      doc.setFontSize(8.5); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+      doc.text('Redução de 50% no valor das parcelas', W / 2, y + 6, { align: 'center' });
+      doc.setFontSize(7.5); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
+      doc.text('Pague menos durante o período de espera e preserve sua liquidez financeira', W / 2, y + 11.5, { align: 'center' });
+      y += 18;
+    }
+
+    const cardW = (W - 2 * M - 8) / 2, cardH = 44;
+    doc.setFillColor(...darkCard); doc.setDrawColor(...gold); doc.setLineWidth(0.5);
+    doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('CARTA DE CRÉDITO TOTAL', M + 7, y + 7);
+    doc.setFontSize(10); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totaisSim.cartaTotal), M + 7, y + 13);
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('CRÉDITO CONTEMPLADO', M + 7, y + 24);
+    doc.setFontSize(13); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totaisSim.creditoContemplado), M + 7, y + 32);
+
+    const card2X = M + cardW + 8;
+    doc.setFillColor(...darkCard); doc.setDrawColor(...darkBorder); doc.setLineWidth(0.3);
+    doc.roundedRect(card2X, y, cardW, cardH, 4, 4, 'FD');
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('LANCE EMBUTIDO', card2X + 7, y + 7);
+    doc.setFontSize(9); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totaisSim.lanceEmb), card2X + 7, y + 14);
+    if (totaisSim.recProprios > 0) {
+      doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+      doc.text('LANCE REC. PRÓPRIOS', card2X + cardW / 2 + 4, y + 7);
+      doc.setFontSize(9); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+      doc.text(formatarMoeda(totaisSim.recProprios), card2X + cardW / 2 + 4, y + 14);
+    }
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('PARCELA INICIAL', card2X + 7, y + 26);
+    doc.setFontSize(11); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totaisSim.parcelaInicial), card2X + 7, y + 34);
+    y += cardH + 8;
+
+    const techItems = [
+      { label: 'TAXA ADM',       value: formatarPercentual(grupo.taxaAdm)      },
+      { label: 'FUNDO RESERVA',  value: formatarPercentual(grupo.fundoReserva) },
+      { label: 'LANCE EMBUTIDO', value: `30%`                                  },
+      { label: 'PRAZO',          value: `${grupo.prazoRestante}/${grupo.prazoTotal}m` },
+    ];
+    const techH = 18, techColW = (W - 2 * M) / techItems.length;
+    doc.setFillColor(...darkCard); doc.setDrawColor(...darkBorder); doc.setLineWidth(0.3);
+    doc.roundedRect(M, y, W - 2 * M, techH, 4, 4, 'FD');
+    techItems.forEach((cell, i) => {
+      const cx = M + i * techColW + 7;
+      doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+      doc.text(cell.label, cx, y + 7);
+      doc.setFontSize(9); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
+      doc.text(cell.value, cx, y + 14);
+    });
+    y += techH + 5;
+
+    const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
+    doc.setFontSize(7);
+    const notaLinhas = doc.splitTextToSize(notaTexto, W - 2 * M - 8);
+    const notaBarH = Math.max(13, 4 + notaLinhas.length * 3.5);
+    doc.setFillColor(...gold); doc.rect(M, y, 3, notaBarH, 'F');
+    doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
+    notaLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 5 + i * 3.5));
+    y += notaBarH + 5;
+
+    const indicados = [
+      '• Construção gradual de patrimônio imobiliário',
+      '• Diversificação em ativos reais',
+      '• Planejamento de aquisições futuras',
+      '• Estratégias familiares e sucessórias',
+      '• Preservação de liquidez e rentabilidade dos investimentos',
+    ];
+    const barH = 8 + indicados.length * 4.5;
+    doc.setFillColor(...gold); doc.rect(M, y, 3, barH, 'F');
+    doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
+    doc.text('ESTRUTURA INDICADA PARA:', M + 7, y + 6);
+    doc.setFontSize(8.5); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
+    indicados.forEach((item, i) => doc.text(item, M + 7, y + 11 + i * 4.5));
+    y += barH + 5;
+
+    doc.setFillColor(22, 18, 0); doc.setDrawColor(...gold); doc.setLineWidth(0.4);
+    doc.roundedRect(M, y, W - 2 * M, 16, 4, 4, 'FD');
+    doc.setFontSize(9); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+    doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 6.5, { align: 'center' });
+    doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 12.5, { align: 'center' });
+    y += 23;
+
+    const legalY = H - 28;
+    if (y < legalY) {
+      doc.setFontSize(6.5); doc.setTextColor(80, 80, 80); doc.setFont('helvetica', 'normal');
+      doc.text(doc.splitTextToSize(OBSERVACOES_LEGAIS.imovel, W - 2 * M), M, legalY);
+    }
+    doc.setFillColor(20, 20, 20); doc.rect(0, H - 16, W, 16, 'F');
+    doc.setFontSize(9); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+    doc.text('Consórcio XP', M, H - 6);
+    const dataValidade = new Date(); dataValidade.setDate(dataValidade.getDate() + 30);
+    doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text(`Oferta válida até ${dataValidade.toLocaleDateString('pt-BR')}`, W - M, H - 6, { align: 'right' });
+    doc.save(`proposta-xp-imovel-medio-prazo-grupo${grupo.numero}-${Date.now()}.pdf`);
   };
 
   return (
@@ -288,10 +429,6 @@ export function EtapaMedioPrazo({ onVoltar }) {
             <div className="sim-reajuste">
               Reajuste anual → <strong>INPC</strong>
             </div>
-
-            <p className="sim-info-contemplacao">
-              Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.
-            </p>
 
             <p className="sim-observacao">
               {OBSERVACOES_LEGAIS.imovel}
@@ -388,13 +525,48 @@ export function EtapaMedioPrazo({ onVoltar }) {
             * Crédito contemplado = carta total − lance embutido.<br />
             * Parcela inicial válida até a contemplação ou metade do prazo do grupo, o que vier primeiro.
           </p>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' }}>
-            <button
-              className="sim-btn-pdf sim-btn-excel"
-              onClick={gerarExcel}
-            >
-              Gerar Excel da proposta
-            </button>
+          <button
+            className="sim-btn-pdf"
+            style={{ marginTop: '20px' }}
+            onClick={() => setShowModalNome(true)}
+          >
+            Gerar PDF da proposta
+          </button>
+          <button
+            className="sim-btn-pdf"
+            style={{ marginTop: '12px' }}
+            onClick={gerarExcel}
+          >
+            Gerar Excel da proposta
+          </button>
+        </div>
+      )}
+
+      {showModalNome && (
+        <div className="sim-modal-overlay" onClick={() => setShowModalNome(false)}>
+          <div className="sim-modal" onClick={e => e.stopPropagation()}>
+            <p className="sim-modal-pergunta">Deseja adicionar o nome do cliente?</p>
+            <input
+              className="sim-modal-input"
+              type="text"
+              placeholder="Nome do cliente (opcional)"
+              value={nomeClienteInput}
+              onChange={e => setNomeClienteInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { setShowModalNome(false); gerarPDF(nomeClienteInput.trim()); }
+              }}
+              autoFocus
+            />
+            <div className="sim-modal-acoes">
+              <button className="sim-modal-btn sim-modal-btn-nao"
+                onClick={() => { setShowModalNome(false); gerarPDF(''); }}>
+                Não
+              </button>
+              <button className="sim-modal-btn sim-modal-btn-sim"
+                onClick={() => { setShowModalNome(false); gerarPDF(nomeClienteInput.trim()); }}>
+                Sim — Gerar PDF
+              </button>
+            </div>
           </div>
         </div>
       )}
