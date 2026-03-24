@@ -7,6 +7,7 @@ const router = express.Router();
 // Rotas públicas
 router.post('/login', AuthController.login);
 router.post('/definir-senha', AuthController.definirSenha);
+router.post('/esqueci-senha', AuthController.esqueceuSenha);
 
 // Rotas protegidas
 router.get('/me', authMiddleware, AuthController.me);

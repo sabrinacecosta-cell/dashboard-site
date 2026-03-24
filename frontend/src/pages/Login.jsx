@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
+  const [esqueceuSenha, setEsqueceuSenha] = useState(false);
+  const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +23,7 @@ function Login() {
 
     try {
       const result = await login(email, senha);
-      
+
       if (result.primeiroAcesso) {
         setPrimeiroAcesso(result);
       } else {
@@ -48,13 +51,31 @@ function Login() {
     }
   }
 
+  async function handleEsqueceuSenha(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/esqueci-senha', { email: emailRecuperacao });
+      setPrimeiroAcesso(response.data);
+      setEsqueceuSenha(false);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Email não encontrado');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (primeiroAcesso) {
     return (
       <div className="login-container">
         <div className="card login-card">
-          <h1>Primeiro Acesso</h1>
+          <h1>{primeiroAcesso.redefinindo ? 'Redefinir Senha' : 'Primeiro Acesso'}</h1>
           <p style={{ textAlign: 'center', marginBottom: 25, color: 'var(--text-secondary)' }}>
-            Defina sua senha para continuar
+            {primeiroAcesso.redefinindo
+              ? 'Escolha uma nova senha para continuar'
+              : 'Defina sua senha para continuar'}
           </p>
           <form onSubmit={handleDefinirSenha}>
             <div className="form-group">
@@ -73,6 +94,44 @@ function Login() {
             </button>
             {error && <p className="error">{error}</p>}
           </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (esqueceuSenha) {
+    return (
+      <div className="login-container">
+        <div className="card login-card">
+          <h1>Esqueci minha senha</h1>
+          <p style={{ textAlign: 'center', marginBottom: 25, color: 'var(--text-secondary)' }}>
+            Informe seu email para redefinir a senha
+          </p>
+          <form onSubmit={handleEsqueceuSenha}>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={emailRecuperacao}
+                onChange={(e) => setEmailRecuperacao(e.target.value)}
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Verificando...' : 'Continuar'}
+            </button>
+            {error && <p className="error">{error}</p>}
+          </form>
+          <p style={{ textAlign: 'center', marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={() => { setEsqueceuSenha(false); setError(''); }}
+              style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.9rem' }}
+            >
+              Voltar ao login
+            </button>
+          </p>
         </div>
       </div>
     );
@@ -107,6 +166,15 @@ function Login() {
           </button>
           {error && <p className="error">{error}</p>}
         </form>
+        <p style={{ textAlign: 'center', marginTop: 16 }}>
+          <button
+            type="button"
+            onClick={() => { setEsqueceuSenha(true); setError(''); }}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.9rem' }}
+          >
+            Esqueci minha senha
+          </button>
+        </p>
       </div>
     </div>
   );

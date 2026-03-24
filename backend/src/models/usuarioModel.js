@@ -44,6 +44,14 @@ const UsuarioModel = {
   async resetAllPasswords() {
     const result = await db.query('UPDATE usuarios SET senha_hash = NULL');
     return result.rowCount;
+  },
+
+  async resetPasswordByEmail(email) {
+    const result = await db.query(
+      'UPDATE usuarios SET senha_hash = NULL WHERE email = $1 RETURNING id, nome, email',
+      [email]
+    );
+    return result.rows[0] || null;
   }
 };
 

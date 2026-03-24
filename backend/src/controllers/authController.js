@@ -41,6 +41,31 @@ const AuthController = {
     }
   },
 
+  async esqueceuSenha(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório' });
+      }
+
+      const usuario = await require('../models/usuarioModel').resetPasswordByEmail(email);
+
+      if (!usuario) {
+        return res.status(404).json({ error: 'Email não encontrado' });
+      }
+
+      return res.json({
+        primeiroAcesso: true,
+        redefinindo: true,
+        usuarioId: usuario.id,
+        email: usuario.email,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  },
+
   async me(req, res) {
     try {
       const usuario = await AuthService.getUsuarioAutenticado(req.userId);
