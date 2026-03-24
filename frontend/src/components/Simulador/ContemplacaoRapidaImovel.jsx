@@ -4,8 +4,6 @@ import { GRUPOS_CONTEMPLACAO_IMOVEL, OBSERVACOES_LEGAIS } from '../../data/grupo
 import { calcularSimulacao, formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { ResumoProposta } from './ResumoProposta';
 
-const GRUPO = GRUPOS_CONTEMPLACAO_IMOVEL[1038];
-
 // ─── Dropdown customizado (igual ao do Simulador principal) ───────────────────
 function CustomDropdown({ options, value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -198,27 +196,42 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
+const GRUPOS_ORDEM = [1036, 1037, 1038, 1039, 1040];
+
 export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
+  const [grupoNumero, setGrupoNumero]             = useState(1038);
   const [plano, setPlano]                         = useState('comReductor');
-  const lanceProprioPercent = 0;
-  const lanceEmbutidoPercent = GRUPO.lanceEmbutidoMax;
   const [showModalNome, setShowModalNome]         = useState(false);
   const [nomeClienteInput, setNomeClienteInput]   = useState('');
   const [linhasSim, setLinhasSim]                 = useState([]);
   const [showModalNomeSim, setShowModalNomeSim]   = useState(false);
   const [nomeClienteInputSim, setNomeClienteInputSim] = useState('');
 
-  const dadosPlano = GRUPO[plano];
+  const GRUPO            = GRUPOS_CONTEMPLACAO_IMOVEL[grupoNumero];
+  const temReductor      = Boolean(GRUPO.comReductor);
+  const lanceProprioPercent  = 0;
+  const lanceEmbutidoPercent = GRUPO.lanceEmbutidoMax;
+
+  const handleGrupoChange = (num) => {
+    const g = GRUPOS_CONTEMPLACAO_IMOVEL[num];
+    const novoPlan = g.comReductor ? 'comReductor' : 'semReductor';
+    setGrupoNumero(num);
+    setPlano(novoPlan);
+    setCreditoSelecionado(g[novoPlan].tabela[0].credito);
+  };
+
+  const dadosPlano = GRUPO[plano] ?? GRUPO.semReductor;
   const tabela     = dadosPlano.tabela;
   const [creditoSelecionado, setCreditoSelecionado] = useState(tabela[0].credito);
 
-  // Atualiza crédito selecionado se mudar de plano
+  // Atualiza crédito selecionado se mudar de plano ou grupo
   useEffect(() => {
-    const novaTabela = GRUPO[plano].tabela;
+    const resolvedPlan = GRUPO[plano] ? plano : 'semReductor';
+    const novaTabela = GRUPO[resolvedPlan].tabela;
     if (!novaTabela.find(r => r.credito === creditoSelecionado)) {
       setCreditoSelecionado(novaTabela[0].credito);
     }
-  }, [plano, creditoSelecionado]);
+  }, [grupoNumero, plano, creditoSelecionado]);
 
   const linhaSelecionada = tabela.find(r => r.credito === creditoSelecionado);
 
@@ -634,16 +647,27 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
       {/* Filtros */}
       <div className="sim-filtros">
         <div className="sim-filtro-grupo">
-          <span className="sim-filtro-label">Grupo 1038</span>
+          {GRUPOS_ORDEM.map(num => (
+            <button
+              key={num}
+              type="button"
+              className={`sim-pill ${grupoNumero === num ? 'active' : ''}`}
+              onClick={() => handleGrupoChange(num)}
+            >
+              Grupo {num}
+            </button>
+          ))}
         </div>
-        <PillsToggle
-          options={[
-            { value: 'comReductor', label: 'Com Redutor 50%' },
-            { value: 'semReductor', label: 'Sem Redutor'     },
-          ]}
-          value={plano}
-          onChange={setPlano}
-        />
+        {temReductor && (
+          <PillsToggle
+            options={[
+              { value: 'comReductor', label: 'Com Redutor 50%' },
+              { value: 'semReductor', label: 'Sem Redutor'     },
+            ]}
+            value={plano}
+            onChange={setPlano}
+          />
+        )}
       </div>
 
       {/* Layout duas colunas */}
@@ -670,7 +694,7 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Lance máx. contemp.</span>
-                <span className="sim-info-valor">59%</span>
+                <span className="sim-info-valor">{String(GRUPO.lanceTotalMax).replace('.', ',')}%</span>
               </div>
               <div className="sim-info-item">
                 <span className="sim-info-label">Prazo</span>
@@ -682,9 +706,13 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
               Reajuste anual → <strong>INPC</strong>
             </div>
 
-            <p className="sim-info-contemplacao">
-              Nos últimos 11 meses, a média de contemplações é de 7% — ou seja, do total de lances máximos ofertados, 7% foram contemplados, conforme a aba de métricas.
-            </p>
+            {GRUPO.observacao && (
+              <p className="sim-info-contemplacao">
+                {GRUPO.observacao.split('\n').map((linha, i) => (
+                  <React.Fragment key={i}>{linha}{i < GRUPO.observacao.split('\n').length - 1 && <br />}</React.Fragment>
+                ))}
+              </p>
+            )}
 
             <p className="sim-observacao">
               {OBSERVACOES_LEGAIS.imovel}
