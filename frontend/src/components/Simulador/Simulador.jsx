@@ -398,11 +398,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     const lanceTotal            = recPropriosReais + lanceEmb;
     const creditoContemplado    = Math.max(0, cartaTotal - lanceEmb);
     const saldoDevedor          = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
+    const totalFundoReserva     = cartaTotal * (l.fundoReserva || 0);
+    const totalTaxas            = saldoDevedor - cartaTotal;
     const prazoR = l.prazoRestante || 1;
     const parcelaPosContemplacao = prazoR > 1
       ? Math.max(0, (saldoDevedor - parcelaInicialSim - lanceTotal) / (prazoR - 1))
       : 0;
-    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, parcelaPosContemplacao };
+    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas, parcelaPosContemplacao };
   }), [linhasSim]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
@@ -413,11 +415,26 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     recProprios:           acc.recProprios           + (l.recPropriosReais || 0),
     creditoContemplado:    acc.creditoContemplado    + l.creditoContemplado,
     saldoDevedor:          acc.saldoDevedor          + (l.saldoDevedor || 0),
+    totalFundoReserva:     acc.totalFundoReserva     + (l.totalFundoReserva || 0),
+    totalTaxas:            acc.totalTaxas            + (l.totalTaxas || 0),
     parcelaPosContemplacao: acc.parcelaPosContemplacao + l.parcelaPosContemplacao,
-  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, saldoDevedor: 0, parcelaPosContemplacao: 0 }),
+  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, saldoDevedor: 0, totalFundoReserva: 0, totalTaxas: 0, parcelaPosContemplacao: 0 }),
   [linhasSimCalc]);
 
   const redutorDisplay = (plano === 'taxaReduzida' && modalidade === 'imovel') ? 0 : 50;
+
+  const simulacaoDoTotais = useMemo(() => ({
+    credito:               totaisSim.cartaTotal,
+    parcelaInicial:        totaisSim.parcelaInicialSim,
+    parcelaPosContemplacao: totaisSim.parcelaPosContemplacao,
+    creditoDisponivel:     totaisSim.creditoContemplado,
+    lanceProprio:          totaisSim.recProprios,
+    lanceEmbutido:         totaisSim.lanceEmb,
+    lanceTotal:            totaisSim.lanceTotal,
+    totalFundoReserva:     totaisSim.totalFundoReserva,
+    totalTaxas:            totaisSim.totalTaxas,
+    saldoDevedor:          totaisSim.saldoDevedor,
+  }), [totaisSim]);
 
   const gerarExcel = () => {
     gerarExcelSimulacao({
@@ -1210,7 +1227,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       {/* Resumo Full Width */}
       <div className="sim-painel sim-painel-resumo">
         <h3 className="sim-titulo-secao">Resumo da proposta</h3>
-        <ResumoProposta simulacao={simulacao} />
+        <ResumoProposta simulacao={linhasSim.length > 0 ? simulacaoDoTotais : simulacao} />
       </div>
 
       {/* Modal: nome do cliente */}
