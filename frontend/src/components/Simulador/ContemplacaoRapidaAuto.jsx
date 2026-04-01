@@ -447,23 +447,15 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     });
     y += techH + 5;
 
-    // ── Memória de cálculo: Parcela pós contemplação ──
-    const prazoRepresentativo = gruposPresentes.length === 1
-      ? (({ 2127: G2127, 2128: G2128 })[gruposPresentes[0]]?.prazoRestante || 1)
-      : G2127.prazoRestante;
-    const memLinhas = [
-      `(Saldo devedor inicial (${formatarMoeda(totais.saldoDevedor)})`,
-      `  \u2212 Parcela inicial (${formatarMoeda(totais.parcelaInicial)})`,
-      `  \u2212 Lance total (${formatarMoeda(totais.lanceTotal)}))`,
-      `  \u00f7 (${prazoRepresentativo} \u2212 1 m\u00eas)`,
-      `= ${formatarMoeda(totais.parcelaPosContemplacao)}`,
-    ];
-    const memH = 8 + memLinhas.length * 4.5;
+    // ── Nota: Parcela pós contemplação ──
+    const notaParcelaPosTexto = 'O cálculo da parcela pós contemplação foi feito considerando o valor total de lance pago, subtraído 1 mês, que corresponde à parcela inicial e dividido pelo prazo restante.';
+    const notaParcelaPosLinhas = doc.splitTextToSize(notaParcelaPosTexto, W - 2 * M - 14);
+    const memH = 8 + notaParcelaPosLinhas.length * 4.5;
     doc.setFillColor(...gold); doc.rect(M, y, 3, memH, 'F');
     doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
     doc.text('Parcela pós contemplação', M + 7, y + 6);
     doc.setFontSize(8); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
-    memLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
+    notaParcelaPosLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
     y += memH + 5;
 
     // ── Bloco prazo + mês de reajuste por grupo ──

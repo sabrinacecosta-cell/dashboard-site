@@ -456,21 +456,15 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     });
     y += techH + 5;
 
-    // ── Memória de cálculo: Parcela pós contemplação ──
-    const prazoSimPDF = GRUPO.prazoRestante || GRUPO.prazo || 1;
-    const memLinhasSim = [
-      `(Saldo devedor inicial (${formatarMoeda(totaisSim.saldoDevedor)})`,
-      `  \u2212 Parcela inicial (${formatarMoeda(totaisSim.parcelaInicialSim)})`,
-      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)}))`,
-      `  \u00f7 (${prazoSimPDF} \u2212 1 m\u00eas)`,
-      `= ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
-    ];
-    const memHSim = 8 + memLinhasSim.length * 4.5;
+    // ── Nota: Parcela pós contemplação ──
+    const notaParcelaPosTexto = 'O cálculo da parcela pós contemplação foi feito considerando o valor total de lance pago, subtraído 1 mês, que corresponde à parcela inicial e dividido pelo prazo restante.';
+    const notaParcelaPosLinhas = doc.splitTextToSize(notaParcelaPosTexto, W - 2 * M - 14);
+    const memHSim = 8 + notaParcelaPosLinhas.length * 4.5;
     doc.setFillColor(...gold); doc.rect(M, y, 3, memHSim, 'F');
     doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
     doc.text('Parcela pós contemplação', M + 7, y + 6);
     doc.setFontSize(8); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
-    memLinhasSim.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
+    notaParcelaPosLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
     y += memHSim + 5;
 
     const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
@@ -639,21 +633,15 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     });
     y += techH + 5;
 
-    // ── Memória de cálculo: Parcela pós contemplação ──
-    const prazoPDF = GRUPO.prazoRestante || GRUPO.prazo || 1;
-    const memLinhasPDF = [
-      `(Saldo devedor inicial (${formatarMoeda(simulacao.saldoDevedor)})`,
-      `  \u2212 Parcela inicial (${formatarMoeda(parcelaReduzida)})`,
-      `  \u2212 Lance total (${formatarMoeda(simulacao.lanceTotal)}))`,
-      `  \u00f7 (${prazoPDF} \u2212 1 m\u00eas)`,
-      `= ${formatarMoeda(simulacao.parcelaPosContemplacao)}`,
-    ];
-    const memHPDF = 8 + memLinhasPDF.length * 4.5;
+    // ── Nota: Parcela pós contemplação ──
+    const notaParcelaPosTexto2 = 'O cálculo da parcela pós contemplação foi feito considerando o valor total de lance pago, subtraído 1 mês, que corresponde à parcela inicial e dividido pelo prazo restante.';
+    const notaParcelaPosLinhas2 = doc.splitTextToSize(notaParcelaPosTexto2, W - 2 * M - 14);
+    const memHPDF = 8 + notaParcelaPosLinhas2.length * 4.5;
     doc.setFillColor(...gold); doc.rect(M, y, 3, memHPDF, 'F');
     doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
     doc.text('Parcela pós contemplação', M + 7, y + 6);
     doc.setFontSize(8); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
-    memLinhasPDF.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
+    notaParcelaPosLinhas2.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
     y += memHPDF + 5;
 
     doc.setFillColor(...gold); doc.rect(M, y, 3, 13, 'F');
