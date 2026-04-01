@@ -169,6 +169,7 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
         redutor:             tipoParcela === 'reduzida' ? 50 : 0,
         taxaAdm:             grupo.taxaAdm,
         fundoReserva:        grupo.fundoReserva,
+        prazoRestante:       grupo.prazoRestante,
         qtde,
         recProprios:         0,
       }];
@@ -187,7 +188,10 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     const recPropriosReais      = cartaTotal * ((l.recProprios || 0) / 100);
     const lanceTotal            = recPropriosReais + lanceEmb;
     const saldoDevedor          = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
-    const parcelaPosContemplacao = Math.max(0, saldoDevedor - parcelaInicial - lanceTotal);
+    const prazoR = l.prazoRestante || 1;
+    const parcelaPosContemplacao = prazoR > 1
+      ? Math.max(0, (saldoDevedor - parcelaInicial - lanceTotal) / (prazoR - 1))
+      : 0;
     return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, parcelaPosContemplacao };
   }), [linhas]);
 
@@ -198,8 +202,9 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     lanceTotal:        acc.lanceTotal        + l.lanceTotal,
     recProprios:       acc.recProprios       + (l.recPropriosReais || 0),
     creditoContemplado:    acc.creditoContemplado    + l.creditoContemplado,
+    saldoDevedor:          acc.saldoDevedor          + (l.saldoDevedor || 0),
     parcelaPosContemplacao: acc.parcelaPosContemplacao + l.parcelaPosContemplacao,
-  }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, parcelaPosContemplacao: 0 }),
+  }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, saldoDevedor: 0, parcelaPosContemplacao: 0 }),
   [linhasCalculadas]);
 
   const gruposPresentes = useMemo(
@@ -443,12 +448,15 @@ export function EtapaContemplacaoRapidaAuto({ onVoltar }) {
     y += techH + 5;
 
     // ── Memória de cálculo: Parcela pós contemplação ──
-    const saldoDevedorPDF = totais.parcelaPosContemplacao + totais.parcelaInicial + totais.lanceTotal;
+    const prazoRepresentativo = gruposPresentes.length === 1
+      ? (({ 2127: G2127, 2128: G2128 })[gruposPresentes[0]]?.prazoRestante || 1)
+      : G2127.prazoRestante;
     const memLinhas = [
-      `= Saldo devedor inicial (${formatarMoeda(saldoDevedorPDF)})`,
+      `(Saldo devedor inicial (${formatarMoeda(totais.saldoDevedor)})`,
       `  \u2212 Parcela inicial (${formatarMoeda(totais.parcelaInicial)})`,
-      `  \u2212 Lance total (${formatarMoeda(totais.lanceTotal)})`,
-      `  = ${formatarMoeda(totais.parcelaPosContemplacao)}`,
+      `  \u2212 Lance total (${formatarMoeda(totais.lanceTotal)}))`,
+      `  \u00f7 (${prazoRepresentativo} \u2212 1 m\u00eas)`,
+      `= ${formatarMoeda(totais.parcelaPosContemplacao)}`,
     ];
     const memH = 8 + memLinhas.length * 4.5;
     doc.setFillColor(...gold); doc.rect(M, y, 3, memH, 'F');

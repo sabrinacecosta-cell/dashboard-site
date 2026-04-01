@@ -346,7 +346,8 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       taxaAdm: efetivaTaxaAdm,
       fundoReserva: dadosPlano.fundoReserva,
       parcelaInicial,
-      parcelaIntegral: linhaSelecionada?.parcelaIntegral || 0
+      parcelaIntegral: linhaSelecionada?.parcelaIntegral || 0,
+      prazo: grupo.prazoRestante || grupo.prazo,
     });
   }, [linhaSelecionada, lanceProprioPercent, lanceEmbutidoPercent, dadosPlano, parcelaInicial, efetivaTaxaAdm]);
 
@@ -378,6 +379,7 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
         lanceEmbutidoMax:    lanceEmbutidoMax,
         taxaAdm:             row.taxaAdm ?? dadosPlano.taxaAdm,
         fundoReserva:        dadosPlano.fundoReserva,
+        prazoRestante:       grupo.prazoRestante || grupo.prazo,
         qtde,
         recProprios:         0,
       }];
@@ -396,7 +398,10 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     const lanceTotal            = recPropriosReais + lanceEmb;
     const creditoContemplado    = Math.max(0, cartaTotal - lanceEmb);
     const saldoDevedor          = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
-    const parcelaPosContemplacao = Math.max(0, saldoDevedor - parcelaInicialSim - lanceTotal);
+    const prazoR = l.prazoRestante || 1;
+    const parcelaPosContemplacao = prazoR > 1
+      ? Math.max(0, (saldoDevedor - parcelaInicialSim - lanceTotal) / (prazoR - 1))
+      : 0;
     return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, parcelaPosContemplacao };
   }), [linhasSim]);
 
@@ -407,8 +412,9 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     lanceTotal:         acc.lanceTotal         + l.lanceTotal,
     recProprios:           acc.recProprios           + (l.recPropriosReais || 0),
     creditoContemplado:    acc.creditoContemplado    + l.creditoContemplado,
+    saldoDevedor:          acc.saldoDevedor          + (l.saldoDevedor || 0),
     parcelaPosContemplacao: acc.parcelaPosContemplacao + l.parcelaPosContemplacao,
-  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, parcelaPosContemplacao: 0 }),
+  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, saldoDevedor: 0, parcelaPosContemplacao: 0 }),
   [linhasSimCalc]);
 
   const redutorDisplay = (plano === 'taxaReduzida' && modalidade === 'imovel') ? 0 : 50;
@@ -614,12 +620,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += techH + 5;
 
     // Memória de cálculo: Parcela pós contemplação
-    const saldoDevedorSimPDF = totaisSim.parcelaPosContemplacao + totaisSim.parcelaInicialSim + totaisSim.lanceTotal;
+    const prazoSimPDF2 = grupo.prazoRestante || grupo.prazo || 1;
     const memLinhasSim2 = [
-      `= Saldo devedor inicial (${formatarMoeda(saldoDevedorSimPDF)})`,
+      `(Saldo devedor inicial (${formatarMoeda(totaisSim.saldoDevedor)})`,
       `  \u2212 Parcela inicial (${formatarMoeda(totaisSim.parcelaInicialSim)})`,
-      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)})`,
-      `  = ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
+      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)}))`,
+      `  \u00f7 (${prazoSimPDF2} \u2212 1 m\u00eas)`,
+      `= ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
     ];
     const memHSim2 = 8 + memLinhasSim2.length * 4.5;
     doc.setFillColor(...gold);
@@ -911,11 +918,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += techH + 5;
 
     // ─── MEMÓRIA DE CÁLCULO: Parcela pós contemplação ───
+    const prazoPDF = grupo.prazoRestante || grupo.prazo || 1;
     const memLinhasPDF = [
-      `= Saldo devedor inicial (${formatarMoeda(simulacao.saldoDevedor)})`,
+      `(Saldo devedor inicial (${formatarMoeda(simulacao.saldoDevedor)})`,
       `  \u2212 Parcela inicial (${formatarMoeda(parcelaReduzida)})`,
-      `  \u2212 Lance total (${formatarMoeda(simulacao.lanceTotal)})`,
-      `  = ${formatarMoeda(simulacao.parcelaPosContemplacao)}`,
+      `  \u2212 Lance total (${formatarMoeda(simulacao.lanceTotal)}))`,
+      `  \u00f7 (${prazoPDF} \u2212 1 m\u00eas)`,
+      `= ${formatarMoeda(simulacao.parcelaPosContemplacao)}`,
     ];
     const memHPDF = 8 + memLinhasPDF.length * 4.5;
     doc.setFillColor(...gold);

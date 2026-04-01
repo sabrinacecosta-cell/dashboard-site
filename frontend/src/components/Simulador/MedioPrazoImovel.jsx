@@ -169,6 +169,7 @@ export function EtapaMedioPrazo({ onVoltar }) {
         lanceEmbutidoMax:     30,
         taxaAdm:              GRUPOS_MEDIO_PRAZO[grupoNum].taxaAdm,
         fundoReserva:         GRUPOS_MEDIO_PRAZO[grupoNum].fundoReserva,
+        prazoRestante:        GRUPOS_MEDIO_PRAZO[grupoNum].prazoRestante || GRUPOS_MEDIO_PRAZO[grupoNum].prazoTotal,
         recProprios:          0,
         qtde,
       }];
@@ -187,7 +188,10 @@ export function EtapaMedioPrazo({ onVoltar }) {
     const lanceTotal            = recPropriosReais + lanceEmb;
     const creditoContemplado    = Math.max(0, cartaTotal - lanceEmb);
     const saldoDevedor          = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
-    const parcelaPosContemplacao = Math.max(0, saldoDevedor - parcelaInicial - lanceTotal);
+    const prazoR = l.prazoRestante || 1;
+    const parcelaPosContemplacao = prazoR > 1
+      ? Math.max(0, (saldoDevedor - parcelaInicial - lanceTotal) / (prazoR - 1))
+      : 0;
     return { ...l, cartaTotal, parcelaInicial, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, parcelaPosContemplacao };
   }), [linhasSim]);
 
@@ -198,8 +202,9 @@ export function EtapaMedioPrazo({ onVoltar }) {
     lanceTotal:         acc.lanceTotal         + l.lanceTotal,
     recProprios:           acc.recProprios           + (l.recPropriosReais || 0),
     creditoContemplado:    acc.creditoContemplado    + l.creditoContemplado,
+    saldoDevedor:          acc.saldoDevedor          + (l.saldoDevedor || 0),
     parcelaPosContemplacao: acc.parcelaPosContemplacao + l.parcelaPosContemplacao,
-  }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, parcelaPosContemplacao: 0 }), [linhasSimCalc]);
+  }), { cartaTotal: 0, parcelaInicial: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, saldoDevedor: 0, parcelaPosContemplacao: 0 }), [linhasSimCalc]);
 
   const redutorDisplay = plano === 'reduzida' ? 50 : 0;
 
@@ -350,12 +355,13 @@ export function EtapaMedioPrazo({ onVoltar }) {
     y += techH + 5;
 
     // ── Memória de cálculo: Parcela pós contemplação ──
-    const saldoDevedorMP = totaisSim.parcelaPosContemplacao + totaisSim.parcelaInicial + totaisSim.lanceTotal;
+    const prazoMP = grupo.prazoRestante || grupo.prazoTotal || 1;
     const memLinhasMP = [
-      `= Saldo devedor inicial (${formatarMoeda(saldoDevedorMP)})`,
+      `(Saldo devedor inicial (${formatarMoeda(totaisSim.saldoDevedor)})`,
       `  \u2212 Parcela inicial (${formatarMoeda(totaisSim.parcelaInicial)})`,
-      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)})`,
-      `  = ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
+      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)}))`,
+      `  \u00f7 (${prazoMP} \u2212 1 m\u00eas)`,
+      `= ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
     ];
     const memHMP = 8 + memLinhasMP.length * 4.5;
     doc.setFillColor(...gold); doc.rect(M, y, 3, memHMP, 'F');

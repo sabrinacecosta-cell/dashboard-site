@@ -94,12 +94,16 @@ export function calcularSimulacao({
   taxaAdm,
   fundoReserva,
   parcelaInicial,
-  parcelaIntegral
+  parcelaIntegral,
+  prazo
 }) {
   const lances = calcularLances(credito, lanceProprioPercent, lanceEmbutidoPercent);
   const creditoDisponivel = calcularCreditoDisponivel(credito, lances.lanceEmbutido);
   const custos = calcularCustos(credito, taxaAdm, fundoReserva);
-  const parcelaPosContemplacao = Math.max(0, custos.saldoDevedor - parcelaInicial - lances.lanceTotal);
+  const prazoRestante = prazo || 1;
+  const parcelaPosContemplacao = prazoRestante > 1
+    ? Math.max(0, (custos.saldoDevedor - parcelaInicial - lances.lanceTotal) / (prazoRestante - 1))
+    : 0;
 
   return {
     credito,
