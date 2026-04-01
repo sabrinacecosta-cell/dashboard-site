@@ -7,8 +7,8 @@ export async function gerarExcelSimulacao({ rows, totais, nomeArquivo }) {
 
   // Formato contábil BR: "R$ 304.871,20" | zero → "R$ -"
   const moedaFmt = '"R$ "#,##0.00;"R$ "#,##0.00;"R$ -"';
-  // Colunas monetárias: C(3), D(4), F(6), H(8), I(9), J(10)
-  const moedaCols = new Set([3, 4, 6, 8, 9, 10]);
+  // Colunas monetárias: C(3), D(4), E(5), G(7), I(9), J(10), K(11)
+  const moedaCols = new Set([3, 4, 5, 7, 9, 10, 11]);
 
   const estiloCabTot = (cell, colNum) => {
     cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
@@ -28,6 +28,7 @@ export async function gerarExcelSimulacao({ rows, totais, nomeArquivo }) {
     'Qtde Cotas',
     'Carta Total (R$)',
     'Parcela Inicial (R$)',
+    'Parcela pós contemplação (R$)',
     'Redutor',
     'Rec. Próprios (R$)',
     'Lance Emb. (%)',
@@ -44,6 +45,7 @@ export async function gerarExcelSimulacao({ rows, totais, nomeArquivo }) {
       r.qtde,
       r.cartaTotal,
       r.parcelaInicial,
+      r.parcelaPosContemplacao ?? 0,
       r.redutor,          // string "50%" ou "0%"
       r.recProprios,
       r.lanceEmbPerc,     // número inteiro (ex: 30)
@@ -59,6 +61,7 @@ export async function gerarExcelSimulacao({ rows, totais, nomeArquivo }) {
     '',
     totais.cartaTotal,
     totais.parcelaInicial,
+    totais.parcelaPosContemplacao ?? 0,
     '',
     totais.recProprios,
     '',

@@ -14,6 +14,12 @@ export function ResumoProposta({ simulacao }) {
           <span className="sim-resumo-label">Parcela inicial</span>
           <span className="sim-resumo-valor">{formatarMoeda(simulacao.parcelaInicial)}</span>
         </div>
+        {simulacao.parcelaPosContemplacao !== undefined && (
+          <div className="sim-resumo-linha">
+            <span className="sim-resumo-label">Parcela pós contemplação</span>
+            <span className="sim-resumo-valor">{formatarMoeda(simulacao.parcelaPosContemplacao)}</span>
+          </div>
+        )}
         <div className="sim-resumo-linha">
           <span className="sim-resumo-label">Crédito disponível pós contemplação</span>
           <span className="sim-resumo-valor">{formatarMoedaInteiro(simulacao.creditoDisponivel)}</span>

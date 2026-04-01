@@ -146,7 +146,8 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
   const cartaTotal         = linha.credito * linha.qtde;
   const parcelaInicial     = linha.parcela  * linha.qtde;
   const lanceEmb           = cartaTotal * (linha.lanceEmbutidoPercent / 100);
-  const lanceTotal         = (linha.recProprios || 0) + lanceEmb;
+  const recPropriosReais   = cartaTotal * ((linha.recProprios || 0) / 100);
+  const lanceTotal         = recPropriosReais + lanceEmb;
   const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
   return (
@@ -165,13 +166,17 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate, redutorDisplay }) {
       <td>{formatarMoeda(parcelaInicial)}</td>
       <td>{redutorDisplay === 50 ? '50%' : '0%'}</td>
       <td>
-        <input
-          type="number"
-          className="cr-input-celula"
-          min={0}
-          value={linha.recProprios || 0}
-          onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
-        />
+        <div className="cr-lance-emb-cell">
+          <input
+            type="number"
+            className="cr-input-celula cr-input-lance-emb"
+            min={0}
+            max={100}
+            value={linha.recProprios || 0}
+            onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
+          />
+          <span className="cr-lance-emb-label">% · {formatarMoeda(recPropriosReais)}</span>
+        </div>
       </td>
       <td>
         <input
@@ -278,6 +283,7 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
         lanceEmbutidoPercent,
         lanceEmbutidoMax:    GRUPO.lanceEmbutidoMax,
         taxaAdm:             dadosPlano.taxaAdm,
+        fundoReserva:        dadosPlano.fundoReserva,
         qtde,
         recProprios:         0,
       }];
@@ -291,10 +297,13 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const cartaTotal         = l.credito * l.qtde;
     const parcelaInicialSim  = l.parcela  * l.qtde;
-    const lanceEmb           = cartaTotal * (l.lanceEmbutidoPercent / 100);
-    const lanceTotal         = (l.recProprios || 0) + lanceEmb;
-    const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
-    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado };
+    const lanceEmb              = cartaTotal * (l.lanceEmbutidoPercent / 100);
+    const recPropriosReais      = cartaTotal * ((l.recProprios || 0) / 100);
+    const lanceTotal            = recPropriosReais + lanceEmb;
+    const creditoContemplado    = Math.max(0, cartaTotal - lanceEmb);
+    const saldoDevedor          = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
+    const parcelaPosContemplacao = Math.max(0, saldoDevedor - parcelaInicialSim - lanceTotal);
+    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado, recPropriosReais, saldoDevedor, parcelaPosContemplacao };
   }), [linhasSim]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
@@ -302,9 +311,10 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     parcelaInicialSim:  acc.parcelaInicialSim  + l.parcelaInicialSim,
     lanceEmb:           acc.lanceEmb           + l.lanceEmb,
     lanceTotal:         acc.lanceTotal         + l.lanceTotal,
-    recProprios:        acc.recProprios        + (l.recProprios || 0),
-    creditoContemplado: acc.creditoContemplado + l.creditoContemplado,
-  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0 }),
+    recProprios:           acc.recProprios           + (l.recPropriosReais || 0),
+    creditoContemplado:    acc.creditoContemplado    + l.creditoContemplado,
+    parcelaPosContemplacao: acc.parcelaPosContemplacao + l.parcelaPosContemplacao,
+  }), { cartaTotal: 0, parcelaInicialSim: 0, lanceEmb: 0, lanceTotal: 0, recProprios: 0, creditoContemplado: 0, parcelaPosContemplacao: 0 }),
   [linhasSimCalc]);
 
   const redutorDisplay = plano === 'comReductor' ? 50 : 0;
@@ -313,24 +323,26 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     const redutor = redutorDisplay === 50 ? '50%' : '0%';
     gerarExcelSimulacao({
       rows: linhasSimCalc.map(l => ({
-        grupo:             l.grupo,
-        qtde:              l.qtde,
-        cartaTotal:        l.cartaTotal,
-        parcelaInicial:    l.parcelaInicialSim,
-        redutor:           redutor,
-        recProprios:       l.recProprios || 0,
-        lanceEmbPerc:      l.lanceEmbutidoPercent,
-        lanceEmb:          l.lanceEmb,
-        lanceTotal:        l.lanceTotal,
-        creditoContemplado: l.creditoContemplado,
+        grupo:                  l.grupo,
+        qtde:                   l.qtde,
+        cartaTotal:             l.cartaTotal,
+        parcelaInicial:         l.parcelaInicialSim,
+        parcelaPosContemplacao: l.parcelaPosContemplacao,
+        redutor:                redutor,
+        recProprios:            l.recPropriosReais || 0,
+        lanceEmbPerc:           l.lanceEmbutidoPercent,
+        lanceEmb:               l.lanceEmb,
+        lanceTotal:             l.lanceTotal,
+        creditoContemplado:     l.creditoContemplado,
       })),
       totais: {
-        cartaTotal:        totaisSim.cartaTotal,
-        parcelaInicial:    totaisSim.parcelaInicialSim,
-        recProprios:       totaisSim.recProprios,
-        lanceEmb:          totaisSim.lanceEmb,
-        lanceTotal:        totaisSim.lanceTotal,
-        creditoContemplado: totaisSim.creditoContemplado,
+        cartaTotal:             totaisSim.cartaTotal,
+        parcelaInicial:         totaisSim.parcelaInicialSim,
+        parcelaPosContemplacao: totaisSim.parcelaPosContemplacao,
+        recProprios:            totaisSim.recProprios,
+        lanceEmb:               totaisSim.lanceEmb,
+        lanceTotal:             totaisSim.lanceTotal,
+        creditoContemplado:     totaisSim.creditoContemplado,
       },
       nomeArquivo: `simulacao-xp-imovel-grupo${GRUPO.grupo}.xlsx`,
     });
@@ -385,7 +397,7 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
       y += 18;
     }
 
-    const cardW = (W - 2 * M - 8) / 2, cardH = 44;
+    const cardW = (W - 2 * M - 8) / 2, cardH = 56;
     doc.setFillColor(...darkCard); doc.setDrawColor(...gold); doc.setLineWidth(0.5);
     doc.roundedRect(M, y, cardW, cardH, 4, 4, 'FD');
     doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
@@ -414,6 +426,10 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     doc.text('PARCELA INICIAL', card2X + 7, y + 26);
     doc.setFontSize(11); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
     doc.text(formatarMoeda(totaisSim.parcelaInicialSim), card2X + 7, y + 34);
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('PARCELA PÓS CONTEMPLAÇÃO', card2X + 7, y + 42);
+    doc.setFontSize(10); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(totaisSim.parcelaPosContemplacao), card2X + 7, y + 50);
     y += cardH + 8;
 
     const techItems = [
@@ -433,6 +449,22 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
       doc.text(cell.value, cx, y + 14);
     });
     y += techH + 5;
+
+    // ── Memória de cálculo: Parcela pós contemplação ──
+    const saldoDevedorPDFSim = totaisSim.parcelaPosContemplacao + totaisSim.parcelaInicialSim + totaisSim.lanceTotal;
+    const memLinhasSim = [
+      `= Saldo devedor inicial (${formatarMoeda(saldoDevedorPDFSim)})`,
+      `  \u2212 Parcela inicial (${formatarMoeda(totaisSim.parcelaInicialSim)})`,
+      `  \u2212 Lance total (${formatarMoeda(totaisSim.lanceTotal)})`,
+      `  = ${formatarMoeda(totaisSim.parcelaPosContemplacao)}`,
+    ];
+    const memHSim = 8 + memLinhasSim.length * 4.5;
+    doc.setFillColor(...gold); doc.rect(M, y, 3, memHSim, 'F');
+    doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
+    doc.text('Parcela pós contemplação', M + 7, y + 6);
+    doc.setFontSize(8); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
+    memLinhasSim.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
+    y += memHSim + 5;
 
     const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
     doc.setFontSize(7);
@@ -532,7 +564,7 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
       y += 22;
     }
 
-    const cardW = (W - 2 * M - 8) / 2, cardH = 44;
+    const cardW = (W - 2 * M - 8) / 2, cardH = 56;
     const parcelaReduzida = plano === 'comReductor'
       ? (linhaSelecionada?.redutor50 || parcelaInicial)
       : parcelaInicial;
@@ -565,6 +597,10 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
     doc.text('PARCELA INICIAL', card2X + 7, y + 26);
     doc.setFontSize(11); doc.setTextColor(...white); doc.setFont('helvetica', 'bold');
     doc.text(formatarMoeda(parcelaReduzida), card2X + 7, y + 34);
+    doc.setFontSize(7); doc.setTextColor(...grey); doc.setFont('helvetica', 'normal');
+    doc.text('PARCELA PÓS CONTEMPLAÇÃO', card2X + 7, y + 42);
+    doc.setFontSize(10); doc.setTextColor(...gold); doc.setFont('helvetica', 'bold');
+    doc.text(formatarMoeda(simulacao.parcelaPosContemplacao), card2X + 7, y + 50);
     y += cardH + 7;
 
     const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
@@ -595,6 +631,21 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
       doc.text(cell.value, cx, y + 14);
     });
     y += techH + 5;
+
+    // ── Memória de cálculo: Parcela pós contemplação ──
+    const memLinhasPDF = [
+      `= Saldo devedor inicial (${formatarMoeda(simulacao.saldoDevedor)})`,
+      `  \u2212 Parcela inicial (${formatarMoeda(parcelaReduzida)})`,
+      `  \u2212 Lance total (${formatarMoeda(simulacao.lanceTotal)})`,
+      `  = ${formatarMoeda(simulacao.parcelaPosContemplacao)}`,
+    ];
+    const memHPDF = 8 + memLinhasPDF.length * 4.5;
+    doc.setFillColor(...gold); doc.rect(M, y, 3, memHPDF, 'F');
+    doc.setFontSize(8); doc.setTextColor(...grey); doc.setFont('helvetica', 'bold');
+    doc.text('Parcela pós contemplação', M + 7, y + 6);
+    doc.setFontSize(8); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
+    memLinhasPDF.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
+    y += memHPDF + 5;
 
     doc.setFillColor(...gold); doc.rect(M, y, 3, 13, 'F');
     doc.setFontSize(8.5); doc.setTextColor(...lightGrey); doc.setFont('helvetica', 'normal');
@@ -750,7 +801,7 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
                   <th>Carta Total</th>
                   <th>Parcela Inicial</th>
                   <th>Redutor</th>
-                  <th>Rec. Próprios (R$)</th>
+                  <th>Rec. Próprios (%)</th>
                   <th>Lance Emb.</th>
                   <th>Lance Total</th>
                   <th>Crédito Contemplado</th>
@@ -797,6 +848,10 @@ export function EtapaContemplacaoRapidaImovel({ onVoltar }) {
             <div className="cr-resumo-item">
               <span className="cr-resumo-label">Parcela inicial total</span>
               <span className="cr-resumo-valor cr-ouro">{formatarMoeda(totaisSim.parcelaInicialSim)}</span>
+            </div>
+            <div className="cr-resumo-item">
+              <span className="cr-resumo-label">Parcela pós contemplação</span>
+              <span className="cr-resumo-valor">{formatarMoeda(totaisSim.parcelaPosContemplacao)}</span>
             </div>
             <div className="cr-resumo-item">
               <span className="cr-resumo-label">Lance total</span>
