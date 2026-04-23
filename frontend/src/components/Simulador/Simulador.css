@@ -1106,3 +1106,54 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Toggle — incluir parcela pós no PDF */
+.sim-toggle-parcela-pos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sim-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--borda);
+  transition: background 0.2s;
+  flex-shrink: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.sim-toggle-switch:focus-visible {
+  box-shadow: 0 0 0 2px var(--cor-destaque);
+}
+
+.sim-toggle-switch.active {
+  background: var(--cor-destaque);
+}
+
+.sim-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.sim-toggle-switch.active .sim-toggle-knob {
+  transform: translateX(16px);
+}
+
+.sim-toggle-label {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
