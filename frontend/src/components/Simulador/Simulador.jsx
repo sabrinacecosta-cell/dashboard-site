@@ -614,13 +614,14 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += cardH + 8;
 
     // Informações técnicas
+    const hasPrazoRestanteSim = !!grupo.prazoRestante && grupo.prazoRestante !== grupo.prazo;
     const techItems = [
-      { label: 'TAXA ADM',       value: formatarPercentual(dadosPlano.taxaAdm) },
-      { label: 'FUNDO RESERVA',  value: formatarPercentual(dadosPlano.fundoReserva) },
-      { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%` },
-      { label: 'PRAZO',          value: `${grupo.prazo} meses` },
+      { label: 'TAXA ADM',                                    value: formatarPercentual(dadosPlano.taxaAdm) },
+      { label: 'FUNDO RESERVA',                               value: formatarPercentual(dadosPlano.fundoReserva) },
+      { label: 'LANCE EMBUTIDO',                              value: `${lanceEmbutidoPercent}%` },
+      { label: hasPrazoRestanteSim ? 'PRAZO RESTANTE' : 'PRAZO', value: `${hasPrazoRestanteSim ? grupo.prazoRestante : grupo.prazo} meses` },
     ];
-    const techH = 18;
+    const techH = hasPrazoRestanteSim ? 24 : 18;
     const techColW = (W - 2 * M) / techItems.length;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
@@ -637,6 +638,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       doc.setFont('helvetica', 'bold');
       doc.text(cell.value, cx, y + 14);
     });
+    if (hasPrazoRestanteSim) {
+      const cx = M + (techItems.length - 1) * techColW + 7;
+      doc.setFontSize(6.5);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Prazo total: ${grupo.prazo} meses`, cx, y + 20);
+    }
     y += techH + 5;
 
     // Nota: Parcela pós contemplação
@@ -907,15 +915,16 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
     y += notaBarH + 6;
 
     // ─── INFORMAÇÕES TÉCNICAS DO GRUPO (linha única horizontal) ───
+    const hasPrazoRestante = !!grupo.prazoRestante && grupo.prazoRestante !== grupo.prazo;
     const techCells = [
-      { label: 'TAXA ADM',       value: formatarPercentual(efetivaTaxaAdm)           },
-      { label: 'TAXA/MÊS',       value: formatarPercentual(dadosPlano.taxaMes)      },
-      { label: 'FUNDO RESERVA',  value: formatarPercentual(dadosPlano.fundoReserva) },
-      { label: 'LANCE EMBUTIDO', value: `${lanceEmbutidoPercent}%`                 },
-      { label: 'LANCE FIXO',     value: `${lanceProprioPercent}%`                  },
-      { label: 'PRAZO',          value: `${grupo.prazo} meses`                     },
+      { label: 'TAXA ADM',                                       value: formatarPercentual(efetivaTaxaAdm)           },
+      { label: 'TAXA/MÊS',                                       value: formatarPercentual(dadosPlano.taxaMes)      },
+      { label: 'FUNDO RESERVA',                                  value: formatarPercentual(dadosPlano.fundoReserva) },
+      { label: 'LANCE EMBUTIDO',                                 value: `${lanceEmbutidoPercent}%`                 },
+      { label: 'LANCE FIXO',                                     value: `${lanceProprioPercent}%`                  },
+      { label: hasPrazoRestante ? 'PRAZO RESTANTE' : 'PRAZO',   value: `${hasPrazoRestante ? grupo.prazoRestante : grupo.prazo} meses` },
     ];
-    const techH = 18;
+    const techH = hasPrazoRestante ? 24 : 18;
     const techColW = (W - 2 * M) / techCells.length;
     doc.setFillColor(...darkCard);
     doc.setDrawColor(...darkBorder);
@@ -933,6 +942,13 @@ function EtapaSimulacao({ modalidade, onVoltar }) {
       doc.setFont('helvetica', 'bold');
       doc.text(cell.value, cx, cy + 6);
     });
+    if (hasPrazoRestante) {
+      const cx = M + (techCells.length - 1) * techColW + 7;
+      doc.setFontSize(6.5);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Prazo total: ${grupo.prazo} meses`, cx, y + 20);
+    }
     y += techH + 5;
 
     // ─── NOTA: Parcela pós contemplação ───
