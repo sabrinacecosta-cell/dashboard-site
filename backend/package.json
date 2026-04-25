@@ -8,6 +8,7 @@
     "start": "node src/server.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
+    "seed:simulador": "node scripts/seed_simulador.js",
     "import": "node scripts/importar-excel.js"
   },
   "dependencies": {

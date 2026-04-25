@@ -85,6 +85,42 @@ async function migrate() {
   }
   console.log('Novas colunas em "producao" OK!');
 
+  // Tabelas do Simulador
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS simulador_grupos (
+      id SERIAL PRIMARY KEY,
+      numero_grupo INTEGER NOT NULL,
+      modalidade TEXT NOT NULL,
+      taxa_adm DECIMAL(5,4) NOT NULL,
+      fundo_reserva DECIMAL(5,4) NOT NULL,
+      reajuste TEXT NOT NULL,
+      mes_reajuste TEXT NOT NULL,
+      lance_embutido_max DECIMAL(5,2) NOT NULL,
+      prazo_restante INTEGER NOT NULL,
+      prazo_total INTEGER NOT NULL,
+      media_contemplacao DECIMAL(10,6),
+      sem_media_contemplacao BOOLEAN DEFAULT FALSE
+    )
+  `);
+  console.log('Tabela "simulador_grupos" OK!');
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS simulador_cotas (
+      id SERIAL PRIMARY KEY,
+      numero_grupo INTEGER NOT NULL,
+      modalidade TEXT NOT NULL,
+      bem_referencia DECIMAL(15,2) NOT NULL,
+      cota INTEGER NOT NULL,
+      parcela DECIMAL(15,2) NOT NULL,
+      redutor_parcela DECIMAL(5,2) NOT NULL DEFAULT 0
+    )
+  `);
+  console.log('Tabela "simulador_cotas" OK!');
+
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
+  console.log('Índices simulador OK!');
+
   // Índices para busca por assessor
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);

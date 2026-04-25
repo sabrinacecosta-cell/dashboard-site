@@ -1157,3 +1157,332 @@
   font-size: 13px;
   color: var(--texto-secundario);
 }
+
+/* ── Novo Simulador: Toggle Modalidade ── */
+.sim-toggle-modalidade {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.sim-toggle-btn {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--texto-secundario);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.sim-toggle-btn.active,
+.sim-toggle-btn:hover {
+  border-color: var(--cor-destaque);
+  color: var(--cor-destaque);
+  background: var(--bg-card);
+}
+
+/* ── Grid de Grupos ── */
+.sim-grupos-grid-area {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sim-grupos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.sim-card-grupo {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 18px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s, background 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-card-grupo:hover {
+  border-color: var(--cor-destaque);
+  background: var(--bg-card);
+}
+
+.sim-card-grupo-numero {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--texto-principal);
+}
+
+.sim-card-grupo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+
+.sim-card-grupo-media {
+  font-size: 12px;
+  color: var(--cor-destaque);
+  font-weight: 500;
+}
+
+.sim-card-grupo-media.sem-media {
+  color: var(--texto-hint);
+}
+
+/* ── Área de Cotas ── */
+.sim-cotas-area {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sim-cotas-header {
+  margin-bottom: 16px;
+}
+
+.sim-cotas-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--texto-principal);
+  margin-bottom: 8px;
+}
+
+.sim-cotas-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+
+/* ── Toggle Redutor ── */
+.sim-redutor-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sim-redutor-btn {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sim-redutor-btn.active,
+.sim-redutor-btn:hover {
+  border-color: var(--cor-destaque);
+  color: var(--cor-destaque);
+}
+
+/* ── Tabela de Cotas ── */
+.sim-cotas-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.sim-cotas-tabela th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--texto-secundario);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.sim-cotas-tabela td {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--texto-principal);
+  border-bottom: 1px solid var(--borda);
+  vertical-align: middle;
+}
+
+.sim-cotas-tabela tr:hover td {
+  background: var(--bg-card);
+}
+
+.sim-btn-add {
+  background: var(--cor-destaque);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.sim-btn-add:hover {
+  opacity: 0.85;
+}
+
+/* ── Monte sua simulação ── */
+.sim-monte-container {
+  max-width: 1200px;
+  margin: 32px auto 0;
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 24px;
+}
+
+.sim-monte-titulo {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--texto-titulo);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* ── Ações ── */
+.sim-acoes {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.sim-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--texto-secundario);
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.sim-btn-excel {
+  background: transparent;
+  border: 1px solid var(--cor-destaque);
+  color: var(--cor-destaque);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sim-btn-excel:hover {
+  background: rgba(245, 192, 0, 0.08);
+}
+
+.sim-btn-pdf {
+  background: var(--cor-destaque);
+  border: none;
+  color: #000;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sim-btn-pdf:hover {
+  opacity: 0.88;
+}
+
+/* ── Loading ── */
+.sim-loading {
+  color: var(--texto-secundario);
+  font-size: 14px;
+  padding: 32px 0;
+  text-align: center;
+}
+
+/* ── Modal PDF ── */
+.sim-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sim-modal {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 28px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sim-modal-titulo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto-principal);
+}
+
+.sim-modal-input {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--texto-principal);
+  font-size: 14px;
+  padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.sim-modal-input:focus {
+  border-color: var(--cor-destaque);
+}
+
+.sim-modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.sim-modal-btn-cancelar {
+  background: transparent;
+  border: 1px solid var(--borda);
+  color: var(--texto-secundario);
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.sim-modal-btn-gerar {
+  background: var(--cor-destaque);
+  border: none;
+  color: #000;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.sim-modal-btn-gerar:hover {
+  opacity: 0.88;
+}
