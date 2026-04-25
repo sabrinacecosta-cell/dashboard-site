@@ -272,6 +272,8 @@ async function seed() {
   console.log('Seed do Simulador concluído!');
 }
 
-seed()
-  .then(() => process.exit(0))
-  .catch(err => { console.error(err); process.exit(1); });
+module.exports = seed;
+
+if (require.main === module) {
+  seed().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });
+}

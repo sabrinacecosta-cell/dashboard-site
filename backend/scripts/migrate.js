@@ -129,10 +129,13 @@ async function migrate() {
   console.log('Índices OK!');
 
   console.log('Migração concluída!');
-  process.exit(0);
 }
 
-migrate().catch(err => {
-  console.error('Erro na migração:', err);
-  process.exit(1);
-});
+module.exports = migrate;
+
+if (require.main === module) {
+  migrate().then(() => process.exit(0)).catch(err => {
+    console.error('Erro na migração:', err);
+    process.exit(1);
+  });
+}

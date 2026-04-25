@@ -14,6 +14,17 @@ app.use(express.json());
 // Rotas
 app.use('/api', routes);
 
+// Migração + seed automáticos na inicialização
+const migrate = require('../scripts/migrate');
+const seedSimulador = require('../scripts/seed_simulador');
+
+async function initDb() {
+  try { await migrate(); } catch (e) { console.error('migrate error:', e.message); }
+  try { await seedSimulador(); } catch (e) { console.error('seed_simulador error:', e.message); }
+}
+
+initDb();
+
 // Rota raiz
 app.get('/', (req, res) => {
   res.json({ 
