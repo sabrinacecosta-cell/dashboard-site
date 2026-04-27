@@ -146,6 +146,23 @@ async function migrate() {
   }
   console.log('Patches de media_contemplacao e lance_maximo_contemplado aplicados!');
 
+  // Popular lance_maximo_contemplado para grupos auto
+  const patchesAuto = [
+    [2125, 31.25],
+    [2126, 43.75],
+    [2127, 61.25],
+    [2128, 61],
+    [2132, null],
+    [2133, null],
+  ];
+  for (const [grupo, lanceMax] of patchesAuto) {
+    await db.query(
+      `UPDATE simulador_grupos SET lance_maximo_contemplado = $1 WHERE numero_grupo = $2 AND modalidade = 'auto'`,
+      [lanceMax, grupo]
+    );
+  }
+  console.log('Patches lance_maximo_contemplado auto aplicados!');
+
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
   console.log('Índices simulador OK!');
