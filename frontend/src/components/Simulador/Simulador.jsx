@@ -508,7 +508,7 @@ export default function Simulador() {
               <span>Taxa adm: {formatarPercentual(parseFloat(grupoSelecionado.taxa_adm))}</span>
               <span>Fundo reserva: {formatarPercentual(parseFloat(grupoSelecionado.fundo_reserva))}</span>
               <span>Reajuste: {grupoSelecionado.reajuste} / {grupoSelecionado.mes_reajuste}</span>
-              <span>Lance máx: {Math.round(parseFloat(grupoSelecionado.lance_embutido_max) * 100)}%</span>
+              <span>Lance embutido máximo: {Math.round(parseFloat(grupoSelecionado.lance_embutido_max) * 100)}%</span>
               <span>Prazo restante: {grupoSelecionado.prazo_restante} meses</span>
             </div>
           </div>
@@ -548,7 +548,7 @@ export default function Simulador() {
                   const qtde = qtdesCotas[key] || 1;
                   return (
                     <tr key={cota.id}>
-                      <td>{formatarMoedaInteiro(parseFloat(cota.bem_referencia))}</td>
+                      <td>{formatarMoedaInteiro(parseFloat(cota.cota))}</td>
                       <td>{formatarMoeda(parseFloat(cota.parcela))}</td>
                       <td>
                         <input
