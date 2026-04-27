@@ -6,13 +6,6 @@ import { ResumoProposta } from './ResumoProposta';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
 
-const MEDIAS_CONTEMPLACAO = {
-  1035: '3,21%', 1036: '8,09%', 1037: '6,07%', 1038: '5,29%', 1039: '5,16%',
-  1040: '11,37%', 1041: '3,89%', 1042: '6,93%', 1043: '11,80%', 1044: '5,40%',
-  1045: '34,75%', 1047: '16,67%',
-  2125: '10,28%', 2126: '16,49%', 2127: '12,08%', 2128: '43,29%',
-  2132: '78,13%', 2133: '50,00%',
-};
 
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   const cartaTotal         = linha.credito * linha.qtde;
@@ -468,7 +461,12 @@ export default function Simulador() {
           ) : (
             <div className="sim-grupos-grid">
               {grupos.map(g => {
-                const media = MEDIAS_CONTEMPLACAO[g.numero_grupo];
+                const mediaVal = g.media_contemplacao != null
+                  ? `${(parseFloat(g.media_contemplacao) * 100).toFixed(2).replace('.', ',')}%`
+                  : null;
+                const lanceMaxCont = g.lance_maximo_contemplado != null
+                  ? `${parseFloat(g.lance_maximo_contemplado).toFixed(1).replace('.', ',').replace(/,0$/, '')}%`
+                  : null;
                 return (
                   <button
                     key={g.id}
@@ -478,15 +476,20 @@ export default function Simulador() {
                     <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
-                      <span>Lance máx: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
+                      <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
                     </div>
                     <div className={`sim-card-grupo-media${g.sem_media_contemplacao ? ' sem-media' : ''}`}>
                       {g.sem_media_contemplacao
                         ? 'Sem média de contemplação'
-                        : media
-                          ? `Média contemplação: ${media}/mês`
+                        : mediaVal
+                          ? `Média contemplação: ${mediaVal}/mês`
                           : ''}
                     </div>
+                    {lanceMaxCont && (
+                      <div className="sim-card-grupo-lance-max-cont">
+                        Lance máximo contemplado: {lanceMaxCont}
+                      </div>
+                    )}
                   </button>
                 );
               })}

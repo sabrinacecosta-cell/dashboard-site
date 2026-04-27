@@ -117,6 +117,35 @@ async function migrate() {
   `);
   console.log('Tabela "simulador_cotas" OK!');
 
+  await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS lance_maximo_contemplado DECIMAL(5,2)`);
+  console.log('Coluna "lance_maximo_contemplado" OK!');
+
+  // Corrigir media_contemplacao e popular lance_maximo_contemplado para grupos imóvel
+  const patchesImovel = [
+    [1035, 0.048814, 56],
+    [1036, 0.129100, 57],
+    [1037, 0.083019, 58],
+    [1038, 0.067657, 59],
+    [1039, 0.066552, 61.5],
+    [1040, 0.141658, 62],
+    [1041, 0.057915, 63],
+    [1042, 0.091165, 64],
+    [1043, 0.167906, 72],
+    [1044, 0.114973, 77.5],
+    [1045, 0.447368, 84],
+    [1047, 0.272727, null],
+    [1053, 0.323529, null],
+  ];
+  for (const [grupo, media, lanceMax] of patchesImovel) {
+    await db.query(
+      `UPDATE simulador_grupos
+         SET media_contemplacao = $1, lance_maximo_contemplado = $2, sem_media_contemplacao = FALSE
+       WHERE numero_grupo = $3 AND modalidade = 'imovel'`,
+      [media, lanceMax, grupo]
+    );
+  }
+  console.log('Patches de media_contemplacao e lance_maximo_contemplado aplicados!');
+
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
   console.log('Índices simulador OK!');

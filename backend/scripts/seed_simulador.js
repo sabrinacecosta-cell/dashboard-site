@@ -2,19 +2,19 @@ require('dotenv').config();
 const db = require('../src/config/database');
 
 const GRUPOS_IMOVEL = [
-  { numero_grupo: 1035, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JANEIRO',   lance_embutido_max: 0.50, prazo_restante: 114, prazo_total: 200, media_contemplacao: 0.032147 },
-  { numero_grupo: 1036, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MARÇO',     lance_embutido_max: 0.50, prazo_restante: 115, prazo_total: 200, media_contemplacao: 0.080946 },
-  { numero_grupo: 1037, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MAIO',      lance_embutido_max: 0.50, prazo_restante: 118, prazo_total: 200, media_contemplacao: 0.060694 },
-  { numero_grupo: 1038, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JULHO',     lance_embutido_max: 0.50, prazo_restante: 119, prazo_total: 200, media_contemplacao: 0.052874 },
-  { numero_grupo: 1039, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'DEZEMBRO',  lance_embutido_max: 0.50, prazo_restante: 124, prazo_total: 200, media_contemplacao: 0.051593 },
-  { numero_grupo: 1040, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JANEIRO',   lance_embutido_max: 0.50, prazo_restante: 125, prazo_total: 200, media_contemplacao: 0.113725 },
-  { numero_grupo: 1041, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MARÇO',     lance_embutido_max: 0.50, prazo_restante: 128, prazo_total: 200, media_contemplacao: 0.038911 },
-  { numero_grupo: 1042, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MAIO',      lance_embutido_max: 0.50, prazo_restante: 130, prazo_total: 200, media_contemplacao: 0.069253 },
-  { numero_grupo: 1043, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'SETEMBRO',  lance_embutido_max: 0.50, prazo_restante: 146, prazo_total: 200, media_contemplacao: 0.118012 },
-  { numero_grupo: 1044, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'AGOSTO',    lance_embutido_max: 0.50, prazo_restante: 157, prazo_total: 200, media_contemplacao: 0.053957 },
-  { numero_grupo: 1045, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'SETEMBRO',  lance_embutido_max: 0.50, prazo_restante: 170, prazo_total: 200, media_contemplacao: 0.347458 },
-  { numero_grupo: 1047, taxa_adm: 0.22, fundo_reserva: 0.037, reajuste: 'INPC', mes_reajuste: 'AGOSTO',   lance_embutido_max: 0.30, prazo_restante: 181, prazo_total: 200, media_contemplacao: 0.166667 },
-  { numero_grupo: 1053, taxa_adm: 0.15, fundo_reserva: 0.037, reajuste: 'FIXO', mes_reajuste: 'JANEIRO',  lance_embutido_max: 0.30, prazo_restante: 238, prazo_total: 240, media_contemplacao: null, sem_media_contemplacao: true },
+  { numero_grupo: 1035, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JANEIRO',   lance_embutido_max: 0.50, prazo_restante: 114, prazo_total: 200, media_contemplacao: 0.048814, lance_maximo_contemplado: 56 },
+  { numero_grupo: 1036, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MARÇO',     lance_embutido_max: 0.50, prazo_restante: 115, prazo_total: 200, media_contemplacao: 0.129100, lance_maximo_contemplado: 57 },
+  { numero_grupo: 1037, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MAIO',      lance_embutido_max: 0.50, prazo_restante: 118, prazo_total: 200, media_contemplacao: 0.083019, lance_maximo_contemplado: 58 },
+  { numero_grupo: 1038, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JULHO',     lance_embutido_max: 0.50, prazo_restante: 119, prazo_total: 200, media_contemplacao: 0.067657, lance_maximo_contemplado: 59 },
+  { numero_grupo: 1039, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'DEZEMBRO',  lance_embutido_max: 0.50, prazo_restante: 124, prazo_total: 200, media_contemplacao: 0.066552, lance_maximo_contemplado: 61.5 },
+  { numero_grupo: 1040, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'JANEIRO',   lance_embutido_max: 0.50, prazo_restante: 125, prazo_total: 200, media_contemplacao: 0.141658, lance_maximo_contemplado: 62 },
+  { numero_grupo: 1041, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MARÇO',     lance_embutido_max: 0.50, prazo_restante: 128, prazo_total: 200, media_contemplacao: 0.057915, lance_maximo_contemplado: 63 },
+  { numero_grupo: 1042, taxa_adm: 0.20, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'MAIO',      lance_embutido_max: 0.50, prazo_restante: 130, prazo_total: 200, media_contemplacao: 0.091165, lance_maximo_contemplado: 64 },
+  { numero_grupo: 1043, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'SETEMBRO',  lance_embutido_max: 0.50, prazo_restante: 146, prazo_total: 200, media_contemplacao: 0.167906, lance_maximo_contemplado: 72 },
+  { numero_grupo: 1044, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'AGOSTO',    lance_embutido_max: 0.50, prazo_restante: 157, prazo_total: 200, media_contemplacao: 0.114973, lance_maximo_contemplado: 77.5 },
+  { numero_grupo: 1045, taxa_adm: 0.22, fundo_reserva: 0.05, reajuste: 'INPC', mes_reajuste: 'SETEMBRO',  lance_embutido_max: 0.50, prazo_restante: 170, prazo_total: 200, media_contemplacao: 0.447368, lance_maximo_contemplado: 84 },
+  { numero_grupo: 1047, taxa_adm: 0.22, fundo_reserva: 0.037, reajuste: 'INPC', mes_reajuste: 'AGOSTO',   lance_embutido_max: 0.30, prazo_restante: 181, prazo_total: 200, media_contemplacao: 0.272727, lance_maximo_contemplado: null },
+  { numero_grupo: 1053, taxa_adm: 0.15, fundo_reserva: 0.037, reajuste: 'FIXO', mes_reajuste: 'JANEIRO',  lance_embutido_max: 0.30, prazo_restante: 238, prazo_total: 240, media_contemplacao: 0.323529, lance_maximo_contemplado: null },
 ];
 
 const GRUPOS_AUTO = [
@@ -231,11 +231,11 @@ async function seed() {
     await db.query(
       `INSERT INTO simulador_grupos
         (numero_grupo, modalidade, taxa_adm, fundo_reserva, reajuste, mes_reajuste,
-         lance_embutido_max, prazo_restante, prazo_total, media_contemplacao, sem_media_contemplacao)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+         lance_embutido_max, prazo_restante, prazo_total, media_contemplacao, sem_media_contemplacao, lance_maximo_contemplado)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
       [g.numero_grupo, 'imovel', g.taxa_adm, g.fundo_reserva, g.reajuste,
        g.mes_reajuste, g.lance_embutido_max, g.prazo_restante, g.prazo_total,
-       g.media_contemplacao ?? null, g.sem_media_contemplacao ?? false]
+       g.media_contemplacao ?? null, g.sem_media_contemplacao ?? false, g.lance_maximo_contemplado ?? null]
     );
   }
 
