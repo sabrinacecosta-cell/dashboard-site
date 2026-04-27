@@ -1361,6 +1361,14 @@
   margin-top: 20px;
 }
 
+.sim-acoes-secundarias {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
 .sim-checkbox-label {
   display: flex;
   align-items: center;
@@ -1368,27 +1376,23 @@
   font-size: 12px;
   color: var(--texto-secundario);
   cursor: pointer;
-  margin-right: auto;
   white-space: nowrap;
 }
 
 .sim-btn-zerar {
-  background: transparent;
-  border: 1px solid #666;
-  color: #999;
-  border-radius: 6px;
+  background: none;
+  border: none;
+  color: #c0392b;
   font-size: 12px;
   font-weight: 500;
-  padding: 5px 12px;
+  padding: 0;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-  margin-top: 8px;
-  align-self: flex-start;
+  opacity: 0.7;
+  transition: opacity 0.15s;
 }
 
 .sim-btn-zerar:hover {
-  border-color: #c0392b;
-  color: #c0392b;
+  opacity: 1;
 }
 
 .sim-btn-excel {

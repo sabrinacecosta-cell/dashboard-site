@@ -625,13 +625,10 @@ export default function Simulador() {
             </table>
           </div>
 
-          <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
-            Zerar simulação
-          </button>
-
-          <ResumoProposta simulacao={simulacaoDoTotais} />
-
-          <div className="sim-acoes">
+          <div className="sim-acoes-secundarias">
+            <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
+              Zerar simulação
+            </button>
             <label className="sim-checkbox-label">
               <input
                 type="checkbox"
@@ -640,6 +637,11 @@ export default function Simulador() {
               />
               Incluir parcela pós contemplação no PDF
             </label>
+          </div>
+
+          <ResumoProposta simulacao={simulacaoDoTotais} />
+
+          <div className="sim-acoes">
             <button className="sim-btn-excel" onClick={gerarExcel}>
               Gerar Excel
             </button>
