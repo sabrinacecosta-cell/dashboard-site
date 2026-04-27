@@ -625,6 +625,10 @@ export default function Simulador() {
             </table>
           </div>
 
+          <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
+            Zerar simulação
+          </button>
+
           <ResumoProposta simulacao={simulacaoDoTotais} />
 
           <div className="sim-acoes">
