@@ -580,9 +580,8 @@ export default function Simulador() {
         </div>
       )}
 
-      {/* Monte sua simulação — visível quando há itens */}
-      {linhasSim.length > 0 && (
-        <div className="sim-monte-container">
+      {/* Monte sua simulação */}
+      <div className="sim-monte-container">
           <h3 className="sim-monte-titulo">Monte sua simulação</h3>
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
@@ -645,7 +644,6 @@ export default function Simulador() {
             </button>
           </div>
         </div>
-      )}
 
       {/* Modal nome para PDF */}
       {showModalNomeSim && (
