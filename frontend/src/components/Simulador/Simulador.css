@@ -1364,9 +1364,10 @@
 .sim-acoes-secundarias {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 8px;
-  margin-bottom: 4px;
+  justify-content: flex-start;
+  gap: 24px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 
 .sim-checkbox-label {
@@ -1377,22 +1378,22 @@
   color: var(--texto-secundario);
   cursor: pointer;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .sim-btn-zerar {
   background: none;
   border: none;
-  color: #c0392b;
+  color: #cc4444;
   font-size: 12px;
   font-weight: 500;
   padding: 0;
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.15s;
+  line-height: 1;
 }
 
 .sim-btn-zerar:hover {
-  opacity: 1;
+  text-decoration: underline;
 }
 
 .sim-btn-excel {
