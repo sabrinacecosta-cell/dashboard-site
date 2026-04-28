@@ -131,7 +131,7 @@ export default function Simulador() {
         id:                   Date.now() + Math.random(),
         simKey,
         grupo:                String(g.numero_grupo),
-        credito:              parseFloat(cota.bem_referencia),
+        credito:              parseFloat(cota.cota),
         parcela:              parseFloat(cota.parcela),
         redutor:              redutorVal,
         lanceEmbutidoPercent: lanceEmbutidoMax,
