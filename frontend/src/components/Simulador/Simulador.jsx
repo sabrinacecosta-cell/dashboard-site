@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
@@ -66,6 +67,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 }
 
 export default function Simulador() {
+  const navigate = useNavigate();
   const [modalidade, setModalidade]               = useState('imovel');
   const [grupos, setGrupos]                       = useState([]);
   const [loadingGrupos, setLoadingGrupos]         = useState(false);
@@ -480,7 +482,18 @@ export default function Simulador() {
                     </div>
                     <div className={`sim-card-grupo-media${g.sem_media_contemplacao ? ' sem-media' : ''}`}>
                       {g.sem_media_contemplacao
-                        ? 'Sem média de contemplação'
+                        ? (
+                          <span>
+                            Este grupo ainda não tem uma média de contemplação, observar mais detalhes na{' '}
+                            <span
+                              role="button"
+                              style={{ textDecoration: 'underline', cursor: 'pointer' }}
+                              onClick={e => { e.stopPropagation(); navigate('/grupos'); }}
+                            >
+                              aba de Métricas
+                            </span>
+                          </span>
+                        )
                         : mediaVal
                           ? `Média contemplação: ${mediaVal}/mês`
                           : ''}
