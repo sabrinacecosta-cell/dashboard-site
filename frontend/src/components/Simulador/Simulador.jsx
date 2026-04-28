@@ -490,6 +490,9 @@ export default function Simulador() {
                         Lance máximo contemplado: {lanceMaxCont}
                       </div>
                     )}
+                    {g.numero_grupo === 1053 && (
+                      <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
+                    )}
                   </button>
                 );
               })}
