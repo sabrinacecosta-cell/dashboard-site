@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,6 +16,15 @@ function Layout({ children }) {
       return next;
     });
   };
+
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
   const handleLogout = () => {
     logout();
@@ -84,6 +93,14 @@ function Layout({ children }) {
             {user?.email === 'sabrina@jtdkinvest.com' && (
               <AdminButton />
             )}
+            <button
+              className="btn-theme-toggle"
+              onClick={toggleTheme}
+              title="Alternar tema"
+              aria-label="Alternar tema"
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <div className="header-user">
               <span className="header-user-name">{user?.nome}</span>
               <span className="header-user-email">{user?.email}</span>

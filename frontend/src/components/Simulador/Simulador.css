@@ -15,6 +15,18 @@
   --radius-card: 10px;
 }
 
+/* Light theme overrides for Simulador */
+[data-theme="light"] .sim-container {
+  --bg-geral: #f5f5f7;
+  --bg-painel: #ffffff;
+  --bg-card: #f0f0f5;
+  --texto-principal: #1d1d1f;
+  --texto-secundario: #6e6e73;
+  --texto-hint: #aeaeb2;
+  --texto-titulo: #1d1d1f;
+  --borda: rgba(0, 0, 0, 0.08);
+}
+
 /* Container Principal */
 .sim-container {
   background: var(--bg-geral);
@@ -259,6 +271,16 @@
   font-weight: 700;
 }
 
+[data-theme="light"] .sim-pill {
+  background: #e5e5ea;
+  color: #6e6e73;
+}
+
+[data-theme="light"] .sim-pill.active {
+  background: #1d1d1f;
+  color: #ffffff;
+}
+
 /* Layout Colunas */
 .sim-colunas {
   display: grid;
@@ -479,6 +501,10 @@
   background: #1F1A00;
 }
 
+[data-theme="light"] .sim-tabela tbody tr.selected {
+  background: #fff8e0;
+}
+
 .sim-tabela tbody tr.selected td:first-child {
   border-left: 3px solid var(--cor-destaque);
 }
@@ -502,6 +528,10 @@
   border-radius: 6px;
   padding: 3px 10px;
   font-size: 11px;
+}
+
+[data-theme="light"] .sim-taxa-pill {
+  background: #e5e5ea;
 }
 
 .sim-taxa-pill-label {
@@ -980,6 +1010,12 @@
   line-height: 1.5;
 }
 
+[data-theme="light"] .sim-erro-lance {
+  background: #fff0f0;
+  border-color: #e05050;
+  color: #c03030;
+}
+
 .sim-erro-lance p {
   margin: 0;
 }
@@ -1054,6 +1090,12 @@
   font-weight: 500;
 }
 
+[data-theme="light"] .cr-erro-lance {
+  background: #fff0f0;
+  border-color: #e05050;
+  color: #c03030;
+}
+
 .cr-info-lance {
   margin-top: 14px;
   padding: 8px 14px;
@@ -1062,6 +1104,12 @@
   border: 1px solid #2a5a2a;
   color: #80c080;
   font-size: 13px;
+}
+
+[data-theme="light"] .cr-info-lance {
+  background: #f0fff0;
+  border-color: #3a8a3a;
+  color: #2a7a2a;
 }
 
 .cr-btn-add-bloqueado {
@@ -1077,6 +1125,11 @@
   padding: 6px 12px;
   background: #2a0a0a;
   border-radius: 6px;
+}
+
+[data-theme="light"] .cr-aviso-add {
+  background: #fff0f0;
+  color: #c03030;
 }
 
 /* Responsivo */
