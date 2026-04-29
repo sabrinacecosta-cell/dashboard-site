@@ -65,6 +65,7 @@ function Comissoes() {
                   <th>Grupo/Cota</th>
                   <th style={{ textAlign: 'center' }}>Parcela</th>
                   <th style={{ textAlign: 'right' }}>Valor Carta</th>
+                  <th style={{ textAlign: 'right' }}>Comissão %</th>
                   <th style={{ textAlign: 'right' }}>Comissão</th>
                   <th style={{ textAlign: 'right' }}>Valor Líquido</th>
                   <th>Cliente</th>
@@ -79,6 +80,11 @@ function Comissoes() {
                     <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{r.grupo_cota_versao}</td>
                     <td style={{ textAlign: 'center' }}>{r.parcela}</td>
                     <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_carta)}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      {r.percentual_comissao != null
+                        ? (Number(r.percentual_comissao) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '%'
+                        : '-'}
+                    </td>
                     <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(r.valor_comissao)}</td>
                     <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_liquido)}</td>
                     <td>{r.cliente}</td>
@@ -89,6 +95,7 @@ function Comissoes() {
                 <tr style={{ fontWeight: 700 }}>
                   <td colSpan={5}>Total ({dados.length} registros)</td>
                   <td style={{ textAlign: 'right' }}>{fmtMoeda(totalCarta)}</td>
+                  <td />
                   <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(totalComissao)}</td>
                   <td style={{ textAlign: 'right' }}>{fmtMoeda(totalLiquido)}</td>
                   <td />
