@@ -136,7 +136,7 @@ function Grupos() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'center' }}>Grupo</th>
-                  <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 6 meses)</th>
+                  <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 12 meses)</th>
                   <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
                 </tr>
               </thead>
@@ -185,13 +185,12 @@ function Grupos() {
                   <th style={{ textAlign: 'center' }}>Contemp. Mensal</th>
                   {tipoSelecionado === 'imovel' ? (
                     <>
-                      <th style={{ textAlign: 'center' }}>Média Contemp. (11 meses)</th>
+                      <th style={{ textAlign: 'center' }}>Média Contemp. (12 meses)</th>
                       <th style={{ textAlign: 'center' }}>Média Contemp. (6 meses)</th>
                     </>
                   ) : (
                     <th style={{ textAlign: 'center' }}>Média Contemp.</th>
                   )}
-                  <th style={{ textAlign: 'center' }}>Média Lance</th>
                 </tr>
               </thead>
               <tbody>
@@ -210,7 +209,6 @@ function Grupos() {
                     ) : (
                       <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao || '-'}</td>
                     )}
-                    <td style={{ textAlign: 'center' }}>{r.media_lance_percent ? `${r.media_lance_percent}%` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
