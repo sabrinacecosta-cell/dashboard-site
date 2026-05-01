@@ -28,6 +28,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
           onChange={e => onUpdate(linha.id, 'qtde', Math.max(1, Number(e.target.value)))}
         />
       </td>
+      <td>{formatarMoeda(linha.credito)}</td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
       <td>{linha.redutor === 0 ? '0%' : '50%'}</td>
@@ -660,6 +661,7 @@ export default function Simulador() {
                 <tr>
                   <th>Grupo</th>
                   <th>Qtde</th>
+                  <th>Cota</th>
                   <th>Carta Total</th>
                   <th>Parcela Inicial</th>
                   <th>Redutor</th>
@@ -683,6 +685,7 @@ export default function Simulador() {
               <tfoot>
                 <tr className="cr-totais-row">
                   <td colSpan={2}><strong>Total</strong></td>
+                  <td></td>
                   <td>{formatarMoeda(totaisSim.cartaTotal)}</td>
                   <td>{formatarMoeda(totaisSim.parcelaInicialSim)}</td>
                   <td></td>
