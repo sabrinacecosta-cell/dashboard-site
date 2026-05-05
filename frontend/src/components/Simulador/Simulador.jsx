@@ -204,15 +204,15 @@ export default function Simulador() {
     gerarExcelSimulacao({
       rows: linhasSimCalc.map(l => ({
         grupo:                  l.grupo,
+        taxaAdm:                l.taxaAdm,
+        fundoReserva:           l.fundoReserva,
+        prazo:                  l.prazoRestante,
         qtde:                   l.qtde,
         cartaTotal:             l.cartaTotal,
         parcelaInicial:         l.parcelaInicialSim,
         parcelaPosContemplacao: l.parcelaPosContemplacao,
-        redutor:                l.redutor === 0 ? '0%' : '50%',
         recProprios:            l.recPropriosReais || 0,
         lanceEmbPerc:           l.lanceEmbutidoPercent,
-        lanceEmb:               l.lanceEmb,
-        lanceTotal:             l.lanceTotal,
         creditoContemplado:     l.creditoContemplado,
       })),
       totais: {
