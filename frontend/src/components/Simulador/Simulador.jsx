@@ -283,65 +283,14 @@ export default function Simulador() {
     doc.text(`CONSÓRCIO ${modalLabel} XP`, M, y);
     y += 16;
 
-    doc.setFillColor(...gold);
-    doc.rect(M, y, 3, 8, 'F');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...white);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
-    y += 12;
-
-    // Cards de informações por grupo
-    const gruposUnicos = [...new Map(linhasSim.map(l => [l.grupo, l])).values()];
-    const nGrupos = gruposUnicos.length;
-    const infoCardH = 40;
-    const infoCardW = nGrupos <= 2 ? (W - 2 * M - (nGrupos - 1) * 6) / nGrupos : W - 2 * M;
-    if (nGrupos <= 2) {
-      gruposUnicos.forEach((l, i) => {
-        const cx = M + i * (infoCardW + 6);
-        doc.setFillColor(...darkCard);
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(cx, y, infoCardW, infoCardH, 4, 4, 'FD');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`GRUPO ${l.grupo}`, cx + 6, y + 7);
-        doc.setFontSize(8.5);
-        doc.setTextColor(...white);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Prazo restante: ${l.prazoRestante} meses`, cx + 6, y + 14);
-        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, cx + 6, y + 21);
-        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo: ${formatarPercentual(l.fundoReserva)}`, cx + 6, y + 28);
-        doc.setFontSize(7);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, cx + 6, y + 36);
-      });
-      y += infoCardH + 8;
-    } else {
-      gruposUnicos.forEach(l => {
-        doc.setFillColor(...darkCard);
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(M, y, infoCardW, infoCardH, 4, 4, 'FD');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`GRUPO ${l.grupo}`, M + 6, y + 7);
-        doc.setFontSize(8.5);
-        doc.setTextColor(...white);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
-        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
-        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
-        doc.setFontSize(7);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, M + 6, y + 36);
-        y += infoCardH + 5;
-      });
-      y += 3;
+    if (modalidade === 'imovel') {
+      doc.setFillColor(...gold);
+      doc.rect(M, y, 3, 8, 'F');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
+      y += 12;
     }
 
     const cardW = (W - 2 * M - 8) / 2;
@@ -411,6 +360,59 @@ export default function Simulador() {
     }
     y += cardH + 8;
 
+    // Cards de informações por grupo
+    const gruposUnicos = [...new Map(linhasSim.map(l => [l.grupo, l])).values()];
+    const nGrupos = gruposUnicos.length;
+    const infoCardH = 40;
+    const infoCardW = nGrupos <= 2 ? (W - 2 * M - (nGrupos - 1) * 6) / nGrupos : W - 2 * M;
+    if (nGrupos <= 2) {
+      gruposUnicos.forEach((l, i) => {
+        const cx = M + i * (infoCardW + 6);
+        doc.setFillColor(...darkCard);
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(cx, y, infoCardW, infoCardH, 4, 4, 'FD');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...grey);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`GRUPO ${l.grupo}`, cx + 6, y + 7);
+        doc.setFontSize(8.5);
+        doc.setTextColor(...white);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Prazo restante: ${l.prazoRestante} meses`, cx + 6, y + 14);
+        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, cx + 6, y + 21);
+        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, cx + 6, y + 28);
+        doc.setFontSize(7);
+        doc.setTextColor(...grey);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, cx + 6, y + 36);
+      });
+      y += infoCardH + 8;
+    } else {
+      gruposUnicos.forEach(l => {
+        doc.setFillColor(...darkCard);
+        doc.setDrawColor(...gold);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(M, y, infoCardW, infoCardH, 4, 4, 'FD');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...grey);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`GRUPO ${l.grupo}`, M + 6, y + 7);
+        doc.setFontSize(8.5);
+        doc.setTextColor(...white);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
+        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
+        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
+        doc.setFontSize(7);
+        doc.setTextColor(...grey);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, M + 6, y + 36);
+        y += infoCardH + 5;
+      });
+      y += 3;
+    }
+
     if (incluirParcelaPosNoPDF) {
       const notaParcelaPosTexto = 'O cálculo da parcela pós contemplação foi feito considerando o valor total de lance pago, subtraído 1 mês, que corresponde à parcela inicial e dividido pelo prazo restante.';
       const notaParcelaPosLinhas = doc.splitTextToSize(notaParcelaPosTexto, W - 2 * M - 14);
@@ -441,7 +443,7 @@ export default function Simulador() {
 
     const indicados = modalidade === 'imovel'
       ? ['• Construção gradual de patrimônio imobiliário', '• Diversificação em ativos reais', '• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos']
-      : ['• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos'];
+      : ['• Planejamento de aquisições futuras', '• Preservação de liquidez e rentabilidade dos investimentos'];
     const barH = 8 + indicados.length * 4.5;
     doc.setFillColor(...gold);
     doc.rect(M, y, 3, barH, 'F');
@@ -462,7 +464,7 @@ export default function Simulador() {
     doc.setFontSize(9);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Fale comigo para avaliarmos como este consórcio', W / 2, y + 6.5, { align: 'center' });
+    doc.text('Fale conosco para avaliarmos como este consórcio', W / 2, y + 6.5, { align: 'center' });
     doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 12.5, { align: 'center' });
     y += 23;
 
