@@ -55,7 +55,7 @@ export async function gerarExcelSimulacao({ rows, nomeArquivo }) {
     row.getCell(COL.E).value = rowData.qtde;
     row.getCell(COL.F).value = cotaVal;
     row.getCell(COL.G).value = { formula: `E${rowNum}*F${rowNum}` };
-    row.getCell(COL.H).value = rowData.parcelaInicial;
+    row.getCell(COL.H).value = { formula: `(F${rowNum}*(1+B${rowNum}+C${rowNum}))/D${rowNum}` };
     row.getCell(COL.I).value = rowData.parcelaPosContemplacao ?? 0;
     row.getCell(COL.J).value = { formula: `G${rowNum}*${recPct}` };
     row.getCell(COL.K).value = rowData.lanceEmbPerc / 100;
@@ -135,12 +135,12 @@ export async function gerarExcelSimulacao({ rows, nomeArquivo }) {
     row.commit();
   }
 
-  // r9: Parcela Inicial = Saldo Devedor Inicial / Prazo
+  // r9: Parcela Inicial = SUM das parcelas iniciais (H do TOTAL)
   {
     const row = ws.getRow(rr(3));
     row.getCell(COL.A).value = 'Parcela Inicial';
     const f = row.getCell(COL.F);
-    f.value  = { formula: `F${rr(15)}/D${firstData}` };
+    f.value  = { formula: `H${totRow}` };
     f.numFmt = moeda;
     row.commit();
   }
