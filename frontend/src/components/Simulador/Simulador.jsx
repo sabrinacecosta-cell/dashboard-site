@@ -430,16 +430,18 @@ export default function Simulador() {
       y += memHSim2 + 5;
     }
 
-    const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
-    doc.setFontSize(7);
-    const notaLinhas = doc.splitTextToSize(notaTexto, W - 2 * M - 8);
-    const notaBarH = Math.max(13, 4 + notaLinhas.length * 3.5);
-    doc.setFillColor(...gold);
-    doc.rect(M, y, 3, notaBarH, 'F');
-    doc.setTextColor(...lightGrey);
-    doc.setFont('helvetica', 'normal');
-    notaLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 5 + i * 3.5));
-    y += notaBarH + 5;
+    if (linhasSim.some(l => l.redutor === 50)) {
+      const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
+      doc.setFontSize(7);
+      const notaLinhas = doc.splitTextToSize(notaTexto, W - 2 * M - 8);
+      const notaBarH = Math.max(13, 4 + notaLinhas.length * 3.5);
+      doc.setFillColor(...gold);
+      doc.rect(M, y, 3, notaBarH, 'F');
+      doc.setTextColor(...lightGrey);
+      doc.setFont('helvetica', 'normal');
+      notaLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 5 + i * 3.5));
+      y += notaBarH + 5;
+    }
 
     const indicados = modalidade === 'imovel'
       ? ['• Construção gradual de patrimônio imobiliário', '• Diversificação em ativos reais', '• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos']
