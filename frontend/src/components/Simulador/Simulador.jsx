@@ -540,13 +540,13 @@ export default function Simulador() {
                       {g.sem_media_contemplacao
                         ? (
                           <span>
-                            Sem média de contemplação, verificar mais detalhes na{' '}
+                            Este grupo ainda não tem uma média de contemplação, observar mais detalhes na{' '}
                             <span
                               role="button"
                               style={{ textDecoration: 'underline', cursor: 'pointer' }}
                               onClick={e => { e.stopPropagation(); navigate('/grupos'); }}
                             >
-                              aba de métricas
+                              aba de Métricas
                             </span>
                           </span>
                         )
