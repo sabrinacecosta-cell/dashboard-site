@@ -139,7 +139,7 @@ export default function Simulador() {
         redutor:              redutorVal,
         lanceEmbutidoPercent: lanceEmbutidoMax,
         lanceEmbutidoMax,
-        taxaAdm:              parseFloat(g.taxa_adm),
+        taxaAdm:              g.numero_grupo === 2130 ? (redutorVal === 50 ? 0.19 : 0.15) : parseFloat(g.taxa_adm),
         fundoReserva:         parseFloat(g.fundo_reserva),
         prazoRestante:        parseInt(g.prazo_restante),
         reajuste:             g.reajuste,
@@ -380,8 +380,8 @@ export default function Simulador() {
         doc.setTextColor(...white);
         doc.setFont('helvetica', 'bold');
         doc.text(`Prazo restante: ${l.prazoRestante} meses`, cx + 6, y + 14);
-        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, cx + 6, y + 21);
-        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, cx + 6, y + 28);
+        doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, cx + 6, y + 21);
+        doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, cx + 6, y + 28);
         doc.setFontSize(7);
         doc.setTextColor(...grey);
         doc.setFont('helvetica', 'normal');
@@ -402,8 +402,8 @@ export default function Simulador() {
         doc.setTextColor(...white);
         doc.setFont('helvetica', 'bold');
         doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
-        doc.text(`Lance embutido máx.: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
-        doc.text(`Taxa adm.: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
+        doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
+        doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
         doc.setFontSize(7);
         doc.setTextColor(...grey);
         doc.setFont('helvetica', 'normal');
@@ -579,7 +579,7 @@ export default function Simulador() {
           <div className="sim-cotas-header">
             <h2 className="sim-cotas-titulo">Grupo {grupoSelecionado.numero_grupo}</h2>
             <div className="sim-cotas-meta">
-              <span>Taxa adm: {formatarPercentual(parseFloat(grupoSelecionado.taxa_adm))}</span>
+              <span>Taxa adm: {formatarPercentual(grupoSelecionado.numero_grupo === 2130 ? (comRedutor ? 0.19 : 0.15) : parseFloat(grupoSelecionado.taxa_adm))}</span>
               <span>Fundo reserva: {formatarPercentual(parseFloat(grupoSelecionado.fundo_reserva))}</span>
               <span>Reajuste: {grupoSelecionado.reajuste} / {grupoSelecionado.mes_reajuste}</span>
               <span>Lance embutido máximo: {Math.round(parseFloat(grupoSelecionado.lance_embutido_max) * 100)}%</span>
