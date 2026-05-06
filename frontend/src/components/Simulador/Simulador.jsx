@@ -707,17 +707,18 @@ export default function Simulador() {
             <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
               Zerar simulação
             </button>
-            <label className="sim-checkbox-label">
-              <input
-                type="checkbox"
-                checked={incluirParcelaPosNoPDF}
-                onChange={e => setIncluirParcelaPosNoPDF(e.target.checked)}
-              />
-              Incluir parcela pós contemplação no PDF
-            </label>
           </div>
 
           <ResumoProposta simulacao={simulacaoDoTotais} />
+
+          <label className="sim-checkbox-label">
+            <input
+              type="checkbox"
+              checked={incluirParcelaPosNoPDF}
+              onChange={e => setIncluirParcelaPosNoPDF(e.target.checked)}
+            />
+            Incluir parcela pós contemplação no PDF
+          </label>
 
           <div className="sim-acoes">
             <button className="sim-btn-excel" onClick={gerarExcel}>
