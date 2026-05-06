@@ -140,7 +140,7 @@ export default function Simulador() {
         redutor:              redutorVal,
         lanceEmbutidoPercent: lanceEmbutidoMax,
         lanceEmbutidoMax,
-        taxaAdm:              g.numero_grupo === 2130 ? (redutorVal === 50 ? 0.19 : 0.15) : parseFloat(g.taxa_adm),
+        taxaAdm:              (redutorVal === 50 && g.taxa_adm_redutor != null) ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm),
         fundoReserva:         parseFloat(g.fundo_reserva),
         prazoRestante:        parseInt(g.prazo_restante),
         reajuste:             g.reajuste,
@@ -584,7 +584,7 @@ export default function Simulador() {
           <div className="sim-cotas-header">
             <h2 className="sim-cotas-titulo">Grupo {grupoSelecionado.numero_grupo}</h2>
             <div className="sim-cotas-meta">
-              <span>Taxa adm: {formatarPercentual(grupoSelecionado.numero_grupo === 2130 ? (comRedutor ? 0.19 : 0.15) : parseFloat(grupoSelecionado.taxa_adm))}</span>
+              <span>Taxa adm: {formatarPercentual((comRedutor && grupoSelecionado.taxa_adm_redutor != null) ? parseFloat(grupoSelecionado.taxa_adm_redutor) : parseFloat(grupoSelecionado.taxa_adm))}</span>
               <span>Fundo reserva: {formatarPercentual(parseFloat(grupoSelecionado.fundo_reserva))}</span>
               <span>Reajuste: {grupoSelecionado.reajuste} / {grupoSelecionado.mes_reajuste}</span>
               <span>Lance embutido máximo: {Math.round(parseFloat(grupoSelecionado.lance_embutido_max) * 100)}%</span>
