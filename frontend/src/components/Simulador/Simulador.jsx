@@ -81,6 +81,7 @@ export default function Simulador() {
   const [showModalNomeSim, setShowModalNomeSim]   = useState(false);
   const [nomeClienteInputSim, setNomeClienteInputSim] = useState('');
   const [incluirParcelaPosNoPDF, setIncluirParcelaPosNoPDF] = useState(true);
+  const [simParcelasX, setSimParcelasX]                   = useState(18);
 
   useEffect(() => {
     setLoadingGrupos(true);
@@ -165,12 +166,13 @@ export default function Simulador() {
     const totalFundoReserva   = cartaTotal * (l.fundoReserva || 0);
     const totalTaxas          = saldoDevedor - cartaTotal;
     const prazoR = l.prazoRestante || 1;
-    const parcelaPosContemplacao = prazoR > 1
-      ? Math.max(0, (saldoDevedor - parcelaInicialSim - lanceTotal) / (prazoR - 1))
-      : 0;
+    const parcelasPagas = simParcelasX * parcelaInicialSim;
+    const saldoDevedorAtualizado = saldoDevedor - parcelasPagas - lanceTotal;
+    const prazoAtualizado = Math.max(1, prazoR - simParcelasX);
+    const parcelaPosContemplacao = Math.max(0, saldoDevedorAtualizado / prazoAtualizado);
     return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado,
              recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas, parcelaPosContemplacao };
-  }), [linhasSim]);
+  }), [linhasSim, simParcelasX]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
     cartaTotal:             acc.cartaTotal             + l.cartaTotal,
@@ -224,6 +226,7 @@ export default function Simulador() {
         lanceTotal:             totaisSim.lanceTotal,
         creditoContemplado:     totaisSim.creditoContemplado,
       },
+      simularParcelas: simParcelasX,
       nomeArquivo: `simulacao-xp-${modalidade}.xlsx`,
     });
   };
@@ -718,6 +721,19 @@ export default function Simulador() {
               onChange={e => setIncluirParcelaPosNoPDF(e.target.checked)}
             />
             Incluir parcela pós contemplação no PDF
+          </label>
+
+          <label className="sim-checkbox-label">
+            Simular{' '}
+            <input
+              type="number"
+              className="cr-input-celula"
+              min={1}
+              value={simParcelasX}
+              onChange={e => setSimParcelasX(Math.max(1, Number(e.target.value)))}
+              style={{ width: 52, display: 'inline-block', margin: '0 4px' }}
+            />
+            {' '}parcelas até a contemplação
           </label>
 
           <div className="sim-acoes">
