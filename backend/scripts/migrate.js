@@ -163,13 +163,36 @@ async function migrate() {
   }
   console.log('Patches lance_maximo_contemplado auto aplicados!');
 
-  // taxa_adm_redutor: taxa administrativa específica quando "com redutor" está selecionado.
+  // taxa_adm_redutor: taxa administrativa específica quando "com redutor 50%" está selecionado.
   // NULL = usar taxa_adm para ambas as opções de parcela.
   await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS taxa_adm_redutor DECIMAL(5,4)`);
-  await db.query(
-    `UPDATE simulador_grupos SET taxa_adm_redutor = 0.19 WHERE numero_grupo = 2130 AND modalidade = 'auto'`
-  );
-  console.log('Coluna taxa_adm_redutor OK!');
+
+  // Imóvel: 1043/1044/1045 → 23% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1043, 1044, 1045)
+  `);
+  // Imóvel: 1047/1048/1049/1050 → 19% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050)
+  `);
+  // Imóvel: 1054 → 18% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.18
+    WHERE modalidade = 'imovel' AND numero_grupo = 1054
+  `);
+  // Auto: 2130 → 19% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
+    WHERE modalidade = 'auto' AND numero_grupo = 2130
+  `);
+  // Auto: 3002 → 19% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
+    WHERE modalidade = 'auto' AND numero_grupo = 3002
+  `);
+  console.log('Coluna taxa_adm_redutor e valores OK!');
 
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
