@@ -7,6 +7,7 @@ import Vendas from './pages/Vendas';
 import Comissoes from './pages/Comissoes';
 import Simulador from './pages/Simulador';
 import Grupos from './pages/Grupos';
+import Acompanhamento from './pages/Acompanhamento';
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
@@ -80,6 +81,14 @@ function App() {
                 <Grupos />
               </PrivateRoute>
             } 
+          />
+          <Route
+            path="/acompanhamento"
+            element={
+              <PrivateRoute>
+                <Acompanhamento />
+              </PrivateRoute>
+            }
           />
           <Route path="/" element={<Navigate to="/vendas" />} />
           <Route path="*" element={<Navigate to="/vendas" />} />
