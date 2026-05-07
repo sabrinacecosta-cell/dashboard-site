@@ -714,11 +714,12 @@ export default function Simulador() {
 
           <ResumoProposta simulacao={simulacaoDoTotais} />
 
-          <label className="sim-checkbox-label">
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
             <input
               type="checkbox"
               checked={incluirParcelaPosNoPDF}
               onChange={e => setIncluirParcelaPosNoPDF(e.target.checked)}
+              style={{ margin: 0, padding: 0, flexShrink: 0, width: '14px', height: '14px' }}
             />
             Incluir parcela pós contemplação no PDF
           </label>
