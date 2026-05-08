@@ -24,7 +24,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     bottom: { style: 'thin' },
     right:  { style: 'thin' },
   };
-  const begeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC9C5A8' } };
+  const begeFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
 
   const applyBlack = (cell) => {
     cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
@@ -145,8 +145,10 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     row.height = 16;
     const a    = row.getCell(COL.A);
     a.value    = 'RESUMO DA PROPOSTA - CONSÓRCIO XP';
-    a.font     = { name: 'Calibri', size: 12, bold: true };
+    a.font     = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
     applyBegeABC(row);
+    const blackFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
+    [COL.A, COL.B, COL.C].forEach(c => { row.getCell(c).fill = blackFill; });
     row.commit();
   }
 
