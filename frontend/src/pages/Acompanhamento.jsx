@@ -99,7 +99,7 @@ function Acompanhamento() {
               {contratos.map((c, i) => (
                 <tr key={i}>
                   <td className="text-primary">{c.grupo}</td>
-                  <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.cota}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.cota.replace('-00', '')}</td>
                   <td>{c.contrato}</td>
                   <td>{c.dataVenda}</td>
                   <td style={{ textAlign: 'center' }}>{c.prazoGrupo} meses</td>
