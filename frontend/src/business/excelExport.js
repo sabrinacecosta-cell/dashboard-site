@@ -155,7 +155,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   setResumoRow(2,  'Carta de Crédito Total',          `G${totRow}`);
   setResumoRow(3,  'Parcela Inicial',                  `H${totRow}`);
-  setResumoRow(4,  'Parcela pós contemplação',         `C${rr(16)}/100`);
+  setResumoRow(4,  'Parcela pós contemplação',         `C${rr(16)}/(MEDIAN(D${firstData}:D${lastData})-C${rr(6)})`);
   setResumoRow(5,  'Parcelas iniciais pagas',          `C${rr(3)}*C${rr(6)}`);
 
   // r+6: Simulando com x parcelas pagas (valor fixo negrito)
