@@ -24,7 +24,18 @@ const CLIENTES = [
       { grupo: '001003', cota: '0330-00', contrato: '103522', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
     ],
   },
-  // CLIENTE 2 — a ser adicionado depois
+  {
+    nome: 'Alex Martins Calcina',
+    cpf: '100.349.078-66',
+    contratos: [
+      { grupo: '001001', cota: '0029', contrato: '102130', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0253', contrato: '102133', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 16, somaParcelasPagas:  9619.48, prazoRestante: 132, saldoDevedor: 176833.20 },
+      { grupo: '001001', cota: '0280', contrato: '102135', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 16, somaParcelasPagas:  8336.88, prazoRestante: 132, saldoDevedor: 153255.44 },
+      { grupo: '001001', cota: '0303', contrato: '102136', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 15192.15, prazoRestante: 132, saldoDevedor: 133384.54 },
+      { grupo: '001001', cota: '0430', contrato: '102134', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0487', contrato: '102132', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
+    ],
+  },
   // CLIENTE 3 — a ser adicionado depois
 ];
 
