@@ -36,7 +36,34 @@ const CLIENTES = [
       { grupo: '001001', cota: '0487', contrato: '102132', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
     ],
   },
-  // CLIENTE 3 — a ser adicionado depois
+  {
+    nome: 'Stefan Wolansky Negrao',
+    cpf: '164.607.068-24',
+    contratos: [
+      // ── Grupo 001001 ─────────────────────────────
+      { grupo: '001001', cota: '0026', contrato: '102076', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0081', contrato: '102084', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0090', contrato: '102079', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 22985.21, prazoRestante: 132, saldoDevedor: 163504.01 },
+      { grupo: '001001', cota: '0124', contrato: '102087', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0138', contrato: '102077', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0193', contrato: '102074', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0201', contrato: '102078', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0218', contrato: '102085', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0234', contrato: '102080', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0242', contrato: '102088', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0244', contrato: '102086', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0269', contrato: '102082', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0310', contrato: '102090', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas:  8706.34, prazoRestante: 132, saldoDevedor: 140485.11 },
+      { grupo: '001001', cota: '0321', contrato: '102075', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0344', contrato: '102081', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      { grupo: '001001', cota: '0435', contrato: '102089', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas:  9431.83, prazoRestante: 132, saldoDevedor: 152192.22 },
+      { grupo: '001001', cota: '0479', contrato: '102083', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
+      // ── Grupo 001002 ─────────────────────────────
+      { grupo: '001002', cota: '0018', contrato: '102279', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 8981.34, prazoRestante: 135, saldoDevedor: 175448.12 },
+      { grupo: '001002', cota: '0068', contrato: '102272', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 8981.34, prazoRestante: 135, saldoDevedor: 175448.12 },
+      { grupo: '001002', cota: '0141', contrato: '102281', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 7783.69, prazoRestante: 135, saldoDevedor: 152055.05 },
+    ],
+  },
 ];
 
 const fmtMoeda = (v) =>
