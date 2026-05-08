@@ -136,19 +136,21 @@ function Grupos() {
               <thead>
                 <tr>
                   <th style={{ textAlign: 'center' }}>Grupo</th>
+                  <th style={{ textAlign: 'center' }}>Prazo restante</th>
                   <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 12 meses)</th>
                   <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
                 </tr>
               </thead>
               <tbody>
                 {dados.resumo.map((r, i) => (
-                  <tr 
-                    key={i} 
+                  <tr
+                    key={i}
                     onClick={() => setGrupoSelecionado(r.grupo)}
                     style={{ cursor: 'pointer' }}
                     className="row-clickable"
                   >
                     <td style={{ textAlign: 'center' }} className="text-primary">Grupo {r.grupo}</td>
+                    <td style={{ textAlign: 'center' }}>{r.prazo_restante != null ? `${r.prazo_restante}m` : '-'}</td>
                     <td style={{ textAlign: 'center' }}>{r.media_contemplacao}%</td>
                     <td style={{ textAlign: 'center' }} className="text-primary">{r.ultimo_lance_percent}%</td>
                   </tr>

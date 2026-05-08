@@ -38,30 +38,32 @@ const ContemplacaoAutoModel = {
   async getResumoGrupos() {
     const result = await db.query(`
       WITH ultimo_mes AS (
-        SELECT DISTINCT ON (grupo) 
-          grupo, 
+        SELECT DISTINCT ON (grupo)
+          grupo,
           lance_percent as ultimo_lance_percent
-        FROM contemplacao_auto 
+        FROM contemplacao_auto
         ORDER BY grupo, id DESC
       ),
       medias AS (
-        SELECT 
+        SELECT
           grupo,
           ROUND(AVG(
-            CASE 
-              WHEN contemplacao_mensal IS NOT NULL 
-              THEN REPLACE(contemplacao_mensal, '%', '')::numeric 
+            CASE
+              WHEN contemplacao_mensal IS NOT NULL
+              THEN REPLACE(contemplacao_mensal, '%', '')::numeric
             END
           ), 0) as media_contemplacao
-        FROM contemplacao_auto 
+        FROM contemplacao_auto
         GROUP BY grupo
       )
-      SELECT 
+      SELECT
         m.grupo,
+        sg.prazo_restante,
         m.media_contemplacao,
         u.ultimo_lance_percent
       FROM medias m
       JOIN ultimo_mes u ON m.grupo = u.grupo
+      LEFT JOIN simulador_grupos sg ON sg.numero_grupo = m.grupo AND sg.modalidade = 'auto'
       ORDER BY m.grupo
     `);
     return result.rows;
