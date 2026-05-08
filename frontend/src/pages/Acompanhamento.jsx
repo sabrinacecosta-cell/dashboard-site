@@ -10,18 +10,18 @@ const CLIENTES = [
     cpf: '027.140.749-28',
     contratos: [
       // ── Grupo 001002 ─────────────────────────────
-      { grupo: '001002', cota: '0069-00', contrato: '103818', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: '97,0970%' },
-      { grupo: '001002', cota: '0414-00', contrato: '103816', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: '97,0970%' },
-      { grupo: '001002', cota: '0468-00', contrato: '103817', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: '97,0970%' },
+      { grupo: '001002', cota: '0069-00', contrato: '103818', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
+      { grupo: '001002', cota: '0414-00', contrato: '103816', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
+      { grupo: '001002', cota: '0468-00', contrato: '103817', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
       // ── Grupo 001003 ─────────────────────────────
-      { grupo: '001003', cota: '0016-00', contrato: '103525', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas: 11550.00, prazoRestante: 139, saldoDevedor: '94,5000%' },
-      { grupo: '001003', cota: '0027-00', contrato: '103524', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: '94,5000%' },
-      { grupo: '001003', cota: '0087-00', contrato: '103820', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5170.10, prazoRestante: 140, saldoDevedor: '97,8770%' },
-      { grupo: '001003', cota: '0126-00', contrato: '103523', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: '94,5000%' },
-      { grupo: '001003', cota: '0218-00', contrato: '103815', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: '97,8770%' },
-      { grupo: '001003', cota: '0235-00', contrato: '103819', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  4772.40, prazoRestante: 140, saldoDevedor: '97,8770%' },
-      { grupo: '001003', cota: '0264-00', contrato: '103814', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: '97,8770%' },
-      { grupo: '001003', cota: '0330-00', contrato: '103522', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: '94,5000%' },
+      { grupo: '001003', cota: '0016-00', contrato: '103525', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas: 11550.00, prazoRestante: 139, saldoDevedor: 145950.05 },
+      { grupo: '001003', cota: '0027-00', contrato: '103524', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
+      { grupo: '001003', cota: '0087-00', contrato: '103820', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5170.10, prazoRestante: 140, saldoDevedor: 148879.95 },
+      { grupo: '001003', cota: '0126-00', contrato: '103523', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
+      { grupo: '001003', cota: '0218-00', contrato: '103815', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: 171784.56 },
+      { grupo: '001003', cota: '0235-00', contrato: '103819', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  4772.40, prazoRestante: 140, saldoDevedor: 137427.65 },
+      { grupo: '001003', cota: '0264-00', contrato: '103814', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: 171784.56 },
+      { grupo: '001003', cota: '0330-00', contrato: '103522', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
     ],
   },
   // CLIENTE 2 — a ser adicionado depois
@@ -110,7 +110,7 @@ function Acompanhamento() {
                     {fmtMoeda(c.somaParcelasPagas)}
                   </td>
                   <td style={{ textAlign: 'center' }}>{c.prazoRestante} meses</td>
-                  <td style={{ textAlign: 'right' }}>{c.saldoDevedor}</td>
+                  <td style={{ textAlign: 'right' }}>{fmtMoeda(c.saldoDevedor)}</td>
                 </tr>
               ))}
             </tbody>
