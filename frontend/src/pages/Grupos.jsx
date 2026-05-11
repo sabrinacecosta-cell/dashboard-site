@@ -154,7 +154,7 @@ function Grupos() {
                   >
                     <td style={{ textAlign: 'center' }} className="text-primary">Grupo {r.grupo}</td>
                     <td style={{ textAlign: 'center' }}>{r.prazo_restante != null ? `${r.prazo_restante}m` : '-'}</td>
-                    <td style={{ textAlign: 'center' }}>{r.media_contemplacao}%</td>
+                    <td style={{ textAlign: 'center' }}>{formatPct(r.media_contemplacao)}</td>
                     <td style={{ textAlign: 'center' }} className="text-primary">{r.ultimo_lance_percent}%</td>
                   </tr>
                 ))}

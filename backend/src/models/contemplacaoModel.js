@@ -47,12 +47,7 @@ const ContemplacaoModel = {
       medias AS (
         SELECT
           grupo,
-          ROUND(AVG(
-            CASE
-              WHEN contemplacao_mensal IS NOT NULL
-              THEN REPLACE(contemplacao_mensal, '%', '')::numeric
-            END
-          ), 0) as media_contemplacao
+          MAX(media_contemplacao) as media_contemplacao
         FROM contemplacao
         GROUP BY grupo
       )
