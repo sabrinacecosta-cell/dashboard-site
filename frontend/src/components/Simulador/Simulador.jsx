@@ -566,6 +566,11 @@ export default function Simulador() {
                         Lance máximo contemplado: {lanceMaxCont}
                       </div>
                     )}
+                    {g.lance_ultimo_mes != null && (
+                      <div className="sim-card-grupo-lance-max-cont">
+                        Lance último mês: {String(parseFloat(g.lance_ultimo_mes)).replace('.', ',')}%
+                      </div>
+                    )}
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
                     )}
