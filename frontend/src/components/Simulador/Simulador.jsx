@@ -416,23 +416,6 @@ export default function Simulador() {
       y += 3;
     }
 
-    if (incluirParcelaPosNoPDF) {
-      const notaParcelaPosTexto = 'O cálculo da parcela pós contemplação foi feito considerando o valor total de lance pago, subtraído 1 mês, que corresponde à parcela inicial e dividido pelo prazo restante.';
-      const notaParcelaPosLinhas = doc.splitTextToSize(notaParcelaPosTexto, W - 2 * M - 14);
-      const memHSim2 = 8 + notaParcelaPosLinhas.length * 4.5;
-      doc.setFillColor(...gold);
-      doc.rect(M, y, 3, memHSim2, 'F');
-      doc.setFontSize(8);
-      doc.setTextColor(...grey);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Parcela pós contemplação', M + 7, y + 6);
-      doc.setFontSize(8);
-      doc.setTextColor(...lightGrey);
-      doc.setFont('helvetica', 'normal');
-      notaParcelaPosLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
-      y += memHSim2 + 5;
-    }
-
     if (linhasSim.some(l => l.redutor === 50)) {
       const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
       doc.setFontSize(7);
