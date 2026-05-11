@@ -88,7 +88,7 @@ export default function Simulador() {
     setGrupoSelecionado(null);
     setCotas([]);
     api.get(`/simulador/grupos?modalidade=${modalidade}`)
-      .then(r => setGrupos(r.data))
+      .then(r => { console.log('grupos:', r.data); setGrupos(r.data); })
       .catch(() => setGrupos([]))
       .finally(() => setLoadingGrupos(false));
   }, [modalidade]);
