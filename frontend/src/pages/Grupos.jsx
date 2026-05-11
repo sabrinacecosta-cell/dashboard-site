@@ -26,13 +26,16 @@ function Grupos() {
     }
   }
 
-  const formatPercent = (value) => {
-    if (!value && value !== 0) return '-';
-    return `${value}%`;
+  const formatPct = (val) => {
+    if (!val && val !== 0) return '-';
+    const pct = parseFloat(val) * 100;
+    return pct % 1 === 0 ? `${pct}%` : `${pct.toFixed(1).replace('.', ',')}%`;
   };
 
   const formatMesAno = (mes) => {
-    const mesLower = mes?.toLowerCase();
+    if (!mes) return '-';
+    if (mes.includes('/')) return mes;
+    const mesLower = mes.toLowerCase();
     if (mesLower === 'janeiro') return 'janeiro/2026';
     if (mesLower === 'fevereiro') return 'fevereiro/2026';
     if (mesLower === 'março') return 'março/2026';
@@ -202,14 +205,14 @@ function Grupos() {
                     <td style={{ textAlign: 'center' }}>{r.lance_percent}%</td>
                     <td style={{ textAlign: 'center' }}>{r.qnt_lances}</td>
                     <td style={{ textAlign: 'center' }}>{r.contemplados}</td>
-                    <td style={{ textAlign: 'center' }}>{r.contemplacao_mensal || '-'}</td>
+                    <td style={{ textAlign: 'center' }}>{formatPct(r.contemplacao_mensal)}</td>
                     {tipoSelecionado === 'imovel' ? (
                       <>
-                        <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao || '-'}</td>
-                        <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao_6m || '-'}</td>
+                        <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao)}</td>
+                        <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao_6m)}</td>
                       </>
                     ) : (
-                      <td style={{ textAlign: 'center' }} className="text-primary">{r.media_contemplacao || '-'}</td>
+                      <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao)}</td>
                     )}
                   </tr>
                 ))}
