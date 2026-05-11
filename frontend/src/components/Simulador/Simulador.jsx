@@ -542,6 +542,7 @@ export default function Simulador() {
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
                       <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
+                      <span>Lance último mês: {g.lance_ultimo_mes}%</span>
                     </div>
                     <div className={`sim-card-grupo-media${g.sem_media_contemplacao ? ' sem-media' : ''}`}>
                       {g.sem_media_contemplacao
