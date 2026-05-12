@@ -13,6 +13,78 @@ const fmtData = (d) => {
   return `${day}/${m}/${y}`;
 };
 
+const TITULO_SECAO = {
+  '2026-05': 'Base de cálculo abril | Exercício maio',
+  '2026-04': 'Base cálculo março | Exercício abril',
+  '2026-03': 'Base cálculo fevereiro | Exercício março',
+};
+
+function getTituloSecao(mesRef) {
+  if (!mesRef) return mesRef;
+  const ym = String(mesRef).split('T')[0].substring(0, 7);
+  return TITULO_SECAO[ym] || ym;
+}
+
+function getYM(mesRef) {
+  if (!mesRef) return '';
+  return String(mesRef).split('T')[0].substring(0, 7);
+}
+
+function TabelaComissoes({ rows }) {
+  const totalCarta    = rows.reduce((s, r) => s + Number(r.valor_carta),    0);
+  const totalComissao = rows.reduce((s, r) => s + Number(r.valor_comissao), 0);
+  const totalLiquido  = rows.reduce((s, r) => s + Number(r.valor_liquido),  0);
+
+  return (
+    <div className="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Data Venda</th>
+            <th>Contrato</th>
+            <th>Grupo/Cota</th>
+            <th style={{ textAlign: 'center' }}>Parcela</th>
+            <th style={{ textAlign: 'right' }}>Valor Carta</th>
+            <th style={{ textAlign: 'right' }}>Comissão %</th>
+            <th style={{ textAlign: 'right' }}>Comissão</th>
+            <th style={{ textAlign: 'right' }}>Valor Líquido</th>
+            <th>Cliente</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.id}>
+              <td>{fmtData(r.data_venda)}</td>
+              <td className="text-primary">{r.contrato}</td>
+              <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{r.grupo_cota_versao}</td>
+              <td style={{ textAlign: 'center' }}>{r.parcela}</td>
+              <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_carta)}</td>
+              <td style={{ textAlign: 'right' }}>
+                {r.percentual_comissao != null
+                  ? (Number(r.percentual_comissao) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '%'
+                  : '-'}
+              </td>
+              <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(r.valor_comissao)}</td>
+              <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_liquido)}</td>
+              <td>{r.cliente}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr style={{ fontWeight: 700 }}>
+            <td colSpan={4}>Total ({rows.length} registros)</td>
+            <td style={{ textAlign: 'right' }}>{fmtMoeda(totalCarta)}</td>
+            <td />
+            <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(totalComissao)}</td>
+            <td style={{ textAlign: 'right' }}>{fmtMoeda(totalLiquido)}</td>
+            <td />
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  );
+}
+
 function Comissoes() {
   const { user } = useAuth();
   const [dados, setDados] = useState([]);
@@ -30,9 +102,16 @@ function Comissoes() {
       .finally(() => setLoading(false));
   }, [isAdmin]);
 
-  const totalCarta    = dados.reduce((s, r) => s + Number(r.valor_carta),    0);
-  const totalComissao = dados.reduce((s, r) => s + Number(r.valor_comissao), 0);
-  const totalLiquido  = dados.reduce((s, r) => s + Number(r.valor_liquido),  0);
+  // Group by year-month of mes_referencia, descending
+  const secoes = React.useMemo(() => {
+    const map = {};
+    dados.forEach(r => {
+      const ym = getYM(r.mes_referencia);
+      if (!map[ym]) map[ym] = [];
+      map[ym].push(r);
+    });
+    return Object.entries(map).sort(([a], [b]) => b.localeCompare(a));
+  }, [dados]);
 
   return (
     <div className="page-comissoes">
@@ -54,56 +133,12 @@ function Comissoes() {
       ) : error ? (
         <div className="page-error">{error}</div>
       ) : (
-        <div className="card">
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Mês Ref.</th>
-                  <th>Data Venda</th>
-                  <th>Contrato</th>
-                  <th>Grupo/Cota</th>
-                  <th style={{ textAlign: 'center' }}>Parcela</th>
-                  <th style={{ textAlign: 'right' }}>Valor Carta</th>
-                  <th style={{ textAlign: 'right' }}>Comissão %</th>
-                  <th style={{ textAlign: 'right' }}>Comissão</th>
-                  <th style={{ textAlign: 'right' }}>Valor Líquido</th>
-                  <th>Cliente</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dados.map(r => (
-                  <tr key={r.id}>
-                    <td>{fmtData(r.mes_referencia)}</td>
-                    <td>{fmtData(r.data_venda)}</td>
-                    <td className="text-primary">{r.contrato}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{r.grupo_cota_versao}</td>
-                    <td style={{ textAlign: 'center' }}>{r.parcela}</td>
-                    <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_carta)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {r.percentual_comissao != null
-                        ? (Number(r.percentual_comissao) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '%'
-                        : '-'}
-                    </td>
-                    <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(r.valor_comissao)}</td>
-                    <td style={{ textAlign: 'right' }}>{fmtMoeda(r.valor_liquido)}</td>
-                    <td>{r.cliente}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={{ fontWeight: 700 }}>
-                  <td colSpan={5}>Total ({dados.length} registros)</td>
-                  <td style={{ textAlign: 'right' }}>{fmtMoeda(totalCarta)}</td>
-                  <td />
-                  <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(totalComissao)}</td>
-                  <td style={{ textAlign: 'right' }}>{fmtMoeda(totalLiquido)}</td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
+        secoes.map(([ym, rows]) => (
+          <div className="card" key={ym} style={{ marginBottom: '1.5rem' }}>
+            <h3>{getTituloSecao(rows[0]?.mes_referencia)}</h3>
+            <TabelaComissoes rows={rows} />
           </div>
-        </div>
+        ))
       )}
     </div>
   );
