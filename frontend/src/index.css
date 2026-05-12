@@ -495,7 +495,7 @@ thead tr {
 
 th {
   text-align: left;
-  padding: 7px 8px;
+  padding: 10px 8px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -517,7 +517,7 @@ tbody tr:hover {
 }
 
 td {
-  padding: 7px 8px;
+  padding: 12px 8px;
   font-size: 14px;
   color: var(--text-primary);
 }
@@ -527,7 +527,7 @@ tfoot tr {
 }
 
 tfoot td {
-  padding: 7px 8px;
+  padding: 12px 8px;
   font-size: 14px;
   color: var(--text-primary);
 }
