@@ -2,7 +2,7 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function enviarEmailRedefinicaoSenha(destinatario, nomeUsuario, linkRedefinicao) {
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: 'Dashboard <noreply@jtdkinvest.com>',
     to: destinatario,
     subject: 'Redefinição de senha — Dashboard',
@@ -20,6 +20,7 @@ async function enviarEmailRedefinicaoSenha(destinatario, nomeUsuario, linkRedefi
       </div>
     `,
   });
+  if (error) throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
 }
 
 module.exports = { enviarEmailRedefinicaoSenha };
