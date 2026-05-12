@@ -309,29 +309,27 @@ function ChatComissoes({ dados }) {
         </div>
       )}
 
-      <form onSubmit={enviar} style={{ display: 'flex', gap: '8px' }}>
-        <input
+      <form onSubmit={enviar} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+        <textarea
           ref={inputRef}
-          type="text"
           value={pergunta}
           onChange={e => setPergunta(e.target.value)}
-          placeholder='Ex: "Qual o total de comissão líquida de maio?"'
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && enviar(e)}
+          placeholder="Digite sua pergunta..."
           disabled={carregando}
-          className="chat-input"
+          rows={1}
           style={{
-            color: '#f5f5f7',
-            backgroundColor: '#2c2c2e',
-            fontSize: '14px',
-            minHeight: '44px',
-            padding: '12px',
             width: '100%',
+            minHeight: '48px',
+            padding: '12px 16px',
+            background: '#3a3a3c',
+            color: '#ffffff',
+            border: '1px solid rgba(255,255,255,0.15)',
             borderRadius: '10px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            WebkitTextFillColor: '#f5f5f7',
-            caretColor: '#f5f5f7',
-            flex: 1,
-            minWidth: 0,
-            boxSizing: 'border-box',
+            fontSize: '14px',
+            resize: 'none',
+            outline: 'none',
+            fontFamily: 'inherit',
           }}
         />
         <button
@@ -346,6 +344,8 @@ function ChatComissoes({ dados }) {
             fontWeight: 600,
             cursor: 'pointer',
             fontSize: '0.95rem',
+            height: '48px',
+            whiteSpace: 'nowrap',
             opacity: (carregando || !pergunta.trim()) ? 0.5 : 1,
           }}
         >
