@@ -319,12 +319,14 @@ function ChatComissoes({ dados }) {
           disabled={carregando}
           style={{
             flex: 1,
-            padding: '0.5rem 1rem',
+            padding: '0.65rem 1rem',
             borderRadius: '8px',
             border: '1px solid var(--border)',
             background: 'var(--bg-primary)',
-            color: 'var(--text-primary)',
+            color: '#f5f5f7',
             fontSize: '0.95rem',
+            height: '44px',
+            boxSizing: 'border-box',
           }}
         />
         <button
