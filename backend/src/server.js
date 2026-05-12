@@ -8,7 +8,13 @@ const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0';
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://dashboardconsorcio.up.railway.app',
+    'http://localhost:5173'
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 
 // Rotas
