@@ -501,6 +501,9 @@ th {
   letter-spacing: 0.06em;
   color: var(--text-muted);
   font-weight: 600;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 tbody tr {
@@ -520,6 +523,9 @@ td {
   padding: 12px 8px;
   font-size: 14px;
   color: var(--text-primary);
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 tfoot tr {
@@ -530,6 +536,9 @@ tfoot td {
   padding: 12px 8px;
   font-size: 14px;
   color: var(--text-primary);
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 .text-primary {
