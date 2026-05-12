@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/login', AuthController.login);
 router.post('/definir-senha', AuthController.definirSenha);
 router.post('/esqueci-senha', AuthController.esqueceuSenha);
+router.post('/redefinir-senha', AuthController.redefinirSenha);
 
 // Rotas protegidas
 router.get('/me', authMiddleware, AuthController.me);

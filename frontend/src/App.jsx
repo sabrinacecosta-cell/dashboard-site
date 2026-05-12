@@ -8,6 +8,7 @@ import Comissoes from './pages/Comissoes';
 import Simulador from './pages/Simulador';
 import Grupos from './pages/Grupos';
 import Acompanhamento from './pages/Acompanhamento';
+import RedefinirSenha from './pages/RedefinirSenha';
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
@@ -42,14 +43,15 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
               <PublicRoute>
                 <Login />
               </PublicRoute>
-            } 
+            }
           />
+          <Route path="/redefinir-senha" element={<RedefinirSenha />} />
           <Route 
             path="/vendas" 
             element={

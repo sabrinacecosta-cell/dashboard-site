@@ -9,6 +9,7 @@ function Login() {
   const [novaSenha, setNovaSenha] = useState('');
   const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
   const [esqueceuSenha, setEsqueceuSenha] = useState(false);
+  const [emailEnviado, setEmailEnviado] = useState(false);
   const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,9 +58,8 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await api.post('/esqueci-senha', { email: emailRecuperacao });
-      setPrimeiroAcesso(response.data);
-      setEsqueceuSenha(false);
+      await api.post('/esqueci-senha', { email: emailRecuperacao });
+      setEmailEnviado(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Email não encontrado');
     } finally {
@@ -100,6 +100,28 @@ function Login() {
   }
 
   if (esqueceuSenha) {
+    if (emailEnviado) {
+      return (
+        <div className="login-container">
+          <div className="card login-card">
+            <h1>E-mail enviado!</h1>
+            <p style={{ textAlign: 'center', marginBottom: 25, color: 'var(--text-secondary)' }}>
+              Verifique sua caixa de entrada e siga o link para redefinir sua senha.
+            </p>
+            <p style={{ textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => { setEsqueceuSenha(false); setEmailEnviado(false); setError(''); }}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Voltar ao login
+              </button>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="login-container">
         <div className="card login-card">
@@ -119,7 +141,7 @@ function Login() {
               />
             </div>
             <button type="submit" disabled={loading}>
-              {loading ? 'Verificando...' : 'Continuar'}
+              {loading ? 'Enviando...' : 'Enviar e-mail'}
             </button>
             {error && <p className="error">{error}</p>}
           </form>
