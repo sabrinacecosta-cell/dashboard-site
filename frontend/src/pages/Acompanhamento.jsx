@@ -1,70 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 const EMAILS_PERMITIDOS = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outlook.com'];
-
-const CLIENTES = [
-  {
-    nome: 'Marcelo Rodrigo Weckerlin',
-    cpf: '027.140.749-28',
-    contratos: [
-      // ── Grupo 001002 ─────────────────────────────
-      { grupo: '001002', cota: '0069-00', contrato: '103818', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
-      { grupo: '001002', cota: '0414-00', contrato: '103816', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
-      { grupo: '001002', cota: '0468-00', contrato: '103817', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 10, somaParcelasPagas: 6202.23,  prazoRestante: 140, saldoDevedor: 178312.64 },
-      // ── Grupo 001003 ─────────────────────────────
-      { grupo: '001003', cota: '0016-00', contrato: '103525', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas: 11550.00, prazoRestante: 139, saldoDevedor: 145950.05 },
-      { grupo: '001003', cota: '0027-00', contrato: '103524', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
-      { grupo: '001003', cota: '0087-00', contrato: '103820', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5170.10, prazoRestante: 140, saldoDevedor: 148879.95 },
-      { grupo: '001003', cota: '0126-00', contrato: '103523', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
-      { grupo: '001003', cota: '0218-00', contrato: '103815', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: 171784.56 },
-      { grupo: '001003', cota: '0235-00', contrato: '103819', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  4772.40, prazoRestante: 140, saldoDevedor: 137427.65 },
-      { grupo: '001003', cota: '0264-00', contrato: '103814', dataVenda: '14/07/2025', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '11/07/2026', parcelasPagas: 10, somaParcelasPagas:  5965.50, prazoRestante: 140, saldoDevedor: 171784.56 },
-      { grupo: '001003', cota: '0330-00', contrato: '103522', dataVenda: '10/06/2025', prazoGrupo: 150, taxaAdm: '12,50%', proximoReajuste: '09/06/2026', parcelasPagas: 11, somaParcelasPagas:  9900.00, prazoRestante: 139, saldoDevedor: 125100.05 },
-    ],
-  },
-  {
-    nome: 'Alex Martins Calcina',
-    cpf: '100.349.078-66',
-    contratos: [
-      { grupo: '001001', cota: '0029', contrato: '102130', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0253', contrato: '102133', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 16, somaParcelasPagas:  9619.48, prazoRestante: 132, saldoDevedor: 176833.20 },
-      { grupo: '001001', cota: '0280', contrato: '102135', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 16, somaParcelasPagas:  8336.88, prazoRestante: 132, saldoDevedor: 153255.44 },
-      { grupo: '001001', cota: '0303', contrato: '102136', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 15192.15, prazoRestante: 132, saldoDevedor: 133384.54 },
-      { grupo: '001001', cota: '0430', contrato: '102134', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0487', contrato: '102132', dataVenda: '25/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10846.32, prazoRestante: 132, saldoDevedor: 175606.40 },
-    ],
-  },
-  {
-    nome: 'Stefan Wolansky Negrao',
-    cpf: '164.607.068-24',
-    contratos: [
-      // ── Grupo 001001 ─────────────────────────────
-      { grupo: '001001', cota: '0026', contrato: '102076', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0081', contrato: '102084', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0090', contrato: '102079', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 22985.21, prazoRestante: 132, saldoDevedor: 163504.01 },
-      { grupo: '001001', cota: '0124', contrato: '102087', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0138', contrato: '102077', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0193', contrato: '102074', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0201', contrato: '102078', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0218', contrato: '102085', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0234', contrato: '102080', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0242', contrato: '102088', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0244', contrato: '102086', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0269', contrato: '102082', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0310', contrato: '102090', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas:  8706.34, prazoRestante: 132, saldoDevedor: 140485.11 },
-      { grupo: '001001', cota: '0321', contrato: '102075', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0344', contrato: '102081', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      { grupo: '001001', cota: '0435', contrato: '102089', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas:  9431.83, prazoRestante: 132, saldoDevedor: 152192.22 },
-      { grupo: '001001', cota: '0479', contrato: '102083', dataVenda: '22/11/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/11/2026', parcelasPagas: 18, somaParcelasPagas: 10882.90, prazoRestante: 132, saldoDevedor: 175606.40 },
-      // ── Grupo 001002 ─────────────────────────────
-      { grupo: '001002', cota: '0018', contrato: '102279', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 8981.34, prazoRestante: 135, saldoDevedor: 175448.12 },
-      { grupo: '001002', cota: '0068', contrato: '102272', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 8981.34, prazoRestante: 135, saldoDevedor: 175448.12 },
-      { grupo: '001002', cota: '0141', contrato: '102281', dataVenda: '06/12/2024', prazoGrupo: 150, taxaAdm: '18,50%', proximoReajuste: '01/02/2027', parcelasPagas: 15, somaParcelasPagas: 7783.69, prazoRestante: 135, saldoDevedor: 152055.05 },
-    ],
-  },
-];
 
 const fmtMoeda = (v) =>
   Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -72,6 +11,9 @@ const fmtMoeda = (v) =>
 function Acompanhamento() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [dados, setDados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [clienteIdx, setClienteIdx] = useState(0);
 
   useEffect(() => {
@@ -80,9 +22,31 @@ function Acompanhamento() {
     }
   }, [user, navigate]);
 
-  const clienteSelecionado = CLIENTES[clienteIdx];
+  useEffect(() => {
+    api.get('/acompanhamento')
+      .then(r => setDados(r.data))
+      .catch(() => setError('Erro ao carregar dados'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="page-loading">Carregando...</div>;
+  if (error)   return <div className="page-error">{error}</div>;
+
+  // Agrupa por cliente
+  const clientesMap = {};
+  dados.forEach(r => {
+    if (!clientesMap[r.cliente_nome]) {
+      clientesMap[r.cliente_nome] = { nome: r.cliente_nome, cpf: r.cliente_cpf, contratos: [] };
+    }
+    clientesMap[r.cliente_nome].contratos.push(r);
+  });
+  const clientes = Object.values(clientesMap);
+
+  if (clientes.length === 0) return <div className="page-error">Nenhum dado disponível</div>;
+
+  const clienteSelecionado = clientes[clienteIdx] || clientes[0];
   const { contratos } = clienteSelecionado;
-  const totalSomaParcelas = contratos.reduce((s, c) => s + c.somaParcelasPagas, 0);
+  const totalSomaParcelas = contratos.reduce((s, c) => s + Number(c.soma_parcelas_pagas), 0);
 
   return (
     <div className="page-acompanhamento">
@@ -100,7 +64,7 @@ function Acompanhamento() {
             Cliente:
           </span>
           <div className="toggle-group" style={{ marginBottom: 0 }}>
-            {CLIENTES.map((c, i) => (
+            {clientes.map((c, i) => (
               <button
                 key={i}
                 type="button"
@@ -139,16 +103,16 @@ function Acompanhamento() {
                   <td className="text-primary">{c.grupo}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.cota.replace('-00', '')}</td>
                   <td>{c.contrato}</td>
-                  <td>{c.dataVenda}</td>
-                  <td style={{ textAlign: 'center' }}>{c.prazoGrupo} meses</td>
-                  <td style={{ textAlign: 'center' }}>{c.taxaAdm}</td>
-                  <td>{c.proximoReajuste}</td>
-                  <td style={{ textAlign: 'center' }}>{c.parcelasPagas}</td>
+                  <td>{c.data_venda}</td>
+                  <td style={{ textAlign: 'center' }}>{c.prazo_grupo} meses</td>
+                  <td style={{ textAlign: 'center' }}>{c.taxa_adm}</td>
+                  <td>{c.proximo_reajuste}</td>
+                  <td style={{ textAlign: 'center' }}>{c.parcelas_pagas}</td>
                   <td style={{ textAlign: 'right' }} className="text-primary">
-                    {fmtMoeda(c.somaParcelasPagas)}
+                    {fmtMoeda(c.soma_parcelas_pagas)}
                   </td>
-                  <td style={{ textAlign: 'center' }}>{c.prazoRestante} meses</td>
-                  <td style={{ textAlign: 'right' }}>{fmtMoeda(c.saldoDevedor)}</td>
+                  <td style={{ textAlign: 'center' }}>{c.prazo_restante} meses</td>
+                  <td style={{ textAlign: 'right' }}>{fmtMoeda(c.saldo_devedor)}</td>
                 </tr>
               ))}
             </tbody>

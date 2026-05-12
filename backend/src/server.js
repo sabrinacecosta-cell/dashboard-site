@@ -20,6 +20,9 @@ app.use(express.json());
 // Rotas
 app.use('/api', routes);
 
+const acompanhamentoExterno = require('./routes/acompanhamentoExternoRoutes');
+app.use('/api/externo', acompanhamentoExterno);
+
 // Migração + seed automáticos na inicialização
 const migrate = require('../scripts/migrate');
 const seedSimulador = require('../scripts/seed_simulador');
