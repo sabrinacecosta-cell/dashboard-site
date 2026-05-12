@@ -322,6 +322,9 @@ function ChatComissoes({ dados }) {
             width: 'auto',
             minWidth: 0,
             color: '#f5f5f7',
+            WebkitTextFillColor: '#f5f5f7',
+            background: '#2c2c2e',
+            caretColor: '#f5f5f7',
           }}
         />
         <button
