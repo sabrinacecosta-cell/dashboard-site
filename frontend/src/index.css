@@ -654,6 +654,13 @@ input::placeholder {
   color: var(--text-muted);
 }
 
+.chat-input,
+.chat-input textarea,
+.chat-input input {
+  color: #f5f5f7 !important;
+  background-color: #2c2c2e !important;
+}
+
 /* ---- Buttons (global base) ---- */
 button {
   width: 100%;

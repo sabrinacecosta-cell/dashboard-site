@@ -317,14 +317,21 @@ function ChatComissoes({ dados }) {
           onChange={e => setPergunta(e.target.value)}
           placeholder='Ex: "Qual o total de comissão líquida de maio?"'
           disabled={carregando}
+          className="chat-input"
           style={{
-            flex: 1,
-            width: 'auto',
-            minWidth: 0,
             color: '#f5f5f7',
+            backgroundColor: '#2c2c2e',
+            fontSize: '14px',
+            minHeight: '44px',
+            padding: '12px',
+            width: '100%',
+            borderRadius: '10px',
+            border: '1px solid rgba(255,255,255,0.1)',
             WebkitTextFillColor: '#f5f5f7',
-            background: '#2c2c2e',
             caretColor: '#f5f5f7',
+            flex: 1,
+            minWidth: 0,
+            boxSizing: 'border-box',
           }}
         />
         <button
