@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
@@ -38,14 +38,30 @@ function getYM(mesRef) {
   return String(mesRef).split('T')[0].substring(0, 7);
 }
 
-function TabelaComissoes({ rows, filtro }) {
-  const rowsFiltrados = filtro
-    ? rows.filter(r => (r.cliente || '').toLowerCase().includes(filtro.toLowerCase()))
+function TabelaComissoes({ rows }) {
+  const [clienteFiltro, setClienteFiltro] = useState('');
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const clientesUnicos = [...new Set(rows.map(r => r.cliente).filter(Boolean))].sort();
+
+  useEffect(() => {
+    function handleClickFora(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownAberto(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickFora);
+    return () => document.removeEventListener('mousedown', handleClickFora);
+  }, []);
+
+  const rowsFiltrados = clienteFiltro
+    ? rows.filter(r => r.cliente === clienteFiltro)
     : rows;
 
-  const totalCarta    = rowsFiltrados.reduce((s, r) => s + Number(r.valor_carta),    0);
-  const totalBruto    = rowsFiltrados.reduce((s, r) => s + Number(r.valor_comissao), 0);
-  const totalLiquido  = rowsFiltrados.reduce((s, r) => s + Number(r.valor_liquido) * 0.80, 0);
+  const totalCarta   = rowsFiltrados.reduce((s, r) => s + Number(r.valor_carta),    0);
+  const totalBruto   = rowsFiltrados.reduce((s, r) => s + Number(r.valor_comissao), 0);
+  const totalLiquido = rowsFiltrados.reduce((s, r) => s + Number(r.valor_liquido) * 0.80, 0);
 
   return (
     <div className="table-scroll">
@@ -60,7 +76,82 @@ function TabelaComissoes({ rows, filtro }) {
             <th style={{ textAlign: 'right' }}>Comissão %</th>
             <th style={{ textAlign: 'right' }}>Comissão Bruta</th>
             <th style={{ textAlign: 'right' }}>Comissão Líquida</th>
-            <th>Cliente</th>
+            <th>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }} ref={dropdownRef}>
+                Cliente
+                <button
+                  type="button"
+                  onClick={() => setDropdownAberto(v => !v)}
+                  style={{
+                    background: clienteFiltro ? 'var(--primary)' : 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    borderRadius: '4px',
+                    color: clienteFiltro ? '#1d1d1f' : 'var(--text-secondary)',
+                    fontSize: '12px',
+                    lineHeight: 1,
+                  }}
+                  title="Filtrar por cliente"
+                >
+                  ▼
+                </button>
+                {dropdownAberto && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    zIndex: 100,
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                    minWidth: '220px',
+                    maxHeight: '260px',
+                    overflowY: 'auto',
+                    padding: '4px 0',
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => { setClienteFiltro(''); setDropdownAberto(false); }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 16px',
+                        background: !clienteFiltro ? 'var(--primary)' : 'none',
+                        color: !clienteFiltro ? '#1d1d1f' : 'var(--text-primary)',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                      }}
+                    >
+                      Todos
+                    </button>
+                    {clientesUnicos.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => { setClienteFiltro(c); setDropdownAberto(false); }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '8px 16px',
+                          background: clienteFiltro === c ? 'var(--primary)' : 'none',
+                          color: clienteFiltro === c ? '#1d1d1f' : 'var(--text-primary)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '0.85rem',
+                        }}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -97,12 +188,172 @@ function TabelaComissoes({ rows, filtro }) {
   );
 }
 
+function ChatComissoes({ dados }) {
+  const [pergunta, setPergunta] = useState('');
+  const [historico, setHistorico] = useState([]);
+  const [carregando, setCarregando] = useState(false);
+  const inputRef = useRef(null);
+  const historicoRef = useRef(null);
+
+  useEffect(() => {
+    if (historicoRef.current) {
+      historicoRef.current.scrollTop = historicoRef.current.scrollHeight;
+    }
+  }, [historico]);
+
+  async function enviar(e) {
+    e.preventDefault();
+    const texto = pergunta.trim();
+    if (!texto || carregando) return;
+
+    setPergunta('');
+    setHistorico(h => [...h, { role: 'user', content: texto }]);
+    setCarregando(true);
+
+    try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY não configurada');
+
+      const dadosContexto = dados.map(r => ({
+        cliente: r.cliente,
+        contrato: r.contrato,
+        grupo_cota: fmtGrupoCota(r.grupo_cota_versao),
+        data_venda: fmtData(r.data_venda),
+        parcela: r.parcela,
+        valor_carta: Number(r.valor_carta),
+        comissao_bruta: Number(r.valor_comissao),
+        comissao_liquida: Number(r.valor_liquido) * 0.80,
+        mes_referencia: r.mes_referencia ? String(r.mes_referencia).split('T')[0].substring(0, 7) : null,
+      }));
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1024,
+          system: `Você é um assistente que responde perguntas sobre dados de comissões de consórcio. Responda de forma direta e objetiva em português. Use os valores monetários formatados em reais (R$). Dados disponíveis (${dadosContexto.length} registros): ${JSON.stringify(dadosContexto)}`,
+          messages: [{ role: 'user', content: texto }],
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'Erro na API');
+      }
+
+      const data = await response.json();
+      const resposta = data.content?.[0]?.text || 'Sem resposta';
+      setHistorico(h => [...h, { role: 'assistant', content: resposta }]);
+    } catch (err) {
+      setHistorico(h => [...h, { role: 'assistant', content: `Erro: ${err.message}`, erro: true }]);
+    } finally {
+      setCarregando(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  return (
+    <div className="card" style={{ marginBottom: '1.5rem' }}>
+      <h3 style={{ marginBottom: '12px', fontSize: '0.95rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+        Pergunte sobre os dados
+      </h3>
+
+      {historico.length > 0 && (
+        <div
+          ref={historicoRef}
+          style={{
+            maxHeight: '280px',
+            overflowY: 'auto',
+            marginBottom: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          {historico.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '85%',
+                padding: '10px 14px',
+                borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                background: msg.role === 'user' ? 'var(--primary)' : 'var(--bg-secondary)',
+                color: msg.role === 'user' ? '#1d1d1f' : (msg.erro ? '#ff6b6b' : 'var(--text-primary)'),
+                fontSize: '0.88rem',
+                lineHeight: '1.5',
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {msg.content}
+            </div>
+          ))}
+          {carregando && (
+            <div style={{
+              alignSelf: 'flex-start',
+              padding: '10px 14px',
+              borderRadius: '16px 16px 16px 4px',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-secondary)',
+              fontSize: '0.88rem',
+            }}>
+              ...
+            </div>
+          )}
+        </div>
+      )}
+
+      <form onSubmit={enviar} style={{ display: 'flex', gap: '8px' }}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={pergunta}
+          onChange={e => setPergunta(e.target.value)}
+          placeholder='Ex: "Qual o total de comissão líquida de maio?"'
+          disabled={carregando}
+          style={{
+            flex: 1,
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border)',
+            background: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+            fontSize: '0.95rem',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={carregando || !pergunta.trim()}
+          style={{
+            padding: '0.5rem 1.2rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: 'var(--primary)',
+            color: '#1d1d1f',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            opacity: (carregando || !pergunta.trim()) ? 0.5 : 1,
+          }}
+        >
+          Enviar
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function Comissoes() {
   const { user } = useAuth();
   const [dados, setDados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [filtro, setFiltro] = useState('');
 
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
@@ -146,28 +397,11 @@ function Comissoes() {
         <div className="page-error">{error}</div>
       ) : (
         <>
-          <div className="card" style={{ marginBottom: '1.5rem' }}>
-            <input
-              type="text"
-              placeholder="Buscar por cliente..."
-              value={filtro}
-              onChange={e => setFiltro(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-              }}
-            />
-          </div>
+          <ChatComissoes dados={dados} />
           {secoes.map(([ym, rows]) => (
             <div className="card" key={ym} style={{ marginBottom: '1.5rem' }}>
               <h3>{getTituloSecao(rows[0]?.mes_referencia)}</h3>
-              <TabelaComissoes rows={rows} filtro={filtro} />
+              <TabelaComissoes rows={rows} />
             </div>
           ))}
         </>
