@@ -192,12 +192,41 @@ code, pre, .mono {
   border-top: 0.5px solid var(--border);
 }
 
+.sidebar-user-dropdown {
+  position: relative;
+}
+
 .user-badge {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px;
   border-radius: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.user-badge:hover {
+  background: var(--bg-card-hover);
+}
+
+.sidebar-user-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  z-index: 100;
 }
 
 .user-avatar {

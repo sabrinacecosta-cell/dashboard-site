@@ -113,6 +113,37 @@ function Layout({ children }) {
           ))}
         </nav>
 
+        <div className="sidebar-footer">
+          <div className="sidebar-user-dropdown" ref={dropdownRef}>
+            <button className="user-badge" onClick={() => setDropdownOpen(o => !o)}>
+              <div className="user-avatar">{user?.nome?.charAt(0).toUpperCase()}</div>
+              <span className="user-name">{user?.nome?.split(' ')[0]}</span>
+            </button>
+            {dropdownOpen && (
+              <div className="sidebar-user-menu">
+                <span className="header-user-email">{user?.email}</span>
+                {user?.email === 'sabrina@jtdkinvest.com' && (
+                  <>
+                    <hr className="dropdown-divider" />
+                    <button className="dropdown-btn" onClick={handleImportar} disabled={importando}>
+                      {importando ? '...' : '🔄 Atualizar dados'}
+                    </button>
+                    <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>
+                      {resetando ? '...' : '🔑 Resetar senhas'}
+                    </button>
+                  </>
+                )}
+                <hr className="dropdown-divider" />
+                <button className="btn-logout" onClick={handleLogout}>Sair</button>
+                {adminResult && (
+                  <span className={`admin-toast-inline ${adminResult.success ? 'success' : 'error'}`}>
+                    {adminResult.msg}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </aside>
 
       {/* Toggle button */}
@@ -142,34 +173,6 @@ function Layout({ children }) {
               <span>{theme === 'dark' ? '🌙' : '☀️'}</span>
               <span className="theme-label">{theme === 'dark' ? 'Modo escuro' : 'Modo claro'}</span>
             </button>
-            <div className="header-user-dropdown" ref={dropdownRef}>
-              <button className="header-user-btn" onClick={() => setDropdownOpen(o => !o)}>
-                {user?.nome?.split(' ')[0]}
-              </button>
-              {dropdownOpen && (
-                <div className="header-user-menu">
-                  <span className="header-user-email">{user?.email}</span>
-                  {user?.email === 'sabrina@jtdkinvest.com' && (
-                    <>
-                      <hr className="dropdown-divider" />
-                      <button className="dropdown-btn" onClick={handleImportar} disabled={importando}>
-                        {importando ? '...' : '🔄 Atualizar dados'}
-                      </button>
-                      <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>
-                        {resetando ? '...' : '🔑 Resetar senhas'}
-                      </button>
-                    </>
-                  )}
-                  <hr className="dropdown-divider" />
-                  <button className="btn-logout" onClick={handleLogout}>Sair</button>
-                  {adminResult && (
-                    <span className={`admin-toast-inline ${adminResult.success ? 'success' : 'error'}`}>
-                      {adminResult.msg}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
