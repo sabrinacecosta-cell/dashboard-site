@@ -288,17 +288,43 @@ code, pre, .mono {
   transition: background-color 0.3s ease;
 }
 
-.header-user {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+.header-user-dropdown {
+  position: relative;
 }
 
-.header-user-name {
+.header-user-btn {
+  height: 36px;
+  padding: 0 14px;
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 18px;
+  cursor: pointer;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+
+.header-user-btn:hover {
+  background: var(--bg-card-hover);
+}
+
+.header-user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg-card);
+  border: 0.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+  box-shadow: var(--shadow);
+  z-index: 100;
 }
 
 .header-user-email {
@@ -308,25 +334,30 @@ code, pre, .mono {
 
 /* ---- Theme Toggle ---- */
 .btn-theme-toggle {
-  width: 36px;
   height: 36px;
-  padding: 0;
+  padding: 0 12px;
   background: var(--bg-card);
   border: 0.5px solid var(--border);
-  border-radius: 50%;
+  border-radius: 18px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
   transition: all 0.2s ease;
   margin: 0;
   box-shadow: var(--shadow);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .btn-theme-toggle:hover {
   background: var(--bg-card-hover);
-  transform: scale(1.08);
+}
+
+.theme-label {
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* ---- Logout & Admin ---- */

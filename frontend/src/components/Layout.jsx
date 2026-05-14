@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -31,6 +31,19 @@ function Layout({ children }) {
     navigate('/login');
   };
 
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const EMAILS_ACOMPANHAMENTO = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outlook.com'];
 
   const menuItems = [
@@ -48,7 +61,6 @@ function Layout({ children }) {
       {/* Sidebar */}
       <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-logo">
-          <span className="logo-icon">◆</span>
           <span className="logo-text">Dashboard</span>
         </div>
         
@@ -104,15 +116,20 @@ function Layout({ children }) {
               title="Alternar tema"
               aria-label="Alternar tema"
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+              <span className="theme-label">{theme === 'dark' ? 'Modo escuro' : 'Modo claro'}</span>
             </button>
-            <div className="header-user">
-              <span className="header-user-name">{user?.nome}</span>
-              <span className="header-user-email">{user?.email}</span>
+            <div className="header-user-dropdown" ref={dropdownRef}>
+              <button className="header-user-btn" onClick={() => setDropdownOpen(o => !o)}>
+                {user?.nome?.split(' ')[0]}
+              </button>
+              {dropdownOpen && (
+                <div className="header-user-menu">
+                  <span className="header-user-email">{user?.email}</span>
+                  <button className="btn-logout" onClick={handleLogout}>Sair</button>
+                </div>
+              )}
             </div>
-            <button className="btn-logout" onClick={handleLogout}>
-              Sair
-            </button>
           </div>
         </header>
 
