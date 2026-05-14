@@ -551,7 +551,8 @@ tfoot td {
 }
 
 .page-grupos .table-scroll thead th,
-.page-comissoes .table-scroll thead th {
+.page-comissoes .table-scroll thead th,
+.page-acompanhamento .table-scroll thead th {
   position: sticky;
   top: 0;
   z-index: 10;
