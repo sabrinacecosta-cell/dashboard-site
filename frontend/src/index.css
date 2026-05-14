@@ -338,6 +338,51 @@ code, pre, .mono {
   color: var(--text-muted);
 }
 
+.dropdown-divider {
+  border: none;
+  border-top: 0.5px solid var(--border);
+  margin: 0;
+}
+
+.dropdown-btn {
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.dropdown-btn:hover {
+  background: var(--bg-card-hover);
+}
+
+.dropdown-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-toast-inline {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.admin-toast-inline.success {
+  background: rgba(48, 209, 88, 0.15);
+  color: var(--success);
+}
+
+.admin-toast-inline.error {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff453a;
+}
+
 /* ---- Theme Toggle ---- */
 .btn-theme-toggle {
   height: 36px;

@@ -44,6 +44,42 @@ function Layout({ children }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [importando, setImportando] = useState(false);
+  const [resetando, setResetando] = useState(false);
+  const [adminResult, setAdminResult] = useState(null);
+
+  const handleImportar = async () => {
+    if (!confirm('Atualizar dados da planilha?')) return;
+    setImportando(true);
+    try {
+      const api = (await import('../services/api')).default;
+      const response = await api.post('/admin/importar');
+      setAdminResult({ success: true, msg: `${response.data.registrosImportados} registros` });
+      setTimeout(() => setAdminResult(null), 3000);
+    } catch {
+      setAdminResult({ success: false, msg: 'Erro' });
+      setTimeout(() => setAdminResult(null), 3000);
+    } finally {
+      setImportando(false);
+    }
+  };
+
+  const handleResetarSenhas = async () => {
+    if (!confirm('⚠️ ATENÇÃO: Isso vai resetar a senha de TODOS os usuários (incluindo a sua). Todos terão que criar nova senha no próximo login. Continuar?')) return;
+    setResetando(true);
+    try {
+      const api = (await import('../services/api')).default;
+      const response = await api.post('/admin/resetar-senhas');
+      setAdminResult({ success: true, msg: response.data.message });
+      setTimeout(() => setAdminResult(null), 4000);
+    } catch {
+      setAdminResult({ success: false, msg: 'Erro ao resetar' });
+      setTimeout(() => setAdminResult(null), 3000);
+    } finally {
+      setResetando(false);
+    }
+  };
+
   const EMAILS_ACOMPANHAMENTO = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outlook.com'];
 
   const menuItems = [
@@ -97,9 +133,6 @@ function Layout({ children }) {
             {/* Título dinâmico pode ser adicionado aqui */}
           </div>
           <div className="header-actions">
-            {user?.email === 'sabrina@jtdkinvest.com' && (
-              <AdminButton />
-            )}
             <button
               className="btn-theme-toggle"
               onClick={toggleTheme}
@@ -116,7 +149,24 @@ function Layout({ children }) {
               {dropdownOpen && (
                 <div className="header-user-menu">
                   <span className="header-user-email">{user?.email}</span>
+                  {user?.email === 'sabrina@jtdkinvest.com' && (
+                    <>
+                      <hr className="dropdown-divider" />
+                      <button className="dropdown-btn" onClick={handleImportar} disabled={importando}>
+                        {importando ? '...' : '🔄 Atualizar dados'}
+                      </button>
+                      <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>
+                        {resetando ? '...' : '🔑 Resetar senhas'}
+                      </button>
+                    </>
+                  )}
+                  <hr className="dropdown-divider" />
                   <button className="btn-logout" onClick={handleLogout}>Sair</button>
+                  {adminResult && (
+                    <span className={`admin-toast-inline ${adminResult.success ? 'success' : 'error'}`}>
+                      {adminResult.msg}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -128,60 +178,6 @@ function Layout({ children }) {
           {children}
         </main>
       </div>
-    </div>
-  );
-}
-
-function AdminButton() {
-  const [importando, setImportando] = React.useState(false);
-  const [resetando, setResetando] = React.useState(false);
-  const [result, setResult] = React.useState(null);
-
-  const handleImportar = async () => {
-    if (!confirm('Atualizar dados da planilha?')) return;
-    setImportando(true);
-    try {
-      const api = (await import('../services/api')).default;
-      const response = await api.post('/admin/importar');
-      setResult({ success: true, msg: `${response.data.registrosImportados} registros` });
-      setTimeout(() => setResult(null), 3000);
-    } catch (err) {
-      setResult({ success: false, msg: 'Erro' });
-      setTimeout(() => setResult(null), 3000);
-    } finally {
-      setImportando(false);
-    }
-  };
-
-  const handleResetarSenhas = async () => {
-    if (!confirm('⚠️ ATENÇÃO: Isso vai resetar a senha de TODOS os usuários (incluindo a sua). Todos terão que criar nova senha no próximo login. Continuar?')) return;
-    setResetando(true);
-    try {
-      const api = (await import('../services/api')).default;
-      const response = await api.post('/admin/resetar-senhas');
-      setResult({ success: true, msg: response.data.message });
-      setTimeout(() => setResult(null), 4000);
-    } catch (err) {
-      setResult({ success: false, msg: 'Erro ao resetar' });
-      setTimeout(() => setResult(null), 3000);
-    } finally {
-      setResetando(false);
-    }
-  };
-
-  return (
-    <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
-      <button className="btn-admin" onClick={handleImportar} disabled={importando} title="Atualizar dados">
-        {importando ? '...' : '🔄'}
-      </button>
-      <button className="btn-admin" onClick={handleResetarSenhas} disabled={resetando} title="Resetar senhas">
-        {resetando ? '...' : '🔑'}
-      </button>
-      {result && (
-        <span className={`admin-toast ${result.success ? 'success' : 'error'}`}>
-          {result.msg}
-        </span>
-      )}
     </div>
   );
 }
