@@ -288,6 +288,12 @@ code, pre, .mono {
   transition: background-color 0.3s ease;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .header-user-dropdown {
   position: relative;
 }
