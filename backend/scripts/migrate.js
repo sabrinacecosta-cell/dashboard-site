@@ -337,6 +337,23 @@ async function migrate() {
   `);
   console.log('simulador_grupos grupo 2130 (auto) atualizado!');
 
+  // Corrige parcelas grupo 2130 (sem redutor) — taxa 15% no lugar de 18%
+  const cotas2130 = [
+    [90000,  1539.13], [95000,  1624.64], [100000, 1710.14],
+    [105000, 1795.65], [110000, 1881.16], [115000, 1966.67],
+    [120000, 2052.17], [125000, 2137.68], [130000, 2223.19],
+    [135000, 2308.70], [140000, 2394.20], [145000, 2479.71],
+    [150000, 2565.22],
+  ];
+  for (const [bem, parcela] of cotas2130) {
+    await db.query(
+      `UPDATE simulador_cotas SET parcela = $1
+       WHERE numero_grupo = 2130 AND bem_referencia = $2 AND redutor_parcela = 0`,
+      [parcela, bem]
+    );
+  }
+  console.log('Parcelas grupo 2130 (sem redutor) corrigidas!');
+
   console.log('Migração concluída!');
 }
 
