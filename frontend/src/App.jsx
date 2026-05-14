@@ -8,6 +8,7 @@ import Comissoes from './pages/Comissoes';
 import Simulador from './pages/Simulador';
 import Grupos from './pages/Grupos';
 import Acompanhamento from './pages/Acompanhamento';
+import Admin from './pages/Admin';
 import RedefinirSenha from './pages/RedefinirSenha';
 
 function PrivateRoute({ children }) {
@@ -89,6 +90,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Acompanhamento />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute>
+                <Admin />
               </PrivateRoute>
             }
           />

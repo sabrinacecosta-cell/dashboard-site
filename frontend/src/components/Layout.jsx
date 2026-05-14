@@ -90,6 +90,9 @@ function Layout({ children }) {
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '📋', label: 'Acompanhamento' }]
       : []),
+    ...(user?.email === 'sabrina@jtdkinvest.com'
+      ? [{ path: '/admin', icon: '⚙️', label: 'Administração' }]
+      : []),
   ];
 
   return (
