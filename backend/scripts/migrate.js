@@ -295,6 +295,48 @@ async function migrate() {
   `);
   console.log('Tabela "password_reset_tokens" OK!');
 
+  // Coluna lance_ultimo_mes em simulador_grupos
+  await db.query(`
+    DO $$
+    BEGIN
+      ALTER TABLE simulador_grupos ADD COLUMN lance_ultimo_mes DECIMAL(5,1);
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$;
+  `);
+  console.log('Coluna "lance_ultimo_mes" em simulador_grupos OK!');
+
+  // Histórico mensal grupo 2130 (auto)
+  const { rows: rows2130 } = await db.query(
+    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2130'
+  );
+  if (parseInt(rows2130[0].count) === 0) {
+    await db.query(`
+      INSERT INTO contemplacao_auto
+        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+      VALUES
+        (2130,'Outubro/2025',92.5,5,4,'0.800','0.6538',NULL),
+        (2130,'Novembro/2025',91.25,4,4,'1.000',NULL,NULL),
+        (2130,'Dezembro/2025',90.0,3,2,'0.667',NULL,NULL),
+        (2130,'Janeiro/2026',88.75,11,9,'0.818',NULL,NULL),
+        (2130,'Fevereiro/2026',87.5,6,6,'1.000',NULL,NULL),
+        (2130,'Março/2026',86.25,17,7,'0.412',NULL,NULL),
+        (2130,'Abril/2026',85.0,6,2,'0.333',NULL,NULL)
+    `);
+    console.log('Histórico grupo 2130 (auto) inserido!');
+  } else {
+    console.log('Histórico grupo 2130 (auto) já existe, pulando.');
+  }
+
+  // Atualiza simulador_grupos para grupo 2130 (auto)
+  await db.query(`
+    UPDATE simulador_grupos
+    SET media_contemplacao = 0.6538,
+        lance_ultimo_mes   = 85.0,
+        sem_media_contemplacao = FALSE
+    WHERE numero_grupo = 2130 AND modalidade = 'auto'
+  `);
+  console.log('simulador_grupos grupo 2130 (auto) atualizado!');
+
   console.log('Migração concluída!');
 }
 
