@@ -550,6 +550,14 @@ tfoot td {
   overflow-y: auto;
 }
 
+.page-grupos .table-scroll thead th,
+.page-comissoes .table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--bg-card);
+}
+
 /* ---- Empty State ---- */
 .empty-state {
   text-align: center;
