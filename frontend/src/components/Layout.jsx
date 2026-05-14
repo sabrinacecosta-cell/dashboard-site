@@ -77,16 +77,6 @@ function Layout({ children }) {
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-badge">
-            <div className="user-avatar">
-              {user?.nome?.charAt(0).toUpperCase()}
-            </div>
-            <div className="user-info-sidebar">
-              <span className="user-name">{user?.nome?.split(' ')[0]}</span>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* Toggle button */}
@@ -116,7 +106,7 @@ function Layout({ children }) {
               title="Alternar tema"
               aria-label="Alternar tema"
             >
-              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+              <span>{theme === 'dark' ? '🌙' : '☀️'}</span>
               <span className="theme-label">{theme === 'dark' ? 'Modo escuro' : 'Modo claro'}</span>
             </button>
             <div className="header-user-dropdown" ref={dropdownRef}>
