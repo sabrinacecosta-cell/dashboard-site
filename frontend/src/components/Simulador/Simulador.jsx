@@ -546,6 +546,11 @@ export default function Simulador() {
                         Campanha vigente maio
                       </span>
                     )}
+                    {['2130','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
+                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>
+                        Campanha vigente maio
+                      </span>
+                    )}
                     <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
