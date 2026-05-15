@@ -541,7 +541,7 @@ export default function Simulador() {
                     className="sim-card-grupo"
                     onClick={() => setGrupoSelecionado(g)}
                   >
-                    {['1044','1047','1050','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
+                    {['1038','1042','1043','1044','1047','1050','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
                       <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>
                         Campanha vigente maio
                       </span>
