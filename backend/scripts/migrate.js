@@ -354,6 +354,27 @@ async function migrate() {
   }
   console.log('Parcelas grupo 2130 (sem redutor) corrigidas!');
 
+  // Recalcula todas as parcelas com base no prazo_restante atual
+  await db.query(`
+    UPDATE simulador_cotas sc
+    SET parcela = ROUND((sc.bem_referencia * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
+    FROM simulador_grupos sg
+    WHERE sc.numero_grupo = sg.numero_grupo
+      AND sc.modalidade = sg.modalidade
+      AND sc.redutor_parcela = 0
+      AND sg.prazo_restante > 0
+  `);
+  await db.query(`
+    UPDATE simulador_cotas sc
+    SET parcela = ROUND((sc.bem_referencia * (COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+    FROM simulador_grupos sg
+    WHERE sc.numero_grupo = sg.numero_grupo
+      AND sc.modalidade = sg.modalidade
+      AND sc.redutor_parcela = 0.5
+      AND sg.prazo_restante > 0
+  `);
+  console.log('Recálculo de parcelas concluído!');
+
   console.log('Migração concluída!');
 }
 
