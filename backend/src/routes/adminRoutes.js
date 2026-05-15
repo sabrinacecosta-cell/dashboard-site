@@ -67,6 +67,24 @@ router.put('/admin/comissoes/cliente', authMiddleware, adminOnly, async (req, re
 router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, async (req, res) => {
   try {
     await db.query('UPDATE simulador_grupos SET prazo_restante = prazo_restante - 1 WHERE prazo_restante > 0');
+    await db.query(`
+      UPDATE simulador_cotas sc
+      SET parcela = ROUND((sc.bem_referencia * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
+      FROM simulador_grupos sg
+      WHERE sc.numero_grupo = sg.numero_grupo
+        AND sc.modalidade = sg.modalidade
+        AND sc.redutor_parcela = 0
+        AND sg.prazo_restante > 0
+    `);
+    await db.query(`
+      UPDATE simulador_cotas sc
+      SET parcela = ROUND((sc.bem_referencia * (COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+      FROM simulador_grupos sg
+      WHERE sc.numero_grupo = sg.numero_grupo
+        AND sc.modalidade = sg.modalidade
+        AND sc.redutor_parcela = 0.5
+        AND sg.prazo_restante > 0
+    `);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -82,6 +100,26 @@ router.put('/admin/grupos/:id', authMiddleware, adminOnly, async (req, res) => {
        WHERE id = $6`,
       [prazo_restante, media_contemplacao ?? null, lance_maximo_contemplado ?? null, lance_ultimo_mes ?? null, sem_media_contemplacao ?? false, req.params.id]
     );
+    if (prazo_restante > 0) {
+      await db.query(`
+        UPDATE simulador_cotas sc
+        SET parcela = ROUND((sc.bem_referencia * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
+        FROM simulador_grupos sg
+        WHERE sc.numero_grupo = sg.numero_grupo
+          AND sc.modalidade = sg.modalidade
+          AND sc.redutor_parcela = 0
+          AND sg.id = $1
+      `, [req.params.id]);
+      await db.query(`
+        UPDATE simulador_cotas sc
+        SET parcela = ROUND((sc.bem_referencia * (COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+        FROM simulador_grupos sg
+        WHERE sc.numero_grupo = sg.numero_grupo
+          AND sc.modalidade = sg.modalidade
+          AND sc.redutor_parcela = 0.5
+          AND sg.id = $1
+      `, [req.params.id]);
+    }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
