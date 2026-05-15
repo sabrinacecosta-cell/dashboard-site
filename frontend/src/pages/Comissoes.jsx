@@ -38,7 +38,7 @@ function getYM(mesRef) {
   return String(mesRef).split('T')[0].substring(0, 7);
 }
 
-function TabelaComissoes({ rows }) {
+function TabelaComissoes({ rows, isAdmin }) {
   const [clienteFiltro, setClienteFiltro] = useState('');
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const dropdownRef = useRef(null);
@@ -76,6 +76,7 @@ function TabelaComissoes({ rows }) {
             <th style={{ textAlign: 'right' }}>Comissão %</th>
             <th style={{ textAlign: 'right' }}>Comissão Bruta</th>
             <th style={{ textAlign: 'right' }}>Comissão Líquida</th>
+            {isAdmin && <th>Assessor</th>}
             <th>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }} ref={dropdownRef}>
                 Cliente
@@ -169,6 +170,7 @@ function TabelaComissoes({ rows }) {
               </td>
               <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(r.valor_comissao)}</td>
               <td style={{ textAlign: 'right' }}>{fmtMoeda(Number(r.valor_liquido) * 0.80)}</td>
+              {isAdmin && <td>{r.assessor || '-'}</td>}
               <td>{r.cliente}</td>
             </tr>
           ))}
@@ -180,6 +182,7 @@ function TabelaComissoes({ rows }) {
             <td />
             <td style={{ textAlign: 'right' }} className="text-primary">{fmtMoeda(totalBruto)}</td>
             <td style={{ textAlign: 'right' }}>{fmtMoeda(totalLiquido)}</td>
+            {isAdmin && <td />}
             <td />
           </tr>
         </tfoot>
@@ -365,13 +368,12 @@ function Comissoes() {
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
 
   useEffect(() => {
-    if (!isAdmin) return;
     setLoading(true);
     api.get('/comissoes')
       .then(r => setDados(r.data))
       .catch(() => setError('Erro ao carregar comissões'))
       .finally(() => setLoading(false));
-  }, [isAdmin]);
+  }, []);
 
   const secoes = React.useMemo(() => {
     const map = {};
@@ -390,25 +392,25 @@ function Comissoes() {
         <p className="page-subtitle">Acompanhe seus ganhos</p>
       </div>
 
-      {!isAdmin ? (
-        <div className="card">
-          <div className="empty-state">
-            <span className="empty-icon">🔒</span>
-            <h3>Acesso restrito</h3>
-            <p>Você não tem permissão para visualizar esta página.</p>
-          </div>
-        </div>
-      ) : loading ? (
+      {loading ? (
         <div className="page-loading">Carregando...</div>
       ) : error ? (
         <div className="page-error">{error}</div>
+      ) : dados.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <span className="empty-icon">📭</span>
+            <h3>Nenhuma comissão encontrada</h3>
+            <p>Não há comissões registradas para o seu cadastro.</p>
+          </div>
+        </div>
       ) : (
         <>
-          <ChatComissoes dados={dados} />
+          {isAdmin && <ChatComissoes dados={dados} />}
           {secoes.map(([ym, rows]) => (
             <div className="card" key={ym} style={{ marginBottom: '1.5rem' }}>
               <h3>{getTituloSecao(rows[0]?.mes_referencia)}</h3>
-              <TabelaComissoes rows={rows} />
+              <TabelaComissoes rows={rows} isAdmin={isAdmin} />
             </div>
           ))}
         </>

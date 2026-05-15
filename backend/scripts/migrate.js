@@ -1,5 +1,6 @@
 require('dotenv').config();
 const db = require('../src/config/database');
+const seedProducao = require('./seed_producao');
 
 async function migrate() {
   console.log('Iniciando migração PostgreSQL...');
@@ -366,7 +367,7 @@ async function migrate() {
   `);
   await db.query(`
     UPDATE simulador_cotas sc
-    SET parcela = ROUND((sc.cota * (COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+    SET parcela = ROUND((sc.bem_referencia * (COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
     FROM simulador_grupos sg
     WHERE sc.numero_grupo = sg.numero_grupo
       AND sc.modalidade = sg.modalidade
@@ -374,6 +375,43 @@ async function migrate() {
       AND sg.prazo_restante > 0
   `);
   console.log('Recálculo de parcelas concluído!');
+
+  // Seed producao (idempotent — só insere se tabela vazia)
+  await seedProducao();
+
+  // Colunas assessor/email_assessor em comissoes
+  await db.query(`
+    DO $$
+    BEGIN
+      ALTER TABLE comissoes ADD COLUMN assessor VARCHAR(200);
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$;
+  `);
+  await db.query(`
+    DO $$
+    BEGIN
+      ALTER TABLE comissoes ADD COLUMN email_assessor VARCHAR(200);
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$;
+  `);
+  console.log('Colunas assessor/email_assessor em comissoes OK!');
+
+  // Popula assessor/email_assessor via JOIN com producao (por cliente, última ocorrência)
+  await db.query(`
+    UPDATE comissoes c
+    SET
+      assessor = p.assessor,
+      email_assessor = p.email_assessor
+    FROM (
+      SELECT DISTINCT ON (cliente) cliente, assessor, email_assessor
+      FROM producao
+      WHERE assessor IS NOT NULL
+      ORDER BY cliente, id DESC
+    ) p
+    WHERE UPPER(TRIM(c.cliente)) = UPPER(TRIM(p.cliente))
+      AND c.email_assessor IS NULL
+  `);
+  console.log('comissoes assessor/email_assessor populados!');
 
   console.log('Migração concluída!');
 }

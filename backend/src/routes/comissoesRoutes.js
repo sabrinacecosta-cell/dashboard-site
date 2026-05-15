@@ -7,13 +7,14 @@ const router = express.Router();
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 router.get('/comissoes', authMiddleware, async (req, res) => {
-  if (!ADMIN_EMAILS.includes(req.userEmail)) {
-    return res.status(403).json({ error: 'Acesso restrito' });
-  }
+  const isAdmin = ADMIN_EMAILS.includes(req.userEmail);
   try {
-    const result = await db.query(
-      'SELECT * FROM comissoes ORDER BY mes_referencia DESC, data_venda DESC'
-    );
+    const result = isAdmin
+      ? await db.query('SELECT * FROM comissoes ORDER BY mes_referencia DESC, data_venda DESC')
+      : await db.query(
+          'SELECT * FROM comissoes WHERE email_assessor = $1 ORDER BY mes_referencia DESC, data_venda DESC',
+          [req.userEmail]
+        );
     return res.json(result.rows);
   } catch (error) {
     console.error('Erro ao buscar comissões:', error);
