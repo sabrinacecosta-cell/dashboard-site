@@ -25,6 +25,8 @@ const TITULO_SECAO = {
   '2026-05': 'Base de cálculo abril | Exercício maio',
   '2026-04': 'Base cálculo março | Exercício abril',
   '2026-03': 'Base cálculo fevereiro | Exercício março',
+  '2026-02': 'Base cálculo janeiro | Exercício fevereiro',
+  '2026-01': 'Base cálculo janeiro | Exercício fevereiro',
 };
 
 function getTituloSecao(mesRef) {
