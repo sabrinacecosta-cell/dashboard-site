@@ -127,6 +127,7 @@ router.put('/admin/grupos/:id', authMiddleware, adminOnly, async (req, res) => {
 // POST — add contemplacao row
 router.post('/admin/contemplacao', authMiddleware, adminOnly, async (req, res) => {
   try {
+    console.log('Body recebido:', req.body);
     const { tipo, grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal } = req.body;
     const table = tipo === 'auto' ? 'contemplacao_auto' : 'contemplacao';
     const result = await db.query(
@@ -135,7 +136,10 @@ router.post('/admin/contemplacao', authMiddleware, adminOnly, async (req, res) =
       [grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal]
     );
     res.json(result.rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.log('Erro:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // DELETE — remove contemplacao row
