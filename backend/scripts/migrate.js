@@ -413,6 +413,11 @@ async function migrate() {
   `);
   console.log('comissoes assessor/email_assessor populados!');
 
+  // Colunas de médias 12m e 6m em simulador_grupos
+  await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS media_contemplacao_12m NUMERIC(10,6)`);
+  await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS media_contemplacao_6m NUMERIC(10,6)`);
+  console.log('Colunas media_contemplacao_12m e media_contemplacao_6m em simulador_grupos OK!');
+
   console.log('Migração concluída!');
 }
 
