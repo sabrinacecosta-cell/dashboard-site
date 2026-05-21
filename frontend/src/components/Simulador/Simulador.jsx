@@ -541,16 +541,6 @@ export default function Simulador() {
                     className="sim-card-grupo"
                     onClick={() => setGrupoSelecionado(g)}
                   >
-                    {['1038','1042','1043','1044','1047','1050','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
-                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>
-                        Campanha vigente maio
-                      </span>
-                    )}
-                    {['2130','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
-                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>
-                        Campanha vigente maio
-                      </span>
-                    )}
                     <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
@@ -585,6 +575,16 @@ export default function Simulador() {
                     )}
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
+                    )}
+                    {['1038','1042','1043','1044','1047','1050','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
+                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
+                        Campanha vigente maio
+                      </span>
+                    )}
+                    {['2130','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
+                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
+                        Campanha vigente maio
+                      </span>
                     )}
                   </button>
                 );
