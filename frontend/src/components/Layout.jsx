@@ -44,25 +44,8 @@ function Layout({ children }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [importando, setImportando] = useState(false);
   const [resetando, setResetando] = useState(false);
   const [adminResult, setAdminResult] = useState(null);
-
-  const handleImportar = async () => {
-    if (!confirm('Atualizar dados da planilha?')) return;
-    setImportando(true);
-    try {
-      const api = (await import('../services/api')).default;
-      const response = await api.post('/admin/importar');
-      setAdminResult({ success: true, msg: `${response.data.registrosImportados} registros` });
-      setTimeout(() => setAdminResult(null), 3000);
-    } catch {
-      setAdminResult({ success: false, msg: 'Erro' });
-      setTimeout(() => setAdminResult(null), 3000);
-    } finally {
-      setImportando(false);
-    }
-  };
 
   const handleResetarSenhas = async () => {
     if (!confirm('⚠️ ATENÇÃO: Isso vai resetar a senha de TODOS os usuários (incluindo a sua). Todos terão que criar nova senha no próximo login. Continuar?')) return;
@@ -128,9 +111,6 @@ function Layout({ children }) {
                 {user?.email === 'sabrina@jtdkinvest.com' && (
                   <>
                     <hr className="dropdown-divider" />
-                    <button className="dropdown-btn" onClick={handleImportar} disabled={importando}>
-                      {importando ? '...' : '🔄 Atualizar dados'}
-                    </button>
                     <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>
                       {resetando ? '...' : '🔑 Resetar senhas'}
                     </button>
