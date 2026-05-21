@@ -73,7 +73,7 @@ function Layout({ children }) {
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '📋', label: 'Acompanhamento' }]
       : []),
-    ...(user?.email === 'sabrina@jtdkinvest.com'
+    ...(['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email)
       ? [{ path: '/admin', icon: '⚙️', label: 'Administração' }]
       : []),
   ];
@@ -108,7 +108,7 @@ function Layout({ children }) {
             {dropdownOpen && (
               <div className="sidebar-user-menu">
                 <span className="header-user-email">{user?.email}</span>
-                {user?.email === 'sabrina@jtdkinvest.com' && (
+                {['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email) && (
                   <>
                     <hr className="dropdown-divider" />
                     <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>

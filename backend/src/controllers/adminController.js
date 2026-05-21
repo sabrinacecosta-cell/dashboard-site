@@ -1,13 +1,13 @@
 const ImportService = require('../services/importService');
 const UsuarioModel = require('../models/usuarioModel');
 
-const ADMIN_EMAIL = 'sabrina@jtdkinvest.com';
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'];
 
 const AdminController = {
   async importarDados(req, res) {
     try {
       // Verifica se é admin
-      if (req.userEmail !== ADMIN_EMAIL) {
+      if (!ADMIN_EMAILS.includes(req.userEmail)) {
         return res.status(403).json({ success: false, error: 'Acesso negado' });
       }
 
@@ -30,7 +30,7 @@ const AdminController = {
   async resetarSenhas(req, res) {
     try {
       // Verifica se é admin
-      if (req.userEmail !== ADMIN_EMAIL) {
+      if (!ADMIN_EMAILS.includes(req.userEmail)) {
         return res.status(403).json({ success: false, error: 'Acesso negado' });
       }
 

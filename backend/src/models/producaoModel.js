@@ -3,6 +3,7 @@ const db = require('../config/database');
 // Lista de emails com acesso admin
 const ADMIN_EMAILS = [
   'sabrina@jtdkinvest.com',
+  'joel@jtdkinvest.com',
   'joel@wflowinvest.com'
 ];
 

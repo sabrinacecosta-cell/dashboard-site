@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
-const ADMIN_EMAIL = 'sabrina@jtdkinvest.com';
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'];
 
 function Section({ title, open, onToggle, children }) {
   return (
@@ -446,7 +446,7 @@ export default function Admin() {
   const [open, setOpen] = useState({});
   const toggle = (k) => setOpen(s => ({ ...s, [k]: !s[k] }));
 
-  if (user?.email !== ADMIN_EMAIL) {
+  if (!ADMIN_EMAILS.includes(user?.email)) {
     return (
       <div className="page-admin">
         <div className="page-header">
