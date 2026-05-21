@@ -44,20 +44,42 @@ function Layout({ children }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [resetModal, setResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const [resetando, setResetando] = useState(false);
   const [adminResult, setAdminResult] = useState(null);
 
-  const handleResetarSenhas = async () => {
+  const showResult = (success, msg) => {
+    setAdminResult({ success, msg });
+    setTimeout(() => setAdminResult(null), 4000);
+  };
+
+  const handleResetarTodos = async () => {
     if (!confirm('⚠️ ATENÇÃO: Isso vai resetar a senha de TODOS os usuários (incluindo a sua). Todos terão que criar nova senha no próximo login. Continuar?')) return;
     setResetando(true);
     try {
       const api = (await import('../services/api')).default;
       const response = await api.post('/admin/resetar-senhas');
-      setAdminResult({ success: true, msg: response.data.message });
-      setTimeout(() => setAdminResult(null), 4000);
+      setResetModal(false);
+      showResult(true, response.data.message);
     } catch {
-      setAdminResult({ success: false, msg: 'Erro ao resetar' });
-      setTimeout(() => setAdminResult(null), 3000);
+      showResult(false, 'Erro ao resetar');
+    } finally {
+      setResetando(false);
+    }
+  };
+
+  const handleResetarUsuario = async () => {
+    if (!resetEmail.trim()) return;
+    setResetando(true);
+    try {
+      const api = (await import('../services/api')).default;
+      const response = await api.post('/admin/resetar-senha-usuario', { email: resetEmail.trim() });
+      setResetModal(false);
+      setResetEmail('');
+      showResult(true, response.data.message);
+    } catch (err) {
+      showResult(false, err.response?.data?.error || 'Erro ao resetar');
     } finally {
       setResetando(false);
     }
@@ -111,8 +133,8 @@ function Layout({ children }) {
                 {['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email) && (
                   <>
                     <hr className="dropdown-divider" />
-                    <button className="dropdown-btn" onClick={handleResetarSenhas} disabled={resetando}>
-                      {resetando ? '...' : '🔑 Resetar senhas'}
+                    <button className="dropdown-btn" onClick={() => setResetModal(true)}>
+                      🔑 Resetar senha
                     </button>
                   </>
                 )}
@@ -164,6 +186,43 @@ function Layout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Modal Resetar Senha */}
+      {resetModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', padding: '2rem', width: '100%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+            <h3 style={{ margin: '0 0 1.5rem', fontSize: '1.1rem' }}>Resetar senha</h3>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Resetar todos os usuários</p>
+              <button className="btn-admin-action" onClick={handleResetarTodos} disabled={resetando} style={{ width: '100%' }}>
+                {resetando ? '...' : 'Todos os usuários'}
+              </button>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0 0 1.5rem' }} />
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Resetar usuário específico</p>
+              <input
+                type="email"
+                placeholder="Email do usuário"
+                value={resetEmail}
+                onChange={e => setResetEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleResetarUsuario()}
+                style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', marginBottom: '0.75rem', boxSizing: 'border-box' }}
+              />
+              <button className="btn-admin-action" onClick={handleResetarUsuario} disabled={resetando || !resetEmail.trim()} style={{ width: '100%' }}>
+                {resetando ? '...' : 'Resetar usuário específico'}
+              </button>
+            </div>
+
+            <button onClick={() => { setResetModal(false); setResetEmail(''); }} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -15,6 +15,19 @@ const adminOnly = (req, res, next) => {
 router.post('/admin/importar', authMiddleware, AdminController.importarDados);
 router.post('/admin/resetar-senhas', authMiddleware, AdminController.resetarSenhas);
 
+router.post('/admin/resetar-senha-usuario', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email obrigatório' });
+    const result = await db.query(
+      'UPDATE usuarios SET senha_hash = NULL WHERE email = $1 RETURNING id',
+      [email.toLowerCase().trim()]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    res.json({ success: true, message: `Senha de ${email} resetada com sucesso` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // GET — data for admin page
 router.get('/admin/comissoes/clientes', authMiddleware, adminOnly, async (req, res) => {
   try {
