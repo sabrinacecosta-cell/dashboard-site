@@ -176,51 +176,55 @@ function Grupos() {
       )}
 
       {/* Detalhes por Grupo */}
-      {Object.entries(dadosPorGrupo).map(([grupo, registros]) => (
-        <div className="card" key={grupo} style={{ marginTop: '1.5rem' }}>
-          <h3>Grupo {grupo}</h3>
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'center' }}>Mês</th>
-                  <th style={{ textAlign: 'center' }}>Lance %</th>
-                  <th style={{ textAlign: 'center' }}>Qnt Lances</th>
-                  <th style={{ textAlign: 'center' }}>Contemplados</th>
-                  <th style={{ textAlign: 'center' }}>Contemp. Mensal</th>
-                  {tipoSelecionado === 'imovel' ? (
-                    <>
-                      <th style={{ textAlign: 'center' }}>Média Contemp. (12 meses)</th>
-                      <th style={{ textAlign: 'center' }}>Média Contemp. (6 meses)</th>
-                    </>
-                  ) : (
-                    <th style={{ textAlign: 'center' }}>Média Contemp.</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {registros.map((r, i) => (
-                  <tr key={i}>
-                    <td className="text-primary" style={{ textAlign: 'center', textTransform: 'capitalize' }}>{formatMesAno(r.mes)}</td>
-                    <td style={{ textAlign: 'center' }}>{r.lance_percent}%</td>
-                    <td style={{ textAlign: 'center' }}>{r.qnt_lances}</td>
-                    <td style={{ textAlign: 'center' }}>{r.contemplados}</td>
-                    <td style={{ textAlign: 'center' }}>{formatPct(r.contemplacao_mensal)}</td>
+      {Object.entries(dadosPorGrupo).map(([grupo, registros]) => {
+        const mediaContemp = registros.find(r => r.media_contemplacao != null)?.media_contemplacao ?? null;
+        const media6m = registros.find(r => r.media_contemplacao_6m != null)?.media_contemplacao_6m ?? null;
+        return (
+          <div className="card" key={grupo} style={{ marginTop: '1.5rem' }}>
+            <h3>Grupo {grupo}</h3>
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'center' }}>Mês</th>
+                    <th style={{ textAlign: 'center' }}>Lance %</th>
+                    <th style={{ textAlign: 'center' }}>Qnt Lances</th>
+                    <th style={{ textAlign: 'center' }}>Contemplados</th>
+                    <th style={{ textAlign: 'center' }}>Contemp. Mensal</th>
                     {tipoSelecionado === 'imovel' ? (
                       <>
-                        <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao)}</td>
-                        <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao_6m)}</td>
+                        <th style={{ textAlign: 'center' }}>Média Contemp. (12 meses)</th>
+                        <th style={{ textAlign: 'center' }}>Média Contemp. (6 meses)</th>
                       </>
                     ) : (
-                      <td style={{ textAlign: 'center' }} className="text-primary">{formatPct(r.media_contemplacao)}</td>
+                      <th style={{ textAlign: 'center' }}>Média Contemp.</th>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {registros.map((r, i) => (
+                    <tr key={i}>
+                      <td className="text-primary" style={{ textAlign: 'center', textTransform: 'capitalize' }}>{formatMesAno(r.mes)}</td>
+                      <td style={{ textAlign: 'center' }}>{r.lance_percent}%</td>
+                      <td style={{ textAlign: 'center' }}>{r.qnt_lances}</td>
+                      <td style={{ textAlign: 'center' }}>{r.contemplados}</td>
+                      <td style={{ textAlign: 'center' }}>{formatPct(r.contemplacao_mensal)}</td>
+                      {tipoSelecionado === 'imovel' ? (
+                        <>
+                          <td style={{ textAlign: 'center' }} className="text-primary">{i === 0 ? formatPct(mediaContemp) : '-'}</td>
+                          <td style={{ textAlign: 'center' }} className="text-primary">{i === 0 ? formatPct(media6m) : '-'}</td>
+                        </>
+                      ) : (
+                        <td style={{ textAlign: 'center' }} className="text-primary">{i === 0 ? formatPct(mediaContemp) : '-'}</td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

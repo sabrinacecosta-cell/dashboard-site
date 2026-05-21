@@ -3,26 +3,26 @@ const db = require('../config/database');
 const ContemplacaoModel = {
   async findAll() {
     const result = await db.query(
-      `SELECT * FROM contemplacao ORDER BY grupo, 
-       CASE mes 
+      `SELECT * FROM contemplacao ORDER BY grupo,
+       CASE mes
          WHEN 'abril' THEN 1 WHEN 'maio' THEN 2 WHEN 'junho' THEN 3
          WHEN 'julho' THEN 4 WHEN 'agosto' THEN 5 WHEN 'setembro' THEN 6
          WHEN 'outubro' THEN 7 WHEN 'novembro' THEN 8 WHEN 'dezembro' THEN 9
          WHEN 'janeiro' THEN 10 WHEN 'fevereiro' THEN 11 WHEN 'março' THEN 12
-       END`
+       END DESC`
     );
     return result.rows;
   },
 
   async findByGrupo(grupo) {
     const result = await db.query(
-      `SELECT * FROM contemplacao WHERE grupo = $1 
-       ORDER BY CASE mes 
+      `SELECT * FROM contemplacao WHERE grupo = $1
+       ORDER BY CASE mes
          WHEN 'abril' THEN 1 WHEN 'maio' THEN 2 WHEN 'junho' THEN 3
          WHEN 'julho' THEN 4 WHEN 'agosto' THEN 5 WHEN 'setembro' THEN 6
          WHEN 'outubro' THEN 7 WHEN 'novembro' THEN 8 WHEN 'dezembro' THEN 9
          WHEN 'janeiro' THEN 10 WHEN 'fevereiro' THEN 11 WHEN 'março' THEN 12
-       END`,
+       END DESC`,
       [grupo]
     );
     return result.rows;

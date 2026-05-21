@@ -22,7 +22,7 @@ const ContemplacaoAutoModel = {
              WHEN 'outubro' THEN 10 WHEN 'novembro' THEN 11 WHEN 'dezembro' THEN 12
              ELSE 0
            END + 100
-       END`
+       END DESC`
     );
     return result.rows;
   },
@@ -49,7 +49,7 @@ const ContemplacaoAutoModel = {
              WHEN 'outubro' THEN 10 WHEN 'novembro' THEN 11 WHEN 'dezembro' THEN 12
              ELSE 0
            END + 100
-       END`,
+       END DESC`,
       [grupo]
     );
     return result.rows;
