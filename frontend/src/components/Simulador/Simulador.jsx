@@ -576,7 +576,7 @@ export default function Simulador() {
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
                     )}
-                    {['1038','1042','1043','1044','1047','1050','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
+                    {['1038','1042','1043','1044','1047','1050','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
                       <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
                         Campanha vigente maio
                       </span>
