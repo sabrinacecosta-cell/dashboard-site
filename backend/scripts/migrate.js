@@ -418,6 +418,108 @@ async function migrate() {
   await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS media_contemplacao_6m NUMERIC(10,6)`);
   console.log('Colunas media_contemplacao_12m e media_contemplacao_6m em simulador_grupos OK!');
 
+  // ── Coluna observacao em contemplacao_auto ──────────────────────────────────
+  await db.query(`
+    DO $$
+    BEGIN
+      ALTER TABLE contemplacao_auto ADD COLUMN observacao TEXT;
+    EXCEPTION WHEN duplicate_column THEN NULL;
+    END $$;
+  `);
+  console.log('Coluna observacao em contemplacao_auto OK!');
+
+  // ── Grupo 2129 (auto): simulador_grupos ─────────────────────────────────────
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao)
+    VALUES
+      (2129, 'auto', 0.17, NULL, 0.03, 'INPC', 'JANEIRO', 0.30, 64, 80, FALSE)
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('simulador_grupos 2129 inserido!');
+
+  // ── Grupo 2129: cotas ────────────────────────────────────────────────────────
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    VALUES
+      (2129,'auto',  93760.02,  93760.02, 1758.00, 0),
+      (2129,'auto',  98968.91,  98968.91, 1855.67, 0),
+      (2129,'auto', 104177.80, 104177.80, 1953.33, 0),
+      (2129,'auto', 109386.69, 109386.69, 2051.00, 0),
+      (2129,'auto', 114595.58, 114595.58, 2148.67, 0),
+      (2129,'auto', 119804.47, 119804.47, 2246.33, 0),
+      (2129,'auto', 125013.36, 125013.36, 2344.00, 0),
+      (2129,'auto', 130222.25, 130222.25, 2441.67, 0),
+      (2129,'auto', 135431.14, 135431.14, 2539.33, 0),
+      (2129,'auto', 140640.03, 140640.03, 2637.00, 0),
+      (2129,'auto', 145848.92, 145848.92, 2734.67, 0),
+      (2129,'auto', 151057.81, 151057.81, 2832.33, 0),
+      (2129,'auto', 156266.70, 156266.70, 2930.00, 0)
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('simulador_cotas 2129 inseridas!');
+
+  // ── Grupo 2129: histórico contemplacao_auto Out/2025–Abr/2026 ───────────────
+  await db.query(`
+    INSERT INTO contemplacao_auto
+      (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal,
+       media_contemplacao, media_lance_percent, observacao)
+    VALUES
+      (2129,'outubro',  88.75, 11, 8, '73%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'novembro', 87.50, 14,11, '79%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'dezembro', 86.25,  8, 4, '50%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'janeiro',  85.00,  7, 6, '86%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'fevereiro',83.75,  6, 5, '83%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'março',    82.50,  7, 5, '71%', NULL, NULL, 'Este grupo não está em lance máximo'),
+      (2129,'abril',    72.00,  5, 5,'100%', NULL, NULL, 'Este grupo não está em lance máximo')
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('contemplacao_auto 2129 inserida!');
+
+  // ── Atualiza lance_ultimo_mes e media_contemplacao do grupo 2129 ─────────────
+  await db.query(`
+    UPDATE simulador_grupos
+    SET lance_ultimo_mes   = 72.0,
+        media_contemplacao = ROUND((8+11+4+6+5+5+5)::numeric / NULLIF((11+14+8+7+6+7+5),0), 6)
+    WHERE numero_grupo = 2129 AND modalidade = 'auto'
+  `);
+  console.log('simulador_grupos 2129 atualizado!');
+
+  // ── Corrige contemplacao_mensal grupo 2129 (formato decimal) ─────────────────
+  await db.query(`
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.7273' WHERE grupo = 2129 AND mes = 'outubro';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.7857' WHERE grupo = 2129 AND mes = 'novembro';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.5000' WHERE grupo = 2129 AND mes = 'dezembro';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.8571' WHERE grupo = 2129 AND mes = 'janeiro';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.8333' WHERE grupo = 2129 AND mes = 'fevereiro';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.7143' WHERE grupo = 2129 AND mes = 'março';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2129 AND mes = 'abril';
+  `);
+
+  // ── Corrige contemplacao_mensal grupos 2125–2128, 2132, 2133, 3002 ───────────
+  await db.query(`
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1808' WHERE grupo = 2125 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.0957' WHERE grupo = 2126 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1061' WHERE grupo = 2127 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.5909' WHERE grupo = 2128 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.2143' WHERE grupo = 2132 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2133 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 3002 AND mes = 'abril';
+  `);
+  console.log('contemplacao_mensal corrigida (formato decimal)!');
+
+  // ── Remove abril duplicado do grupo 2129 ─────────────────────────────────────
+  await db.query(`
+    DELETE FROM contemplacao_auto
+    WHERE grupo = 2129 AND mes = 'abril'
+      AND id NOT IN (
+        SELECT MIN(id) FROM contemplacao_auto WHERE grupo = 2129 AND mes = 'abril'
+      )
+  `);
+  console.log('Duplicata abril 2129 removida!');
+
   console.log('Migração concluída!');
 }
 

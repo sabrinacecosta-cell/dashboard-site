@@ -166,10 +166,18 @@ export default function Simulador() {
     const totalFundoReserva   = cartaTotal * (l.fundoReserva || 0);
     const totalTaxas          = saldoDevedor - cartaTotal;
     const prazoR = l.prazoRestante || 1;
-    const parcelasPagas = simParcelasX * parcelaInicialSim;
-    const saldoDevedorAtualizado = saldoDevedor - parcelasPagas - lanceTotal;
+    const parcelasPagas   = simParcelasX * parcelaInicialSim;
     const prazoAtualizado = Math.max(1, prazoR - simParcelasX);
-    const parcelaPosContemplacao = Math.max(0, saldoDevedorAtualizado / prazoAtualizado);
+    let parcelaPosContemplacao;
+    if (l.redutor === 50) {
+      parcelaPosContemplacao = Math.max(0, (saldoDevedor - parcelasPagas - lanceTotal) / prazoAtualizado);
+    } else {
+      if (lanceTotal === 0) {
+        parcelaPosContemplacao = parcelaInicialSim;
+      } else {
+        parcelaPosContemplacao = Math.max(0, (saldoDevedor - lanceTotal) / prazoAtualizado);
+      }
+    }
     return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado,
              recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas, parcelaPosContemplacao };
   }), [linhasSim, simParcelasX]);
@@ -228,6 +236,8 @@ export default function Simulador() {
       },
       simularParcelas: simParcelasX,
       nomeArquivo: `simulacao-xp-${modalidade}.xlsx`,
+      temReductor: linhasSimCalc.some(l => l.redutor === 50),
+      temLance: linhasSimCalc.some(l => l.lanceTotal > 0),
     });
   };
 

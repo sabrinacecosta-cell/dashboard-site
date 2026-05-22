@@ -38,7 +38,9 @@ function Grupos() {
     const mesLower = mes.toLowerCase();
     if (mesLower === 'janeiro') return 'janeiro/2026';
     if (mesLower === 'fevereiro') return 'fevereiro/2026';
-    if (mesLower === 'março') return 'março/2026';
+    if (mesLower === 'março')  return 'março/2026';
+    if (mesLower === 'abril')  return 'abril/2026';
+    if (mesLower === 'maio')   return 'maio/2026';
     return `${mes}/2025`;
   };
 

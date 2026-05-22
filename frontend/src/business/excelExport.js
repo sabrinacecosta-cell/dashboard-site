@@ -1,5 +1,5 @@
 // Gera e baixa um arquivo .xlsx com formatação visual padronizada
-export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArquivo }) {
+export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArquivo, temReductor = false, temLance = false }) {
   const { default: ExcelJS } = await import('exceljs');
 
   const workbook = new ExcelJS.Workbook();
@@ -157,7 +157,12 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   setResumoRow(2,  'Carta de Crédito Total',          `G${totRow}`);
   setResumoRow(3,  'Parcela Inicial',                  `H${totRow}`);
-  setResumoRow(4,  'Parcela pós contemplação',         `C${rr(16)}/(MEDIAN(D${firstData}:D${lastData})-C${rr(6)})`);
+  const formulaPPC = temReductor
+    ? `C${rr(16)}/(MEDIAN(D${firstData}:D${lastData})-C${rr(6)})`
+    : temLance
+      ? `C${rr(16)}/MEDIAN(D${firstData}:D${lastData})`
+      : `H${totRow}`;
+  setResumoRow(4,  'Parcela pós contemplação',         formulaPPC);
   setResumoRow(5,  'Parcelas iniciais pagas',          `C${rr(3)}*C${rr(6)}`);
 
   // r+6: Simulando com x parcelas pagas (valor fixo negrito)
@@ -189,7 +194,12 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   setResumoRow(13, 'Taxa administrativa',              `G${totRow}*B${firstData}`);
   setResumoRow(14, 'Fundo de reserva',                 `G${totRow}*C${firstData}`);
   setResumoRow(15, 'Saldo Devedor Inicial',            `C${rr(2)}+C${rr(13)}+C${rr(14)}`);
-  setResumoRow(16, 'Saldo Devedor Após Contemplação',  `C${rr(15)}-C${rr(7)}-C${rr(5)}`);
+  const formulaSDC = temReductor
+    ? `C${rr(15)}-C${rr(7)}-C${rr(5)}`
+    : temLance
+      ? `C${rr(15)}-C${rr(7)}`
+      : `C${rr(15)}`;
+  setResumoRow(16, 'Saldo Devedor Após Contemplação',  formulaSDC);
 
   // ── Bloco lateral (colunas D e E, linhas rr(12)–rr(16)) ─────────────────
   // Sem fundo, bordas thin, Cambria 11. Última linha (rr(16)) altura 14.
