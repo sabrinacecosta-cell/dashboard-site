@@ -92,6 +92,7 @@ function Layout({ children }) {
     { path: '/comissoes', icon: '💰', label: 'Comissões' },
     { path: '/simulador', icon: '🧮', label: 'Simulador' },
     { path: '/grupos', icon: '📈', label: 'Métricas' },
+    { path: '/agenda', icon: '📅', label: 'Agenda' },
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '📋', label: 'Acompanhamento' }]
       : []),
