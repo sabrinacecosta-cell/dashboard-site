@@ -473,7 +473,7 @@ async function migrate() {
       (2129,'janeiro',  85.00,  7, 6, '86%', NULL, NULL, 'Este grupo não está em lance máximo'),
       (2129,'fevereiro',83.75,  6, 5, '83%', NULL, NULL, 'Este grupo não está em lance máximo'),
       (2129,'março',    82.50,  7, 5, '71%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'abril',    72.00,  5, 5,'100%', NULL, NULL, 'Este grupo não está em lance máximo')
+      (2129,'Abril/2026',72.00,  5, 5,'100%', NULL, NULL, 'Este grupo não está em lance máximo')
     ON CONFLICT DO NOTHING
   `);
   console.log('contemplacao_auto 2129 inserida!');
@@ -495,30 +495,20 @@ async function migrate() {
     UPDATE contemplacao_auto SET contemplacao_mensal = '0.8571' WHERE grupo = 2129 AND mes = 'janeiro';
     UPDATE contemplacao_auto SET contemplacao_mensal = '0.8333' WHERE grupo = 2129 AND mes = 'fevereiro';
     UPDATE contemplacao_auto SET contemplacao_mensal = '0.7143' WHERE grupo = 2129 AND mes = 'março';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2129 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2129 AND mes = 'Abril/2026';
   `);
 
   // ── Corrige contemplacao_mensal grupos 2125–2128, 2132, 2133, 3002 ───────────
   await db.query(`
-    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1808' WHERE grupo = 2125 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '0.0957' WHERE grupo = 2126 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1061' WHERE grupo = 2127 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '0.5909' WHERE grupo = 2128 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '0.2143' WHERE grupo = 2132 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2133 AND mes = 'abril';
-    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 3002 AND mes = 'abril';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1808' WHERE grupo = 2125 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.0957' WHERE grupo = 2126 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.1061' WHERE grupo = 2127 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.5909' WHERE grupo = 2128 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '0.2143' WHERE grupo = 2132 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 2133 AND mes = 'Abril/2026';
+    UPDATE contemplacao_auto SET contemplacao_mensal = '1.0000' WHERE grupo = 3002 AND mes = 'Abril/2026';
   `);
   console.log('contemplacao_mensal corrigida (formato decimal)!');
-
-  // ── Remove abril duplicado do grupo 2129 ─────────────────────────────────────
-  await db.query(`
-    DELETE FROM contemplacao_auto
-    WHERE grupo = 2129 AND mes = 'abril'
-      AND id NOT IN (
-        SELECT MIN(id) FROM contemplacao_auto WHERE grupo = 2129 AND mes = 'abril'
-      )
-  `);
-  console.log('Duplicata abril 2129 removida!');
 
   console.log('Migração concluída!');
 }

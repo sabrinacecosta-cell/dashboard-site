@@ -6,7 +6,20 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 
-const COLORS = ['#cc785c', '#d4886c', '#e09980', '#ecaa94', '#f5bba8', '#feccbc', '#ffddd0', '#ffeee4'];
+const COLORS = [
+  '#F5C000', // dourado
+  '#5DCAA5', // verde-água
+  '#5C9BD6', // azul
+  '#F5A623', // âmbar
+  '#C47AE0', // lilás
+  '#E8635A', // coral
+  '#4ECDC4', // teal
+  '#A8D672', // verde-limão
+  '#52D9F5', // azul-claro
+  '#F7A8D4', // rosa
+  '#FFD166', // dourado-claro
+  '#B8936A', // marrom-quente
+];
 
 const MESES_NOME = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
