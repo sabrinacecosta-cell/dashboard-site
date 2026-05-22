@@ -6,20 +6,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 
-const COLORS = [
-  '#F5C000', // dourado
-  '#5DCAA5', // verde-água
-  '#5C9BD6', // azul
-  '#F5A623', // âmbar
-  '#C47AE0', // lilás
-  '#E8635A', // coral
-  '#4ECDC4', // teal
-  '#A8D672', // verde-limão
-  '#52D9F5', // azul-claro
-  '#F7A8D4', // rosa
-  '#FFD166', // dourado-claro
-  '#B8936A', // marrom-quente
-];
+const COLORS = ['#3a3a3a', '#5e5e5e'];
 
 const MESES_NOME = ['', 'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -255,7 +242,7 @@ function Vendas() {
                     labelLine={false}
                   >
                     {dadosMes.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="#F5C000" strokeWidth={1.5} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => formatCurrency(value)} />
