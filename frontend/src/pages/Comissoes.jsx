@@ -57,9 +57,10 @@ function TabelaComissoes({ rows, isAdmin }) {
     return () => document.removeEventListener('mousedown', handleClickFora);
   }, []);
 
-  const rowsFiltrados = clienteFiltro
+  const rowsFiltrados = (clienteFiltro
     ? rows.filter(r => r.cliente === clienteFiltro)
-    : rows;
+    : rows
+  ).slice().sort((a, b) => (a.cliente || '').localeCompare(b.cliente || '', 'pt-BR'));
 
   const totalCarta   = rowsFiltrados.reduce((s, r) => s + Number(r.valor_carta),    0);
   const totalBruto   = rowsFiltrados.reduce((s, r) => s + Number(r.valor_comissao), 0);

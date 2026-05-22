@@ -193,4 +193,30 @@ router.delete('/admin/cotas/:id', authMiddleware, adminOnly, async (req, res) =>
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// GET — lista assessores com/sem email na producao
+router.get('/admin/assessores', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT DISTINCT assessor, email_assessor
+      FROM producao
+      WHERE assessor IS NOT NULL AND TRIM(assessor) != ''
+      ORDER BY assessor
+    `);
+    res.json(result.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT — atualiza email de assessor em toda a producao
+router.put('/admin/assessores/email', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { assessor, email } = req.body;
+    if (!assessor) return res.status(400).json({ error: 'assessor obrigatório' });
+    const result = await db.query(
+      `UPDATE producao SET email_assessor = $1 WHERE assessor = $2`,
+      [email || null, assessor]
+    );
+    res.json({ updated: result.rowCount });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;

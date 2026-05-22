@@ -440,6 +440,95 @@ function SecaoCotas() {
   );
 }
 
+/* ── 6. ASSESSORES — E-mails ──────────────────────────── */
+function SecaoAssessores() {
+  const [assessores, setAssessores] = useState([]);
+  const [vals, setVals]             = useState({});
+  const [status, setStatus]         = useState({});
+  const [novoNome, setNovoNome]     = useState('');
+  const [novoEmail, setNovoEmail]   = useState('');
+  const [addStatus, setAddStatus]   = useState('');
+
+  const inp = {
+    padding: '4px 8px', borderRadius: '6px',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-primary)',
+    color: 'var(--text-primary)', fontSize: '13px',
+  };
+
+  useEffect(() => {
+    api.get('/admin/assessores').then(r => {
+      setAssessores(r.data);
+      const init = {};
+      r.data.forEach(a => { init[a.assessor] = a.email_assessor || ''; });
+      setVals(init);
+    });
+  }, []);
+
+  const salvar = async (assessor) => {
+    try {
+      const res = await api.put('/admin/assessores/email', { assessor, email: vals[assessor] || null });
+      setStatus(s => ({ ...s, [assessor]: `✓ ${res.data.updated} linhas` }));
+      setTimeout(() => setStatus(s => { const n = { ...s }; delete n[assessor]; return n; }), 3000);
+    } catch { setStatus(s => ({ ...s, [assessor]: '✗ Erro' })); }
+  };
+
+  const adicionar = async () => {
+    if (!novoNome.trim()) return;
+    try {
+      const res = await api.put('/admin/assessores/email', { assessor: novoNome.trim(), email: novoEmail.trim() || null });
+      setAddStatus(`✓ ${res.data.updated} linhas atualizadas`);
+      setNovoNome(''); setNovoEmail('');
+      const r = await api.get('/admin/assessores');
+      setAssessores(r.data);
+      const init = {};
+      r.data.forEach(a => { init[a.assessor] = a.email_assessor || ''; });
+      setVals(init);
+      setTimeout(() => setAddStatus(''), 3000);
+    } catch { setAddStatus('✗ Erro'); }
+  };
+
+  return (
+    <>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Nome do assessor</label>
+          <input style={{ ...inp, width: '200px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder="Nome exato como na produção" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>E-mail</label>
+          <input style={{ ...inp, width: '240px' }} value={novoEmail} onChange={e => setNovoEmail(e.target.value)} placeholder="email@wflowinvest.com" />
+        </div>
+        <button className="btn-admin-action" onClick={adicionar}>Adicionar / Atualizar</button>
+        {addStatus && <span style={{ fontSize: '12px', color: addStatus.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{addStatus}</span>}
+      </div>
+      <div className="table-scroll">
+        <table>
+          <thead><tr><th>Assessor</th><th>E-mail atual</th><th></th></tr></thead>
+          <tbody>
+            {assessores.map(a => (
+              <tr key={a.assessor}>
+                <td style={{ fontSize: '13px' }}>{a.assessor}</td>
+                <td>
+                  <input
+                    style={{ ...inp, width: '260px' }}
+                    value={vals[a.assessor] ?? ''}
+                    onChange={e => setVals(s => ({ ...s, [a.assessor]: e.target.value }))}
+                  />
+                </td>
+                <td>
+                  <button className="btn-admin-sm" onClick={() => salvar(a.assessor)}>Salvar</button>
+                  {status[a.assessor] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[a.assessor].startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status[a.assessor]}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 /* ── PÁGINA PRINCIPAL ─────────────────────────────────── */
 export default function Admin() {
   const { user } = useAuth();
@@ -486,6 +575,9 @@ export default function Admin() {
 
       <Section title="5. Cotas e Parcelas" open={!!open.cotas} onToggle={() => toggle('cotas')}>
         <SecaoCotas />
+      </Section>
+      <Section title="6. Assessores — E-mails" open={!!open.assessores} onToggle={() => toggle('assessores')}>
+        <SecaoAssessores />
       </Section>
     </div>
   );
