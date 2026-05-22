@@ -6,6 +6,7 @@ const contemplacaoRoutes = require('./contemplacaoRoutes');
 const simuladorRoutes = require('./simuladorRoutes');
 const comissoesRoutes = require('./comissoesRoutes');
 const acompanhamentoRoutes = require('./acompanhamentoRoutes');
+const agendaRoutes = require('./agendaRoutes');
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.use('/contemplacao', contemplacaoRoutes);
 router.use('/simulador', simuladorRoutes);
 router.use('/', comissoesRoutes);
 router.use('/', acompanhamentoRoutes);
+router.use('/', agendaRoutes);
 
 // Health check
 router.get('/health', (req, res) => {
