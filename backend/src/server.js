@@ -38,6 +38,17 @@ async function initDb() {
 
 initDb();
 
+// Diagnóstico temporário de variáveis de ambiente
+app.get('/debug-env', (req, res) => {
+  res.json({
+    client_id:      process.env.GOOGLE_CLIENT_ID      ? 'OK - ' + process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'AUSENTE',
+    client_secret:  process.env.GOOGLE_CLIENT_SECRET  ? 'OK' : 'AUSENTE',
+    redirect_uri:   process.env.GOOGLE_REDIRECT_URI   || 'AUSENTE',
+    anthropic_key:  process.env.ANTHROPIC_API_KEY     ? 'OK' : 'AUSENTE',
+    node_env:       process.env.NODE_ENV              || 'não definido',
+  });
+});
+
 // Rota raiz
 app.get('/', (req, res) => {
   res.json({ 
