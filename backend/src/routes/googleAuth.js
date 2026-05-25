@@ -11,7 +11,8 @@ const SCOPES = [
 router.get('/auth/google', (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    prompt: 'consent',
+    prompt: 'consent select_account',
+    login_hint: 'sabrina@jtdkinvest.com',
     scope: SCOPES,
   });
   res.redirect(url);
