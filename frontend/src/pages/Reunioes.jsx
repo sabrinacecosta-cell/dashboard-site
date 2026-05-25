@@ -79,17 +79,19 @@ const inp = {
 
 // ── Modal de reunião ──────────────────────────────────────────
 function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
-  const [reuniao, setReuniao]           = useState(initial);
-  const [status, setStatus]             = useState(initial.status || 'em_andamento');
-  const [motivo, setMotivo]             = useState(initial.motivo_nao_fechamento || '');
-  const [dataRetorno, setDataRetorno]   = useState(initial.data_retorno?.slice(0, 10) || '');
-  const [motivoRet, setMotivoRet]       = useState(initial.motivo_retorno || '');
-  const [tarefas, setTarefas]           = useState(initial.tarefas || []);
-  const [novaTarefa, setNovaTarefa]     = useState('');
-  const [showAta, setShowAta]           = useState(false);
-  const [processando, setProcessando]   = useState(false);
-  const [resumo, setResumo]             = useState(initial.resumo_ia || '');
-  const [salvando, setSalvando]         = useState(false);
+  const [reuniao, setReuniao]             = useState(initial);
+  const [status, setStatus]               = useState(initial.status || 'em_andamento');
+  const [motivo, setMotivo]               = useState(initial.motivo_nao_fechamento || '');
+  const [dataRetorno, setDataRetorno]     = useState(initial.data_retorno?.slice(0, 10) || '');
+  const [motivoRet, setMotivoRet]         = useState(initial.motivo_retorno || '');
+  const [tarefas, setTarefas]             = useState(initial.tarefas || []);
+  const [novaTarefa, setNovaTarefa]       = useState('');
+  const [showNovaInput, setShowNovaInput] = useState(false);
+  const [showAtaFull, setShowAtaFull]     = useState(false);
+  const [processando, setProcessando]     = useState(false);
+  const [resumo, setResumo]               = useState(initial.resumo_ia || '');
+  const [statusSugerido, setStatusSugerido] = useState(false);
+  const [salvando, setSalvando]           = useState(false);
 
   const participantes = Array.isArray(reuniao.participantes)
     ? reuniao.participantes
@@ -105,11 +107,20 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
       .catch(() => {});
   }, [initial.id]);
 
+  function fmtHorario(start, end) {
+    const date = fmtDate(start);
+    const startT = fmtTime(start);
+    if (!end) return `${date} às ${startT}`;
+    const endT = fmtTime(end);
+    if (!endT || startT === endT) return `${date} às ${startT}`;
+    return `${date} às ${startT} – ${endT}`;
+  }
+
   async function salvarStatus(novoStatus, extra = {}) {
     setSalvando(true);
     try {
       await api.put(`/reunioes/${reuniao.id}/status`, {
-        status: novoStatus,
+        status:                novoStatus,
         motivo_nao_fechamento: extra.motivo    ?? motivo     ?? null,
         data_retorno:          extra.dataRet   ?? dataRetorno ?? null,
         motivo_retorno:        extra.motivoRet ?? motivoRet  ?? null,
@@ -126,6 +137,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
   async function handleStatusChange(e) {
     const novo = e.target.value;
     setStatus(novo);
+    setStatusSugerido(false);
     await salvarStatus(novo);
   }
 
@@ -134,6 +146,17 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
     try {
       const r = await api.post(`/reunioes/${reuniao.id}/processar`);
       setResumo(r.data.resumo_ia);
+
+      if (r.data.status_sugerido && !r.data.cached) {
+        const novoStatus = r.data.status_sugerido;
+        const novoMotivo = r.data.motivo || '';
+        const novoOQueTratar = r.data.o_que_tratar || '';
+        setStatus(novoStatus);
+        setStatusSugerido(true);
+        if (novoMotivo) setMotivo(novoMotivo);
+        if (novoOQueTratar) setMotivoRet(novoOQueTratar);
+        await salvarStatus(novoStatus, { motivo: novoMotivo || motivo, motivoRet: novoOQueTratar || motivoRet });
+      }
     } catch (e) {
       alert(e.response?.data?.error || 'Erro ao processar');
     } finally {
@@ -147,6 +170,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
       const r = await api.post(`/reunioes/${reuniao.id}/tarefas`, { descricao: novaTarefa.trim() });
       setTarefas(prev => [...prev, r.data]);
       setNovaTarefa('');
+      setShowNovaInput(false);
     } catch { alert('Erro ao criar tarefa'); }
   }
 
@@ -161,132 +185,195 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
   }
 
   const cor = STATUS_COLORS[status] || '#888';
+  const lbl = { display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.4px' };
+  const sec = { margin: '0 0 0.45rem', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' };
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
-      onClick={onClose}
-    >
+    <>
       <div
-        style={{ background: 'var(--bg-secondary)', borderRadius: '16px', padding: '1.75rem', width: '100%', maxWidth: '660px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 8px 40px rgba(0,0,0,.5)' }}
-        onClick={e => e.stopPropagation()}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+        onClick={onClose}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1.25rem' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.05rem', lineHeight: 1.3 }}>{reuniao.titulo}</h3>
-            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              {fmtDate(reuniao.data_reuniao)} às {fmtTime(reuniao.data_reuniao)}
-            </p>
-            {participantes.length > 0 && (
-              <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                {participantes.join(', ')}
+        <div
+          style={{ background: 'var(--bg-secondary)', borderRadius: '16px', width: '100%', maxWidth: '660px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,.5)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* ── Título + X fixos no topo ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <h3 style={{ flex: 1, margin: 0, fontSize: '1rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {reuniao.titulo}
+            </h3>
+            <button onClick={onClose} style={{ ...btn(), padding: '0.25rem 0.6rem', fontSize: '1rem', flexShrink: 0 }}>✕</button>
+          </div>
+
+          {/* ── Conteúdo rolável ── */}
+          <div style={{ overflowY: 'auto', padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+            {/* Data + participantes */}
+            <div>
+              <p style={{ margin: '0 0 0.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                {fmtHorario(reuniao.data_reuniao, reuniao.data_fim)}
               </p>
-            )}
-          </div>
-          <button onClick={onClose} style={{ ...btn(), padding: '0.3rem 0.65rem', fontSize: '1rem', flexShrink: 0 }}>✕</button>
-        </div>
-
-        {/* Status */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Status</label>
-          <select value={status} onChange={handleStatusChange} disabled={salvando} style={{ ...inp, color: cor, borderColor: cor }}>
-            {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-
-        {/* Campos condicionais */}
-        {status === 'nao_fechou' && (
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Motivo do não fechamento</label>
-            <input
-              style={inp}
-              placeholder="Descreva o motivo…"
-              value={motivo}
-              onChange={e => setMotivo(e.target.value)}
-              onBlur={() => salvarStatus(status, { motivo })}
-            />
-          </div>
-        )}
-
-        {status === 'retorno' && (
-          <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: '0 0 auto' }}>
-              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Data de retorno</label>
-              <input
-                type="date"
-                style={{ ...inp, width: '160px' }}
-                value={dataRetorno}
-                onChange={e => setDataRetorno(e.target.value)}
-                onBlur={() => salvarStatus(status, { dataRet: dataRetorno, motivoRet })}
-              />
+              {participantes.length > 0 && (
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {participantes.join(', ')}
+                </p>
+              )}
             </div>
-            <div style={{ flex: 1, minWidth: '180px' }}>
-              <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.4px' }}>O que tratar</label>
-              <input
-                style={inp}
-                placeholder="Assunto do retorno…"
-                value={motivoRet}
-                onChange={e => setMotivoRet(e.target.value)}
-                onBlur={() => salvarStatus(status, { dataRet: dataRetorno, motivoRet })}
-              />
+
+            {/* Ata */}
+            <div>
+              <p style={sec}>📋 Ata da reunião</p>
+              {reuniao.ata_original ? (
+                <>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem' }}>
+                    <pre style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.65, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {reuniao.ata_original}
+                    </pre>
+                  </div>
+                  <button onClick={() => setShowAtaFull(true)} style={{ ...btn('default', true), marginTop: '0.5rem' }}>
+                    📄 Ver ata completa
+                  </button>
+                </>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Nenhuma ata encontrada.</p>
+              )}
             </div>
-          </div>
-        )}
 
-        {/* Resumo IA */}
-        {resumo ? (
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: '10px', padding: '0.9rem 1rem', marginBottom: '1rem' }}>
-            <p style={{ margin: '0 0 0.4rem', fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Resumo IA</p>
-            <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>{resumo}</p>
-          </div>
-        ) : reuniao.ata_original ? (
-          <div style={{ marginBottom: '1rem' }}>
-            <button onClick={processar} disabled={processando} style={btn('accent')}>
-              {processando ? '⏳ Processando…' : '✨ Processar com IA'}
-            </button>
-          </div>
-        ) : null}
+            {/* Resumo IA */}
+            <div>
+              <p style={sec}>🤖 Resumo IA</p>
+              {resumo ? (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>{resumo}</p>
+                </div>
+              ) : reuniao.ata_original ? (
+                <button onClick={processar} disabled={processando} style={btn('accent')}>
+                  {processando ? '⏳ Processando…' : '✨ Processar com IA'}
+                </button>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sem ata para processar.</p>
+              )}
+            </div>
 
-        {/* Ata */}
-        {reuniao.ata_original && (
-          <div style={{ marginBottom: '1rem' }}>
-            <button onClick={() => setShowAta(v => !v)} style={btn('default', true)}>
-              {showAta ? '▲ Ocultar ata' : '📄 Ver ata completa'}
-            </button>
-            {showAta && (
-              <pre style={{ marginTop: '0.75rem', fontSize: '0.8rem', lineHeight: 1.65, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'var(--bg-card)', borderRadius: '8px', padding: '0.75rem', border: '1px solid var(--border)' }}>
-                {reuniao.ata_original}
-              </pre>
+            {/* Status */}
+            <div>
+              <label style={lbl}>Status</label>
+              <select value={status} onChange={handleStatusChange} disabled={salvando} style={{ ...inp, color: cor, borderColor: cor }}>
+                {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              {statusSugerido && (
+                <p style={{ margin: '0.4rem 0 0', fontSize: '0.75rem', color: 'var(--accent)', fontStyle: 'italic' }}>
+                  ✨ Status sugerido pela IA — você pode alterar
+                </p>
+              )}
+            </div>
+
+            {/* Campos condicionais */}
+            {status === 'nao_fechou' && (
+              <div>
+                <label style={lbl}>Motivo do não fechamento</label>
+                <input
+                  style={inp}
+                  placeholder="Descreva o motivo…"
+                  value={motivo}
+                  onChange={e => setMotivo(e.target.value)}
+                  onBlur={() => salvarStatus(status, { motivo })}
+                />
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Tarefas */}
-        <div>
-          <p style={{ margin: '0 0 0.6rem', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Tarefas</p>
-          {tarefas.length === 0 && <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0 0 0.5rem' }}>Nenhuma tarefa ainda.</p>}
-          {tarefas.map(t => (
-            <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={t.concluida} onChange={() => toggleTarefa(t)} />
-              <span style={{ fontSize: '0.85rem', color: t.concluida ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: t.concluida ? 'line-through' : 'none' }}>
-                {t.descricao}
-              </span>
-            </label>
-          ))}
-          <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem' }}>
-            <input
-              style={{ ...inp, flex: 1, padding: '0.35rem 0.6rem' }}
-              placeholder="Nova tarefa…"
-              value={novaTarefa}
-              onChange={e => setNovaTarefa(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && adicionarTarefa()}
-            />
-            <button onClick={adicionarTarefa} style={btn('default', true)}>+ Tarefa</button>
+            {status === 'retorno' && (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ flex: '0 0 auto' }}>
+                  <label style={lbl}>Data de retorno</label>
+                  <input
+                    type="date"
+                    style={{ ...inp, width: '160px' }}
+                    value={dataRetorno}
+                    onChange={e => setDataRetorno(e.target.value)}
+                    onBlur={() => salvarStatus(status, { dataRet: dataRetorno, motivoRet })}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: '180px' }}>
+                  <label style={lbl}>O que tratar</label>
+                  <input
+                    style={inp}
+                    placeholder="Ex: Apresentar simulação grupo 1042, limite R$1.800/mês"
+                    value={motivoRet}
+                    onChange={e => setMotivoRet(e.target.value)}
+                    onBlur={() => salvarStatus(status, { dataRet: dataRetorno, motivoRet })}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Tarefas */}
+            <div>
+              <p style={sec}>Tarefas</p>
+              {tarefas.length === 0 && !showNovaInput && (
+                <p style={{ margin: '0 0 0.4rem', fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Nenhuma tarefa ainda.</p>
+              )}
+              {tarefas.map(t => (
+                <label key={t.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.35rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={t.concluida} onChange={() => toggleTarefa(t)} style={{ marginTop: '0.15rem', flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.85rem', color: t.concluida ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: t.concluida ? 'line-through' : 'none' }}>
+                    {t.descricao}
+                  </span>
+                </label>
+              ))}
+              {showNovaInput ? (
+                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.35rem' }}>
+                  <input
+                    autoFocus
+                    style={{ ...inp, flex: 1, padding: '0.35rem 0.6rem' }}
+                    placeholder="Descreva a tarefa…"
+                    value={novaTarefa}
+                    onChange={e => setNovaTarefa(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') adicionarTarefa();
+                      if (e.key === 'Escape') { setShowNovaInput(false); setNovaTarefa(''); }
+                    }}
+                  />
+                  <button onClick={adicionarTarefa} style={btn('accent', true)}>✓</button>
+                  <button onClick={() => { setShowNovaInput(false); setNovaTarefa(''); }} style={btn('default', true)}>✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowNovaInput(true)} style={{ ...btn('default', true), marginTop: '0.35rem' }}>
+                  + Nova tarefa
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Modal de ata completa (secundário) */}
+      {showAtaFull && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200, padding: '1rem' }}
+          onClick={() => setShowAtaFull(false)}
+        >
+          <div
+            style={{ background: 'var(--bg-secondary)', borderRadius: '14px', width: '100%', maxWidth: '700px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,.6)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, paddingRight: '1rem' }}>
+                Ata completa — {reuniao.titulo}
+              </p>
+              <button onClick={() => setShowAtaFull(false)} style={{ ...btn(), padding: '0.2rem 0.6rem', flexShrink: 0 }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '1.25rem', flex: 1 }}>
+              <pre style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {reuniao.ata_original}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

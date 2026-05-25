@@ -99,8 +99,9 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
     const timeMin = new Date();
-    timeMin.setDate(timeMin.getDate() - 90); // ampliado de 30 → 90 dias
+    timeMin.setDate(timeMin.getDate() - 90);
     const timeMax = new Date();
+    timeMax.setDate(timeMax.getDate() + 30); // inclui reuniões futuras (próximas 4 semanas)
 
     console.log('[importar] Calendar timeMin:', timeMin.toISOString());
     console.log('[importar] Calendar timeMax:', timeMax.toISOString());
@@ -169,16 +170,19 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       const participantes = (event.attendees || []).map(a => a.email);
       const assessorEmail = participantes.find(e => ADMIN_EMAILS.includes(e)) || null;
 
+      const eventEnd = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+
       const ins = await db.query(`
         INSERT INTO reunioes
-          (google_event_id, titulo, data_reuniao, participantes,
+          (google_event_id, titulo, data_reuniao, data_fim, participantes,
            gmail_message_id, ata_original, assessor_email)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         RETURNING id
       `, [
         event.id,
         event.summary,
         eventStart.toISOString(),
+        eventEnd ? eventEnd.toISOString() : null,
         JSON.stringify(participantes),
         matchEmail?.messageId || null,
         matchEmail?.body || null,
@@ -289,25 +293,49 @@ router.post('/reunioes/:id/processar', authMiddleware, adminOnly, async (req, re
 
     const msg = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 512,
+      max_tokens: 600,
       messages: [{
         role: 'user',
-        content: `Abaixo está a ata de uma reunião comercial transcrita pelo Gemini.
-Extraia em no máximo 3 linhas objetivas: qual é a próxima ação a ser
-tomada com este cliente, o que foi prometido e qual o prazo.
-Seja direto e objetivo. Não repita informações óbvias.
-Ata: ${reuniao.ata_original}`,
+        content: `Analise a ata da reunião comercial abaixo e retorne SOMENTE um JSON válido (sem markdown, sem texto extra).
+
+{
+  "resumo": "3 linhas objetivas: o que foi discutido, o que foi prometido e qual a próxima ação",
+  "status_sugerido": "fechou" | "nao_fechou" | "retorno" | "em_andamento",
+  "motivo": "Breve motivo (apenas se status_sugerido for nao_fechou, senão null)",
+  "o_que_tratar": "O que abordar no próximo contato (apenas se status_sugerido for retorno, senão null)"
+}
+
+Critérios:
+- "fechou": cliente assinou contrato ou fechou negócio explicitamente
+- "nao_fechou": cliente recusou ou demonstrou desinteresse claro
+- "retorno": cliente pediu prazo, quer pensar, ou próxima reunião foi agendada
+- "em_andamento": sem conclusão clara
+
+Ata:
+${reuniao.ata_original}`,
       }],
     });
 
-    const resumo = msg.content[0].text;
+    let resultado = { resumo: '', status_sugerido: null, motivo: null, o_que_tratar: null };
+    try {
+      const raw = msg.content[0].text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      resultado = JSON.parse(raw);
+    } catch {
+      resultado.resumo = msg.content[0].text;
+    }
 
     await db.query(
       'UPDATE reunioes SET resumo_ia = $1, atualizado_em = NOW() WHERE id = $2',
-      [resumo, req.params.id]
+      [resultado.resumo, req.params.id]
     );
 
-    res.json({ resumo_ia: resumo, cached: false });
+    res.json({
+      resumo_ia: resultado.resumo,
+      status_sugerido: resultado.status_sugerido || null,
+      motivo: resultado.motivo || null,
+      o_que_tratar: resultado.o_que_tratar || null,
+      cached: false,
+    });
   } catch (err) {
     console.error('processar:', err.message);
     res.status(500).json({ error: err.message });

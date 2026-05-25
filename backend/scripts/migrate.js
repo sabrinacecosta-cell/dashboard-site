@@ -732,6 +732,9 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   `);
   console.log('Tabela "google_tokens" OK!');
 
+  await db.query(`ALTER TABLE reunioes ADD COLUMN IF NOT EXISTS data_fim TIMESTAMP`);
+  console.log('Coluna data_fim em reunioes OK!');
+
   console.log('Migração concluída!');
 }
 
