@@ -36,25 +36,45 @@ function extractEventTitle(subject) {
   return match ? match[1].trim() : subject;
 }
 
-// Busca e-mails do Gemini/Meet com atas de reunião dos últimos 60 dias
+// Busca e-mails do Gemini/Meet com atas de reunião dos últimos 90 dias
 async function searchMeetingEmails() {
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-  const query = [
-    'from:meet-recordings-noreply@google.com',
-    'subject:"Notas da reunião"',
-    'subject:"Meeting notes"',
-    'subject:"Resumo da reunião"',
-    'newer_than:60d',
-  ].join(' OR ');
+  // Query corrigida: OR apenas entre os subjects, newer_than aplicado a todos
+  const query = '(subject:"Notas da reunião" OR subject:"Meeting notes" OR subject:"Resumo da reunião") newer_than:90d';
+  console.log('[gmailService] query:', query);
 
-  const listRes = await gmail.users.messages.list({
-    userId: 'me',
-    q: query,
-    maxResults: 100,
-  });
+  let listRes;
+  try {
+    listRes = await gmail.users.messages.list({
+      userId: 'me',
+      q: query,
+      maxResults: 100,
+    });
+  } catch (listErr) {
+    console.error('[gmailService] ERRO ao listar mensagens:', listErr.message);
+    console.error('[gmailService] code:', listErr.code, 'status:', listErr.status);
+    throw listErr;
+  }
 
   const messages = listRes.data.messages || [];
+  console.log('[gmailService] mensagens encontradas pela query:', messages.length);
+
+  // Testa também query alternativa sem filtro de remetente para diagnóstico
+  if (messages.length === 0) {
+    console.log('[gmailService] AVISO: 0 mensagens. Testando query ampla para diagnóstico...');
+    try {
+      const altRes = await gmail.users.messages.list({
+        userId: 'me',
+        q: 'subject:"reunião" newer_than:90d',
+        maxResults: 5,
+      });
+      console.log('[gmailService] query ampla "reunião" retornou:', (altRes.data.messages || []).length, 'mensagens');
+    } catch (altErr) {
+      console.error('[gmailService] query ampla também falhou:', altErr.message);
+    }
+  }
+
   const results = [];
 
   for (const msg of messages) {
@@ -70,6 +90,7 @@ async function searchMeetingEmails() {
       const dateStr = headers.find(h => h.name === 'Date')?.value || '';
 
       const body = extractBody(full.data.payload);
+      console.log('[gmailService] e-mail lido:', subject, '| body length:', body.length);
 
       results.push({
         messageId: msg.id,
@@ -79,7 +100,7 @@ async function searchMeetingEmails() {
         eventTitle: extractEventTitle(subject),
       });
     } catch (e) {
-      console.warn('gmailService: erro ao ler mensagem', msg.id, e.message);
+      console.error('[gmailService] erro ao ler mensagem', msg.id, ':', e.message);
     }
   }
 

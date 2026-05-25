@@ -76,42 +76,94 @@ router.get('/reunioes/metricas/motivos', authMiddleware, adminOnly, async (req, 
 // ── Importar do Calendar + Gmail ─────────────────────────────
 router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, async (req, res) => {
   try {
-    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+    console.log('[importar] === INÍCIO ===');
+
+    // ── 1. Diagnóstico do token ─────────────────────────────
+    const fs = require('fs');
+    const path = require('path');
+    const TOKEN_PATH = path.join(__dirname, '../../data/google-tokens.json');
+    const tokenFileExists = fs.existsSync(TOKEN_PATH);
+    console.log('[importar] TOKEN_PATH:', TOKEN_PATH);
+    console.log('[importar] token file exists:', tokenFileExists);
+    if (tokenFileExists) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
+        console.log('[importar] token keys:', Object.keys(raw));
+        console.log('[importar] has access_token:', !!raw.access_token);
+        console.log('[importar] has refresh_token:', !!raw.refresh_token);
+        console.log('[importar] scope:', raw.scope || '(sem scope salvo)');
+        console.log('[importar] expiry_date:', raw.expiry_date ? new Date(raw.expiry_date).toISOString() : '(sem expiry)');
+      } catch (e) {
+        console.error('[importar] erro ao ler token file:', e.message);
+      }
+    }
+    const creds = require('../config/google').oauth2Client.credentials;
+    console.log('[importar] oauth2Client.credentials keys:', Object.keys(creds || {}));
+    console.log('[importar] oauth2Client has access_token:', !!creds?.access_token);
+    console.log('[importar] oauth2Client has refresh_token:', !!creds?.refresh_token);
+
+    // ── 2. Calendar ─────────────────────────────────────────
+    const calendar = google.calendar({ version: 'v3', auth: require('../config/google').oauth2Client });
 
     const timeMin = new Date();
-    timeMin.setDate(timeMin.getDate() - 30);
+    timeMin.setDate(timeMin.getDate() - 90); // ampliado de 30 → 90 dias
+    const timeMax = new Date();
 
-    const calRes = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: timeMin.toISOString(),
-      timeMax: new Date().toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 100,
-    });
+    console.log('[importar] Calendar timeMin:', timeMin.toISOString());
+    console.log('[importar] Calendar timeMax:', timeMax.toISOString());
+    console.log('[importar] calendarId: primary');
 
-    const events = (calRes.data.items || []).filter(e => e.summary);
-
-    // Busca e-mails do Gmail em paralelo
-    let emails = [];
+    let calRes;
     try {
-      emails = await searchMeetingEmails();
-    } catch (gmailErr) {
-      console.warn('importar: Gmail indisponível:', gmailErr.message);
+      calRes = await calendar.events.list({
+        calendarId: 'primary',
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        singleEvents: true,
+        orderBy: 'startTime',
+        maxResults: 250,
+      });
+    } catch (calErr) {
+      console.error('[importar] ERRO Calendar.events.list:', calErr.message);
+      console.error('[importar] Calendar error code:', calErr.code);
+      console.error('[importar] Calendar error status:', calErr.status);
+      throw calErr;
     }
 
+    const allItems = calRes.data.items || [];
+    console.log('[importar] Calendar retornou', allItems.length, 'eventos (total, com e sem título)');
+    const events = allItems.filter(e => e.summary);
+    console.log('[importar] Eventos com título (summary):', events.length);
+    if (events.length > 0) {
+      console.log('[importar] Primeiros 5 títulos:', events.slice(0, 5).map(e => `"${e.summary}" (${e.start?.dateTime || e.start?.date})`));
+    }
+
+    // ── 3. Gmail ────────────────────────────────────────────
+    let emails = [];
+    try {
+      console.log('[importar] Buscando e-mails do Gmail...');
+      emails = await searchMeetingEmails();
+      console.log('[importar] Gmail retornou', emails.length, 'e-mails com atas');
+      if (emails.length > 0) {
+        console.log('[importar] Primeiros 3 assuntos Gmail:', emails.slice(0, 3).map(e => `"${e.subject}"`));
+      }
+    } catch (gmailErr) {
+      console.error('[importar] ERRO Gmail:', gmailErr.message);
+      console.error('[importar] Gmail error code:', gmailErr.code);
+      console.error('[importar] Gmail error status:', gmailErr.status);
+    }
+
+    // ── 4. Inserção ─────────────────────────────────────────
     let imported = 0;
     let skipped = 0;
 
     for (const event of events) {
-      // Verifica se já existe
       const existing = await db.query(
         'SELECT id FROM reunioes WHERE google_event_id = $1',
         [event.id]
       );
       if (existing.rows.length > 0) { skipped++; continue; }
 
-      // Cruza com Gmail pelo título ou data próxima (±1 dia)
       const eventStart = new Date(event.start?.dateTime || event.start?.date);
       const matchEmail = emails.find(em => {
         const titleMatch =
@@ -141,8 +193,8 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       ]);
 
       const reuniaoId = ins.rows[0].id;
+      console.log('[importar] inserido:', event.summary, '| com ata Gmail:', !!matchEmail);
 
-      // Extrai e salva tarefas
       if (matchEmail?.body) {
         const tarefas = extractActionItems(matchEmail.body);
         for (const desc of tarefas) {
@@ -156,9 +208,11 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       imported++;
     }
 
+    console.log('[importar] === FIM === imported:', imported, 'skipped:', skipped, 'total events:', events.length);
     res.json({ imported, skipped, total: events.length });
   } catch (err) {
-    console.error('reunioes/importar:', err.message);
+    console.error('[importar] ERRO FATAL:', err.message);
+    console.error('[importar] stack:', err.stack);
     res.status(500).json({ error: err.message });
   }
 });
