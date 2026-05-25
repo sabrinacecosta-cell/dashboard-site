@@ -723,6 +723,15 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   `);
   console.log('Tabela "retornos_pendentes" OK!');
 
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS google_tokens (
+      id SERIAL PRIMARY KEY,
+      tokens JSONB NOT NULL,
+      atualizado_em TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Tabela "google_tokens" OK!');
+
   console.log('Migração concluída!');
 }
 

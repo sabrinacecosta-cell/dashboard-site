@@ -31,7 +31,7 @@ router.get('/auth/google/callback', async (req, res) => {
 
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    saveTokens(tokens);
+    await saveTokens(tokens);
 
     const scopes = (tokens.scope || '').split(' ');
     const hasCalendar = scopes.some(s => s.includes('calendar'));

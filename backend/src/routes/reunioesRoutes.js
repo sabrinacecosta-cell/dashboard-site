@@ -79,31 +79,24 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     console.log('[importar] === INÍCIO ===');
 
     // ── 1. Diagnóstico do token ─────────────────────────────
-    const fs = require('fs');
-    const path = require('path');
-    const TOKEN_PATH = path.join(__dirname, '../../data/google-tokens.json');
-    const tokenFileExists = fs.existsSync(TOKEN_PATH);
-    console.log('[importar] TOKEN_PATH:', TOKEN_PATH);
-    console.log('[importar] token file exists:', tokenFileExists);
-    if (tokenFileExists) {
-      try {
-        const raw = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf8'));
-        console.log('[importar] token keys:', Object.keys(raw));
-        console.log('[importar] has access_token:', !!raw.access_token);
-        console.log('[importar] has refresh_token:', !!raw.refresh_token);
-        console.log('[importar] scope:', raw.scope || '(sem scope salvo)');
-        console.log('[importar] expiry_date:', raw.expiry_date ? new Date(raw.expiry_date).toISOString() : '(sem expiry)');
-      } catch (e) {
-        console.error('[importar] erro ao ler token file:', e.message);
-      }
+    const db2 = require('../config/database');
+    const tokenRow = await db2.query('SELECT tokens, atualizado_em FROM google_tokens ORDER BY id DESC LIMIT 1');
+    if (tokenRow.rows.length > 0) {
+      const t = tokenRow.rows[0].tokens;
+      console.log('[importar] token no banco — atualizado_em:', tokenRow.rows[0].atualizado_em);
+      console.log('[importar] has access_token:', !!t.access_token);
+      console.log('[importar] has refresh_token:', !!t.refresh_token);
+      console.log('[importar] scope:', t.scope || '(sem scope)');
+      console.log('[importar] expiry_date:', t.expiry_date ? new Date(t.expiry_date).toISOString() : '(sem expiry)');
+    } else {
+      console.log('[importar] AVISO: nenhum token no banco — precisa re-autorizar /auth/google');
     }
     const creds = require('../config/google').oauth2Client.credentials;
-    console.log('[importar] oauth2Client.credentials keys:', Object.keys(creds || {}));
     console.log('[importar] oauth2Client has access_token:', !!creds?.access_token);
     console.log('[importar] oauth2Client has refresh_token:', !!creds?.refresh_token);
 
     // ── 2. Calendar ─────────────────────────────────────────
-    const calendar = google.calendar({ version: 'v3', auth: require('../config/google').oauth2Client });
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
     const timeMin = new Date();
     timeMin.setDate(timeMin.getDate() - 90); // ampliado de 30 → 90 dias
