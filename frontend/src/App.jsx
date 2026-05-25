@@ -13,6 +13,8 @@ import Agenda from './pages/Agenda';
 import Reunioes from './pages/Reunioes';
 import RedefinirSenha from './pages/RedefinirSenha';
 
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();
 
@@ -22,6 +24,24 @@ function PrivateRoute({ children }) {
 
   if (!signed) {
     return <Navigate to="/login" />;
+  }
+
+  return <Layout>{children}</Layout>;
+}
+
+function AdminRoute({ children }) {
+  const { signed, loading, user } = useAuth();
+
+  if (loading) {
+    return <div className="app-loading">Carregando...</div>;
+  }
+
+  if (!signed) {
+    return <Navigate to="/login" />;
+  }
+
+  if (!ADMIN_EMAILS.includes(user?.email)) {
+    return <Navigate to="/vendas" />;
   }
 
   return <Layout>{children}</Layout>;
@@ -98,9 +118,9 @@ function App() {
           <Route
             path="/reunioes"
             element={
-              <PrivateRoute>
+              <AdminRoute>
                 <Reunioes />
-              </PrivateRoute>
+              </AdminRoute>
             }
           />
           <Route
