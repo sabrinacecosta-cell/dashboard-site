@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import PopupAgenda from './PopupAgenda';
 
 function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -93,6 +94,9 @@ function Layout({ children }) {
     { path: '/simulador', icon: '🧮', label: 'Simulador' },
     { path: '/grupos', icon: '📈', label: 'Métricas' },
     { path: '/agenda', icon: '📅', label: 'Agenda' },
+    ...(['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
+      ? [{ path: '/reunioes', icon: '🤝', label: 'Reuniões' }]
+      : []),
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '📋', label: 'Acompanhamento' }]
       : []),
@@ -187,6 +191,11 @@ function Layout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Popup de agenda/retornos para admins */}
+      {['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
+        <PopupAgenda userEmail={user.email} onNavigate={navigate} />
+      )}
 
       {/* Modal Resetar Senha */}
       {resetModal && (

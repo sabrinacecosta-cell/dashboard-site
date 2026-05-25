@@ -673,6 +673,56 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   `);
   console.log('Producao Nov/Dez 2025 reinserida com sucesso!');
 
+  // ── Reuniões ─────────────────────────────────────────────
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS reunioes (
+      id                    SERIAL PRIMARY KEY,
+      google_event_id       VARCHAR(255) UNIQUE,
+      titulo                VARCHAR(500),
+      data_reuniao          TIMESTAMP,
+      participantes         JSONB,
+      gmail_message_id      VARCHAR(255),
+      ata_original          TEXT,
+      resumo_ia             TEXT,
+      proximos_passos       TEXT,
+      status                VARCHAR(50) DEFAULT 'em_andamento',
+      motivo_nao_fechamento TEXT,
+      data_retorno          DATE,
+      motivo_retorno        TEXT,
+      assessor_email        VARCHAR(255),
+      criado_em             TIMESTAMP DEFAULT NOW(),
+      atualizado_em         TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Tabela "reunioes" OK!');
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS tarefas_reuniao (
+      id          SERIAL PRIMARY KEY,
+      reuniao_id  INTEGER REFERENCES reunioes(id) ON DELETE CASCADE,
+      descricao   TEXT NOT NULL,
+      concluida   BOOLEAN DEFAULT FALSE,
+      concluida_em TIMESTAMP,
+      criado_em   TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Tabela "tarefas_reuniao" OK!');
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS retornos_pendentes (
+      id             SERIAL PRIMARY KEY,
+      reuniao_id     INTEGER REFERENCES reunioes(id) ON DELETE CASCADE,
+      cliente        VARCHAR(500),
+      data_retorno   DATE NOT NULL,
+      motivo_retorno TEXT,
+      notificado_em  TIMESTAMP,
+      concluido      BOOLEAN DEFAULT FALSE,
+      concluido_em   TIMESTAMP,
+      criado_em      TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Tabela "retornos_pendentes" OK!');
+
   console.log('Migração concluída!');
 }
 

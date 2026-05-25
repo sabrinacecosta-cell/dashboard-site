@@ -12,10 +12,12 @@
     "import": "node scripts/importar-excel.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.98.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
+    "googleapis": "^172.0.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.18.0",
     "resend": "^6.12.3",

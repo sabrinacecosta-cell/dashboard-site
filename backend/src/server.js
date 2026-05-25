@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const routes = require('./routes');
+const googleAuth = require('./routes/googleAuth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,7 +18,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Rotas
+// Rotas OAuth Google (sem prefixo /api — callback precisa bater com GOOGLE_REDIRECT_URI)
+app.use('/', googleAuth);
+
+// Rotas da API
 app.use('/api', routes);
 
 const acompanhamentoExterno = require('./routes/acompanhamentoExternoRoutes');

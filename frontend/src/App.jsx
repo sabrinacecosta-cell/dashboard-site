@@ -10,6 +10,7 @@ import Grupos from './pages/Grupos';
 import Acompanhamento from './pages/Acompanhamento';
 import Admin from './pages/Admin';
 import Agenda from './pages/Agenda';
+import Reunioes from './pages/Reunioes';
 import RedefinirSenha from './pages/RedefinirSenha';
 
 function PrivateRoute({ children }) {
@@ -91,6 +92,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Agenda />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/reunioes"
+            element={
+              <PrivateRoute>
+                <Reunioes />
               </PrivateRoute>
             }
           />
