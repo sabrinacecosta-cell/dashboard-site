@@ -478,13 +478,16 @@ function AgendaChat({ isAdmin, user }) {
           autoComplete="off"
           style={{
             flex: 1,
+            minWidth: 0,
             padding: '0.58rem 0.85rem',
             borderRadius: '8px',
-            border: '1px solid var(--border)',
-            background: 'var(--bg-card)',
-            color: 'var(--text-primary)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: '#3a3a3c',
+            color: '#ffffff',
+            WebkitTextFillColor: '#ffffff',
+            caretColor: '#ffffff',
             fontSize: '0.88rem',
-            fontFamily: 'var(--font-sans)',
+            fontFamily: 'inherit',
             outline: 'none',
             opacity: loading ? 0.6 : 1,
           }}
@@ -493,6 +496,8 @@ function AgendaChat({ isAdmin, user }) {
           onClick={handleSend}
           disabled={!input.trim() || loading}
           style={{
+            width: 'auto',
+            flexShrink: 0,
             padding: '0.58rem 1.1rem',
             borderRadius: '8px',
             border: '1px solid var(--border)',
@@ -502,7 +507,8 @@ function AgendaChat({ isAdmin, user }) {
             fontWeight: 600,
             fontSize: '0.87rem',
             fontFamily: 'var(--font-sans)',
-            flexShrink: 0,
+            marginTop: 0,
+            whiteSpace: 'nowrap',
           }}
         >
           Enviar
@@ -520,7 +526,7 @@ function Agenda() {
   return (
     <div className="page-agenda">
       <div className="page-header">
-        <h1>📅 Agenda</h1>
+        <h1>📅 Agendamentos</h1>
         <p className="page-subtitle">
           {isAdmin ? 'Gerencie os compromissos da mesa' : 'Agende uma reunião com nossa equipe'}
         </p>

@@ -93,7 +93,7 @@ function Layout({ children }) {
     { path: '/comissoes', icon: '💰', label: 'Comissões' },
     { path: '/simulador', icon: '🧮', label: 'Simulador' },
     { path: '/grupos', icon: '📈', label: 'Métricas' },
-    { path: '/agenda', icon: '📅', label: 'Agenda' },
+    { path: '/agenda', icon: '📅', label: 'Agendamentos' },
     ...(['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
       ? [{ path: '/reunioes', icon: '🤝', label: 'Reuniões' }]
       : []),
