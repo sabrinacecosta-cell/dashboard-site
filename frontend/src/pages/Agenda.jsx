@@ -581,13 +581,18 @@ function AgendaChat({ isAdmin, user }) {
 
       {/* Quick action buttons */}
       <div style={{
-        display: 'flex', gap: '0.4rem', padding: '0.45rem 0.9rem 0',
-        flexWrap: 'nowrap',
+        display: 'flex', flexDirection: 'column', gap: '0.35rem',
+        padding: '0.5rem 0.9rem 0',
         background: 'var(--bg-secondary)',
       }}>
-        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('hoje')))}>Hoje</button>
-        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>Amanhã</button>
-        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
+        <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+          Escolha uma das 3 datas abaixo para ver as disponibilidades de horário
+        </span>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap' }}>
+          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('hoje')))}>Hoje</button>
+          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>Amanhã</button>
+          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
+        </div>
       </div>
 
       {/* Input bar */}
