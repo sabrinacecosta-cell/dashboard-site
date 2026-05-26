@@ -253,6 +253,35 @@ function parseDateRef(text) {
   if (t.includes('depois de amanhã') || t.includes('depois de amanha')) return toStr(addDays(2));
   if (t.includes('amanhã') || t.includes('amanha')) return toStr(addDays(1));
 
+  // dd/mm/yyyy or dd/mm
+  const fullDate = t.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?\b/);
+  if (fullDate) {
+    const now = new Date();
+    const day = parseInt(fullDate[1], 10);
+    const month = parseInt(fullDate[2], 10) - 1;
+    const year = fullDate[3] ? parseInt(fullDate[3], 10) : now.getFullYear();
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return toStr(d);
+  }
+
+  // "dia 27" or just "27" (assumes current month/year)
+  const MONTH_MAP = { janeiro:0, fevereiro:1, março:2, marco:2, abril:3, maio:4, junho:5, julho:6, agosto:7, setembro:8, outubro:9, novembro:10, dezembro:11 };
+  for (const [name, idx] of Object.entries(MONTH_MAP)) {
+    const m = t.match(new RegExp(`(\\d{1,2})\\s+de\\s+${name}`));
+    if (m) {
+      const now = new Date();
+      const d = new Date(now.getFullYear(), idx, parseInt(m[1], 10));
+      return toStr(d);
+    }
+  }
+
+  const dayOnly = t.match(/\bdia\s+(\d{1,2})\b/);
+  if (dayOnly) {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth(), parseInt(dayOnly[1], 10));
+    return toStr(d);
+  }
+
   const DAY_MAP = {
     'segunda-feira': 1, 'segunda': 1,
     'terça-feira': 2, 'terca-feira': 2, 'terça': 2, 'terca': 2,
