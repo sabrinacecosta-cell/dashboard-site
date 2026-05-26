@@ -530,19 +530,18 @@ function WeeklyGrid({ reunioes, weekDays, onCardClick }) {
 }
 
 // ── Barra de resumo da semana ─────────────────────────────────
-function SummaryBar({ reunioes }) {
+function SummaryBar({ reunioes, proximosRetornos = [] }) {
   const total       = reunioes.length;
   const fechamentos = reunioes.filter(r => r.status === 'fechou').length;
   const retornos    = reunioes.filter(r => r.status === 'retorno').length;
   const naoFechou   = reunioes.filter(r => r.status === 'nao_fechou').length;
   const emAndamento = reunioes.filter(r => r.status === 'em_andamento').length;
-  const tarefas     = reunioes.flatMap(r => (r.tarefas || []).filter(t => !t.concluida));
 
   const pieData = [
-    { name: 'Fechou negócio',   value: fechamentos, color: CORES.fechou },
-    { name: 'Retorno agendado', value: retornos,    color: CORES.retorno },
-    { name: 'Não fechou',       value: naoFechou,   color: CORES.nao_fechou },
-    { name: 'Em andamento',     value: emAndamento, color: CORES.em_andamento },
+    { name: 'Fechou',       value: fechamentos, color: CORES.fechou },
+    { name: 'Retorno',      value: retornos,    color: CORES.retorno },
+    { name: 'Não fechou',   value: naoFechou,   color: CORES.nao_fechou },
+    { name: 'Em andamento', value: emAndamento, color: CORES.em_andamento },
   ].filter(d => d.value > 0);
 
   const motivosData = Object.values(
@@ -557,67 +556,96 @@ function SummaryBar({ reunioes }) {
   ).sort((a, b) => b.contagem - a.contagem);
 
   const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem 1rem' };
-  const noData    = <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', margin: '3.5rem 0' }}>Sem dados suficientes para exibir</p>;
+
+  function fmtRetornoDate(d) {
+    if (!d) return '';
+    const [y, m, day] = d.split('-');
+    return `${day}/${m}`;
+  }
 
   return (
     <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-      {/* Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.65rem' }}>
-        <div style={cardStyle}>
-          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Reuniões</p>
-          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700 }}>{total}</p>
-        </div>
-        <div style={cardStyle}>
-          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.fechou, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Fechamentos</p>
-          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.fechou }}>{fechamentos}</p>
-        </div>
-        <div style={cardStyle}>
-          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.retorno, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Retornos</p>
-          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.retorno }}>{retornos}</p>
-        </div>
-        {tarefas.length > 0 && (
-          <div style={cardStyle}>
-            <p style={{ margin: '0 0 0.45rem', fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Próximas ações</p>
-            {tarefas.slice(0, 5).map((t, i) => (
-              <p key={i} style={{ margin: '0.12rem 0', fontSize: '0.76rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>• {t.descricao}</p>
-            ))}
+      {/* Cards numéricos */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
+        {[
+          { label: 'Reuniões', value: total, color: 'var(--text-muted)' },
+          { label: 'Fechamentos', value: fechamentos, color: CORES.fechou },
+          { label: 'Retornos', value: retornos, color: CORES.retorno },
+          { label: 'Não fechou', value: naoFechou, color: CORES.nao_fechou },
+        ].map(c => (
+          <div key={c.label} style={cardStyle}>
+            <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: c.color, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{c.label}</p>
+            <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: c.color === 'var(--text-muted)' ? 'var(--text-primary)' : c.color }}>{c.value}</p>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Gráficos da semana */}
+      {/* Gráfico + Próximas ações lado a lado */}
       {total > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: motivosData.length > 0 ? '1fr 1fr' : '1fr', gap: '0.65rem' }}>
-          {/* Pizza: resultado */}
-          <div style={{ ...cardStyle, padding: '1rem' }}>
-            <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Resultado das Reuniões</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+
+          {/* Pizza menor */}
+          <div style={{ ...cardStyle, padding: '0.85rem 1rem' }}>
+            <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Resultado das Reuniões</p>
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={210}>
+              <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={72} dataKey="value">
+                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={52} dataKey="value" paddingAngle={2}>
                     {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
                   </Pie>
                   <Tooltip {...TT} formatter={(v, n) => [v, n]} />
-                  <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
+                  <Legend wrapperStyle={{ fontSize: '0.72rem' }} />
                 </PieChart>
               </ResponsiveContainer>
-            ) : noData}
+            ) : (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', margin: '2.5rem 0' }}>Sem dados</p>
+            )}
           </div>
 
-          {/* Barras horizontais: motivos */}
-          {motivosData.length > 0 && (
-            <div style={{ ...cardStyle, padding: '1rem' }}>
-              <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Motivos de Não Fechamento</p>
-              <ResponsiveContainer width="100%" height={210}>
-                <BarChart layout="vertical" data={motivosData} margin={{ left: 8, right: 24, top: 4 }}>
-                  <XAxis type="number" tick={{ fontSize: 11, fill: '#888' }} allowDecimals={false} />
-                  <YAxis type="category" dataKey="motivo" width={130} tick={{ fontSize: 11, fill: '#888' }} />
-                  <Tooltip {...TT} formatter={(v) => [v, 'Ocorrências']} />
-                  <Bar dataKey="contagem" fill={CORES.nao_fechou} radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {/* Próximas ações */}
+          <div style={{ ...cardStyle, padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0' }}>
+            <p style={{ margin: '0 0 0.6rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Próximas ações</p>
+            {proximosRetornos.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.5rem' }}>Nenhum retorno pendente</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                {proximosRetornos.map((ret, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                    <span style={{
+                      flexShrink: 0, fontSize: '0.7rem', fontWeight: 700,
+                      background: 'rgba(33,150,243,.15)', color: CORES.retorno,
+                      borderRadius: '4px', padding: '0.1rem 0.35rem', marginTop: '1px',
+                    }}>{fmtRetornoDate(ret.data_retorno)}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {ret.cliente || ret.reuniao_titulo || '—'}
+                      </p>
+                      {ret.motivo_retorno && (
+                        <p style={{ margin: 0, fontSize: '0.73rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ret.motivo_retorno}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Motivos de não fechamento */}
+      {motivosData.length > 0 && (
+        <div style={{ ...cardStyle, padding: '0.85rem 1rem' }}>
+          <p style={{ margin: '0 0 0.5rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Motivos de Não Fechamento</p>
+          <ResponsiveContainer width="100%" height={Math.max(100, motivosData.length * 36)}>
+            <BarChart layout="vertical" data={motivosData} margin={{ left: 8, right: 24, top: 4 }}>
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#888' }} allowDecimals={false} />
+              <YAxis type="category" dataKey="motivo" width={140} tick={{ fontSize: 11, fill: '#888' }} />
+              <Tooltip {...TT} formatter={(v) => [v, 'Ocorrências']} />
+              <Bar dataKey="contagem" fill={CORES.nao_fechou} radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
@@ -792,6 +820,7 @@ function Reunioes() {
   const [importMsg, setImportMsg]             = useState('');
   const [selectedReuniao, setSelectedReuniao] = useState(null);
   const [retornosHoje, setRetornosHoje]       = useState([]);
+  const [proximosRetornos, setProximosRetornos] = useState([]);
   const [showRetModal, setShowRetModal]       = useState(false);
 
   const weekDays = React.useMemo(() => {
@@ -837,6 +866,12 @@ function Reunioes() {
       const r = await api.get('/retornos/pendentes');
       const today = new Date().toISOString().slice(0, 10);
       setRetornosHoje(r.data.filter(ret => ret.data_retorno === today));
+      setProximosRetornos(
+        r.data
+          .filter(ret => ret.data_retorno >= today)
+          .sort((a, b) => a.data_retorno.localeCompare(b.data_retorno))
+          .slice(0, 5)
+      );
     } catch {}
   }, []);
 
@@ -926,7 +961,7 @@ function Reunioes() {
       }
 
       {/* Barra de resumo + Métricas mensais */}
-      {!loading && <SummaryBar reunioes={reunioes} />}
+      {!loading && <SummaryBar reunioes={reunioes} proximosRetornos={proximosRetornos} />}
       {!loading && <MetricasMensais />}
 
       {/* Modal da reunião */}
