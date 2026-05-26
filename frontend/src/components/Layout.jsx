@@ -89,19 +89,19 @@ function Layout({ children }) {
   const EMAILS_ACOMPANHAMENTO = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outlook.com'];
 
   const menuItems = [
-    { path: '/vendas', icon: '📊', label: 'Vendas' },
-    { path: '/comissoes', icon: '💰', label: 'Comissões' },
-    { path: '/simulador', icon: '🧮', label: 'Simulador' },
-    { path: '/grupos', icon: '📈', label: 'Métricas' },
-    { path: '/agenda', icon: '📅', label: 'Agendamentos' },
+    { path: '/vendas', icon: '', label: 'Vendas' },
+    { path: '/comissoes', icon: '', label: 'Comissões' },
+    { path: '/simulador', icon: '', label: 'Simulador' },
+    { path: '/grupos', icon: '', label: 'Métricas' },
+    { path: '/agenda', icon: '', label: 'Chat-agenda' },
     ...(['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
-      ? [{ path: '/reunioes', icon: '🤝', label: 'Reuniões' }]
+      ? [{ path: '/reunioes', icon: '', label: 'Reuniões' }]
       : []),
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
-      ? [{ path: '/acompanhamento', icon: '📋', label: 'Acompanhamento' }]
+      ? [{ path: '/acompanhamento', icon: '', label: 'Acompanhamento' }]
       : []),
     ...(['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email)
-      ? [{ path: '/admin', icon: '⚙️', label: 'Administração' }]
+      ? [{ path: '/admin', icon: '', label: 'Administração' }]
       : []),
   ];
 
@@ -120,7 +120,7 @@ function Layout({ children }) {
               to={item.path}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
-              <span className="nav-icon">{item.icon}</span>
+              {item.icon && <span className="nav-icon">{item.icon}</span>}
               <span className="nav-label">{item.label}</span>
             </NavLink>
           ))}
