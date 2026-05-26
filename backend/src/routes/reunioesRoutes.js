@@ -13,7 +13,8 @@ const TITLE_EXCLUSIONS = [
   /\bcasa\b/i,
   /\brotary\b/i,
   /call\s+semanal/i,
-  /aula\s+de?\s+t[eê]nis/i,
+  /t[eê]nis/i,
+  /tenis/i,
 ];
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -205,10 +206,11 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     // Remove registros já importados que correspondem às exclusões
     await db.query(`
       DELETE FROM reunioes
-      WHERE titulo ~* '\\mcasa\\M'
-         OR titulo ~* '\\mrotary\\M'
-         OR titulo ~* 'call\\s+semanal'
-         OR titulo ~* 'aula\\s+de?\\s+t[eê]nis'
+      WHERE titulo ILIKE '%casa%'
+         OR titulo ILIKE '%rotary%'
+         OR titulo ILIKE '%call semanal%'
+         OR titulo ILIKE '%tenis%'
+         OR titulo ILIKE '%tênis%'
     `);
     if (events.length > 0) {
       console.log('[importar] Primeiros 5 títulos:', events.slice(0, 5).map(e => `"${e.summary}" (${e.start?.dateTime || e.start?.date})`));
