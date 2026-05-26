@@ -261,15 +261,22 @@ function AgendaChat({ isAdmin, user }) {
   }, []);
 
   // ── API helpers ──────────────────────────────────────────
-  async function fetchToday() {
+  async function fetchDay(dateStr) {
     try {
-      const r = await api.get('/agenda/events/today');
+      const r = await api.get(`/agenda/events/${dateStr}`);
       const events = r.data.events || [];
-      const label = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const label = new Date(y, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
       addMsg('assistant', { type: 'events_today', events, label });
     } catch {
-      addMsg('assistant', { type: 'text', content: 'Não foi possível carregar os compromissos de hoje. Tente novamente.' });
+      addMsg('assistant', { type: 'text', content: 'Não foi possível carregar os compromissos. Tente novamente.' });
     }
+  }
+
+  async function fetchToday() {
+    const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      .split('/').reverse().join('-');
+    await fetchDay(today);
   }
 
   async function fetchSemana() {
@@ -425,23 +432,29 @@ function AgendaChat({ isAdmin, user }) {
   // ── Free-text interpreter ────────────────────────────────
   async function interpret(raw) {
     const t = raw.toLowerCase();
-    const wantsToday = isAdmin && (t.includes('hoje') || (t.includes('compromisso') && !t.includes('agendar')));
-    const wantsSemana = isAdmin && t.includes('semana') && !t.includes('agendar');
-    const wantsMore = t.includes('mais') && (t.includes('data') || t.includes('semana') || t.includes('opção') || t.includes('opcao'));
-    const wantsBook = t.includes('agendar') || t.includes('reunião') || t.includes('reuniao') || t.includes('marcar');
+    const dateRef = parseDateRef(t);
+    const wantsCompromissos = isAdmin && (t.includes('compromisso') || t.includes('agenda') || t.includes('reunião') && t.includes('tenho'));
+    const wantsBook = t.includes('agendar') || t.includes('marcar') || (t.includes('reunião') && !t.includes('tenho'));
     const wantsAvail = t.includes('disponibilidade') || t.includes('disponív') || t.includes('horário') || t.includes('horario');
+    const wantsSemana = isAdmin && t.includes('semana') && !wantsBook;
+    const wantsMore = t.includes('mais') && (t.includes('data') || t.includes('semana') || t.includes('opção') || t.includes('opcao'));
 
-    if (wantsToday) {
+    if (wantsCompromissos && dateRef) {
+      // "compromissos de amanhã", "agenda de segunda", etc.
+      await fetchDay(dateRef);
+    } else if (wantsCompromissos && t.includes('hoje')) {
       await fetchToday();
     } else if (wantsSemana) {
       await fetchSemana();
     } else if (wantsMore) {
       await startBooking(null, 4);
     } else if (wantsBook || wantsAvail) {
-      await startBooking(parseDateRef(t));
+      await startBooking(dateRef);
+    } else if (isAdmin && t.includes('hoje')) {
+      await fetchToday();
     } else {
       const tips = isAdmin
-        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "agenda desta semana"\n• "quero agendar uma reunião"\n• "mostrar mais datas"'
+        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "compromissos de amanhã"\n• "agenda desta semana"\n• "quero agendar uma reunião"\n• "mostrar mais datas"'
         : 'Posso ajudar com:\n• "quero agendar uma reunião"\n• "verificar disponibilidade"\n• "mostrar mais datas"';
       addMsg('assistant', { type: 'text', content: tips });
     }

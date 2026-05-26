@@ -125,15 +125,16 @@ async function buildSlotsForDate(dateStr) {
 
 // ── Routes ────────────────────────────────────────────────────
 
-// Today's events (admin view)
-router.get('/agenda/events/today', authMiddleware, async (req, res) => {
+// Events for a specific date (YYYY-MM-DD) or today
+router.get('/agenda/events/:date', authMiddleware, async (req, res) => {
   if (!isConnected()) return res.status(503).json({ error: 'Google Calendar não conectado' });
 
   try {
-    const today = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      .split('/').reverse().join('-'); // YYYY-MM-DD
+    const dateStr = req.params.date === 'today'
+      ? new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).split('/').reverse().join('-')
+      : req.params.date;
 
-    const items = await getEventsForDate(today);
+    const items = await getEventsForDate(dateStr);
     const events = items
       .filter(ev => ev.start?.dateTime)
       .map(ev => ({
