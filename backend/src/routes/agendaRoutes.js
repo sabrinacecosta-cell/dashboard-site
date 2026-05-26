@@ -5,7 +5,7 @@ const { oauth2Client, isConnected } = require('../config/google');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 // Always included in every calendar invite
-const INTERNAL_ATTENDEES = ['joel@wfloinvest.com', 'sabrina.costa@wflowinvest.com'];
+const INTERNAL_ATTENDEES = ['joel@wflowinvest.com', 'sabrina.costa@wflowinvest.com'];
 
 // Brazil is always UTC-3 (no DST since 2019)
 const WORK_START = 9;

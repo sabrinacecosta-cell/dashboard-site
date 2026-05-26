@@ -404,7 +404,7 @@ function AgendaChat({ isAdmin, user }) {
       setBooking(newBk);
       addMsg('assistant', {
         type: 'text',
-        content: `Confira os detalhes:\n\n📅 ${formatDateLabel(newBk.date)}\n🕐 ${newBk.slotLabel}\n👤 ${newBk.name}\n📧 ${newBk.email}\n📧 joel@wfloinvest.com (já incluso)\n✉️ Remetente: sabrina@jtdkinvest.com${assunto ? '\n📝 ' + assunto : ''}\n\nConfirmar? (sim / não)`,
+        content: `Confira os detalhes:\n\n📅 ${formatDateLabel(newBk.date)}\n🕐 ${newBk.slotLabel}\n👤 ${newBk.name}\n📧 ${newBk.email}\n📧 joel@wflowinvest.com (já incluso)\n✉️ Remetente: sabrina@jtdkinvest.com${assunto ? '\n📝 ' + assunto : ''}\n\nConfirmar? (sim / não)`,
       });
       return;
     }
