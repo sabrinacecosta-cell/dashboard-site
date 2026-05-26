@@ -168,6 +168,24 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
             </button>
           ))}
         </div>
+        {active && (
+          <button
+            onClick={() => onOptionClick('__volta_datas__', 'Escolher outro dia')}
+            style={{
+              alignSelf: 'flex-start',
+              padding: '0.28rem 0.7rem',
+              borderRadius: '999px',
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              fontSize: '0.76rem',
+              fontFamily: 'var(--font-sans)',
+            }}
+          >
+            ← Escolher outro dia
+          </button>
+        )}
       </div>
     );
   }
@@ -491,6 +509,14 @@ function AgendaChat({ isAdmin, user }) {
     if (value === '__mais_datas__') {
       setLoading(true);
       try { await startBooking(null, 4); } finally { setLoading(false); }
+      return;
+    }
+
+    // "Escolher outro dia" — volta ao seletor de datas
+    if (value === '__volta_datas__') {
+      const datas = booking.availableDates || [];
+      setBooking(prev => prev ? { ...prev, step: 'date', date: null, slotStart: null, slotLabel: null, availableSlots: [] } : null);
+      addMsg('assistant', { type: 'dates_picker', datas, semanas: 1 });
       return;
     }
 
