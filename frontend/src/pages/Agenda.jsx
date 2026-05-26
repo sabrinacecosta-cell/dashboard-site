@@ -198,6 +198,22 @@ function getPlaceholder(step) {
   }
 }
 
+// ── Next-week date range (Mon–Fri) ───────────────────────────
+function nextWeekRange() {
+  const toStr = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const today = new Date();
+  const dow = today.getDay(); // 0=Sun
+  const daysToNextMon = (8 - dow) % 7 || 7;
+  const mon = new Date(today); mon.setDate(today.getDate() + daysToNextMon);
+  const fri = new Date(mon);   fri.setDate(mon.getDate() + 4);
+  return { from: toStr(mon), to: toStr(fri) };
+}
+
 // ── Natural language date resolver ───────────────────────────
 function parseDateRef(text) {
   const t = text.toLowerCase();
@@ -288,12 +304,18 @@ function AgendaChat({ isAdmin, user }) {
     }
   }
 
-  async function startBooking(autoDate = null, semanas = 1) {
+  async function startBooking(autoDate = null, semanas = 1, filterRange = null) {
     try {
-      const r = await api.get(`/agenda/datas${semanas > 1 ? `?semanas=${semanas}` : ''}`);
-      const datas = r.data || [];
+      const r = await api.get(`/agenda/datas?semanas=${semanas}`);
+      let datas = r.data || [];
+
+      // Filter to a specific date range if provided (e.g. next week Mon–Fri)
+      if (filterRange) {
+        datas = datas.filter(d => d.date >= filterRange.from && d.date <= filterRange.to);
+      }
+
       if (datas.length === 0) {
-        addMsg('assistant', { type: 'text', content: 'Não há datas disponíveis para agendamento no momento.' });
+        addMsg('assistant', { type: 'text', content: filterRange ? 'Não há horários disponíveis na semana que vem.' : 'Não há datas disponíveis para agendamento no momento.' });
         return;
       }
 
@@ -309,11 +331,7 @@ function AgendaChat({ isAdmin, user }) {
       }
 
       setBooking({ step: 'date', date: null, slotStart: null, slotLabel: null, name: '', email: user?.email || '', assunto: '', availableDates: datas, availableSlots: [] });
-      addMsg('assistant', {
-        type: 'dates_picker',
-        datas,
-        semanas,
-      });
+      addMsg('assistant', { type: 'dates_picker', datas, semanas });
     } catch {
       addMsg('assistant', { type: 'text', content: 'Não foi possível carregar as datas disponíveis. Tente novamente.' });
     }
@@ -433,17 +451,20 @@ function AgendaChat({ isAdmin, user }) {
   async function interpret(raw) {
     const t = raw.toLowerCase();
     const dateRef = parseDateRef(t);
-    const wantsCompromissos = isAdmin && (t.includes('compromisso') || t.includes('agenda') || t.includes('reunião') && t.includes('tenho'));
+    const isNextWeek = t.includes('semana que vem') || t.includes('próxima semana') || t.includes('proxima semana');
+    const wantsCompromissos = isAdmin && (t.includes('compromisso') || t.includes('agenda') || (t.includes('reunião') && t.includes('tenho')));
     const wantsBook = t.includes('agendar') || t.includes('marcar') || (t.includes('reunião') && !t.includes('tenho'));
-    const wantsAvail = t.includes('disponibilidade') || t.includes('disponív') || t.includes('horário') || t.includes('horario');
-    const wantsSemana = isAdmin && t.includes('semana') && !wantsBook;
+    const wantsAvail = t.includes('disponibilidade') || t.includes('disponív') || t.includes('horário') || t.includes('horario') || t.includes('horários');
+    const wantsSemana = isAdmin && t.includes('semana') && !wantsBook && !isNextWeek;
     const wantsMore = t.includes('mais') && (t.includes('data') || t.includes('semana') || t.includes('opção') || t.includes('opcao'));
 
     if (wantsCompromissos && dateRef) {
-      // "compromissos de amanhã", "agenda de segunda", etc.
       await fetchDay(dateRef);
     } else if (wantsCompromissos && t.includes('hoje')) {
       await fetchToday();
+    } else if (isNextWeek) {
+      // "horários de semana que vem", "disponibilidade semana que vem", etc.
+      await startBooking(null, 2, nextWeekRange());
     } else if (wantsSemana) {
       await fetchSemana();
     } else if (wantsMore) {
@@ -454,8 +475,8 @@ function AgendaChat({ isAdmin, user }) {
       await fetchToday();
     } else {
       const tips = isAdmin
-        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "compromissos de amanhã"\n• "agenda desta semana"\n• "quero agendar uma reunião"\n• "mostrar mais datas"'
-        : 'Posso ajudar com:\n• "quero agendar uma reunião"\n• "verificar disponibilidade"\n• "mostrar mais datas"';
+        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "compromissos de amanhã"\n• "horários de semana que vem"\n• "quero agendar uma reunião"\n• "mostrar mais datas"'
+        : 'Posso ajudar com:\n• "quero agendar uma reunião"\n• "horários de semana que vem"\n• "mostrar mais datas"';
       addMsg('assistant', { type: 'text', content: tips });
     }
   }
