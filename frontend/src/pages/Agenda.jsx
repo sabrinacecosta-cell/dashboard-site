@@ -582,7 +582,7 @@ function AgendaChat({ isAdmin, user }) {
       {/* Quick action buttons */}
       <div style={{
         display: 'flex', gap: '0.4rem', padding: '0.45rem 0.9rem 0',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         background: 'var(--bg-secondary)',
       }}>
         {isAdmin && (
