@@ -355,6 +355,28 @@ function AgendaChat({ isAdmin, user }) {
     }
   }
 
+  // Mostra diretamente os slots de um dia específico sem passar pelo seletor de datas
+  async function showSlotsForDate(dateStr) {
+    try {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const label = new Date(y, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const r = await api.get(`/agenda/slots/${dateStr}`);
+      const slots = (r.data || []).filter(s => !s.status || s.status === 'available');
+
+      if (slots.length === 0) {
+        addMsg('assistant', { type: 'text', content: `Não há horários disponíveis em ${label}.` });
+        return;
+      }
+
+      // Inicializa booking para que a seleção de slot funcione normalmente
+      setBooking({ step: 'slot', date: dateStr, slotStart: null, slotLabel: null, name: '', email: user?.email || '', assunto: '', availableDates: [], availableSlots: slots });
+      addMsg('assistant', { type: 'text', content: `Horários disponíveis em ${label}:` });
+      addMsg('assistant', { type: 'slots_picker', slots });
+    } catch {
+      addMsg('assistant', { type: 'text', content: 'Não foi possível carregar os horários. Tente novamente.' });
+    }
+  }
+
   async function selectDate(date, label) {
     try {
       const r = await api.get(`/agenda/slots/${date}`);
@@ -481,14 +503,16 @@ function AgendaChat({ isAdmin, user }) {
     } else if (wantsCompromissos && t.includes('hoje')) {
       await fetchToday();
     } else if (isNextWeek) {
-      // "horários de semana que vem", "disponibilidade semana que vem", etc.
       await startBooking(null, 2, nextWeekRange());
     } else if (wantsSemana) {
       await fetchSemana();
     } else if (wantsMore) {
       await startBooking(null, 4);
+    } else if ((wantsAvail || wantsBook) && dateRef) {
+      // Pediu disponibilidade/horários de um dia específico → mostra slots diretamente
+      await showSlotsForDate(dateRef);
     } else if (wantsBook || wantsAvail) {
-      await startBooking(dateRef);
+      await startBooking(null);
     } else if (isAdmin && t.includes('hoje')) {
       await fetchToday();
     } else {
@@ -649,8 +673,8 @@ function AgendaChat({ isAdmin, user }) {
           Escolha uma das 3 datas abaixo para ver as disponibilidades de horário
         </span>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap' }}>
-          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('hoje')))}>Hoje</button>
-          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>Amanhã</button>
+          <button style={qBtnStyle} onClick={() => quickAction(() => showSlotsForDate(parseDateRef('hoje')))}>Hoje</button>
+          <button style={qBtnStyle} onClick={() => quickAction(() => showSlotsForDate(parseDateRef('amanhã')))}>Amanhã</button>
           <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
         </div>
       </div>
