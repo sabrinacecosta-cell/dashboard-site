@@ -503,17 +503,18 @@ function AgendaChat({ isAdmin, user }) {
   }
 
   const qBtnStyle = {
-    padding: '0.42rem 1rem',
-    borderRadius: '20px',
+    padding: '0.28rem 0.75rem',
+    borderRadius: '999px',
     border: '1px solid var(--border)',
     background: 'transparent',
-    color: 'var(--text-secondary)',
+    color: 'var(--text-muted)',
     cursor: loading ? 'not-allowed' : 'pointer',
-    fontSize: '0.82rem',
+    fontSize: '0.76rem',
     fontFamily: 'var(--font-sans)',
     fontWeight: 500,
-    opacity: loading ? 0.5 : 1,
+    opacity: loading ? 0.4 : 1,
     whiteSpace: 'nowrap',
+    lineHeight: 1.4,
   };
 
   return (
@@ -527,32 +528,6 @@ function AgendaChat({ isAdmin, user }) {
       border: '1px solid var(--border)',
       overflow: 'hidden',
     }}>
-      {/* Quick action buttons */}
-      <div style={{
-        display: 'flex', gap: '0.5rem', padding: '0.65rem 1rem',
-        borderBottom: '1px solid var(--border)',
-        flexWrap: 'wrap',
-        background: 'var(--bg-secondary)',
-      }}>
-        {isAdmin && (
-          <button style={qBtnStyle} onClick={() => quickAction(fetchToday)}>
-            📋 Hoje
-          </button>
-        )}
-        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>
-          📅 Amanhã
-        </button>
-        {isAdmin ? (
-          <button style={qBtnStyle} onClick={() => quickAction(fetchSemana)}>
-            📆 Esta semana
-          </button>
-        ) : (
-          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>
-            📆 Esta semana
-          </button>
-        )}
-      </div>
-
       {/* Messages area */}
       <div style={{
         flex: 1,
@@ -604,10 +579,26 @@ function AgendaChat({ isAdmin, user }) {
         <div ref={bottomRef} />
       </div>
 
+      {/* Quick action buttons */}
+      <div style={{
+        display: 'flex', gap: '0.4rem', padding: '0.45rem 0.9rem 0',
+        flexWrap: 'wrap',
+        background: 'var(--bg-secondary)',
+      }}>
+        {isAdmin && (
+          <button style={qBtnStyle} onClick={() => quickAction(fetchToday)}>Hoje</button>
+        )}
+        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>Amanhã</button>
+        {isAdmin ? (
+          <button style={qBtnStyle} onClick={() => quickAction(fetchSemana)}>Esta semana</button>
+        ) : (
+          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
+        )}
+      </div>
+
       {/* Input bar */}
       <div style={{
-        borderTop: '1px solid var(--border)',
-        padding: '0.65rem 0.9rem',
+        padding: '0.45rem 0.9rem 0.65rem',
         display: 'flex',
         gap: '0.5rem',
         alignItems: 'center',
