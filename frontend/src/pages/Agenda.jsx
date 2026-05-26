@@ -513,6 +513,8 @@ function AgendaChat({ isAdmin, user }) {
       await showSlotsForDate(dateRef);
     } else if (wantsBook || wantsAvail) {
       await startBooking(null);
+    } else if (dateRef) {
+      await showSlotsForDate(dateRef);
     } else if (isAdmin && t.includes('hoje')) {
       await fetchToday();
     } else {
