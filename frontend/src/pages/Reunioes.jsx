@@ -224,6 +224,15 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
             <h3 style={{ flex: 1, margin: 0, fontSize: '1rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {reuniao.titulo}
             </h3>
+            <button
+              onClick={async () => {
+                if (!window.confirm('Remover esta reunião da lista?')) return;
+                try { await api.delete(`/reunioes/${reuniao.id}`); if (onUpdate) onUpdate(); }
+                catch { alert('Erro ao remover'); }
+              }}
+              style={{ ...btn('danger', true), flexShrink: 0 }}
+              title="Remover da lista"
+            >Remover</button>
             <button onClick={onClose} style={{ ...btn(), padding: '0.25rem 0.6rem', fontSize: '1rem', flexShrink: 0 }}>✕</button>
           </div>
 

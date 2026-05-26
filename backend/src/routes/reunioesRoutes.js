@@ -7,6 +7,14 @@ const { searchMeetingEmails, extractActionItems } = require('../services/gmailSe
 const Anthropic = require('@anthropic-ai/sdk');
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+
+// Eventos pessoais/não-comerciais que não devem aparecer em Reuniões
+const TITLE_EXCLUSIONS = [
+  /\bcasa\b/i,
+  /\brotary\b/i,
+  /call\s+semanal/i,
+  /aula\s+de?\s+t[eê]nis/i,
+];
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function adminOnly(req, res, next) {
@@ -189,8 +197,19 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
 
     const allItems = calRes.data.items || [];
     console.log('[importar] Calendar retornou', allItems.length, 'eventos (total, com e sem título)');
-    const events = allItems.filter(e => e.summary);
-    console.log('[importar] Eventos com título (summary):', events.length);
+    const events = allItems.filter(e =>
+      e.summary && !TITLE_EXCLUSIONS.some(re => re.test(e.summary))
+    );
+    console.log('[importar] Eventos após filtro de exclusão:', events.length);
+
+    // Remove registros já importados que correspondem às exclusões
+    await db.query(`
+      DELETE FROM reunioes
+      WHERE titulo ~* '\\mcasa\\M'
+         OR titulo ~* '\\mrotary\\M'
+         OR titulo ~* 'call\\s+semanal'
+         OR titulo ~* 'aula\\s+de?\\s+t[eê]nis'
+    `);
     if (events.length > 0) {
       console.log('[importar] Primeiros 5 títulos:', events.slice(0, 5).map(e => `"${e.summary}" (${e.start?.dateTime || e.start?.date})`));
     }
@@ -312,6 +331,16 @@ router.get('/reunioes', authMiddleware, adminOnly, async (req, res) => {
   } catch (err) {
     console.error('GET /reunioes:', err.message);
     res.status(500).json({ error: 'Erro ao listar reuniões' });
+  }
+});
+
+// ── Remover reunião ──────────────────────────────────────────
+router.delete('/reunioes/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await db.query('DELETE FROM reunioes WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover reunião' });
   }
 });
 
