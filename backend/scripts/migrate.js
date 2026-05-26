@@ -735,6 +735,26 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   await db.query(`ALTER TABLE reunioes ADD COLUMN IF NOT EXISTS data_fim TIMESTAMP`);
   console.log('Coluna data_fim em reunioes OK!');
 
+  // Remove duplicatas em simulador_grupos (mantém o id menor por numero_grupo+modalidade)
+  await db.query(`
+    DELETE FROM simulador_grupos
+    WHERE id NOT IN (
+      SELECT MIN(id) FROM simulador_grupos GROUP BY numero_grupo, modalidade
+    )
+  `);
+  // Adiciona constraint única para evitar novas duplicatas
+  await db.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'uq_simulador_grupos_grupo_modalidade'
+      ) THEN
+        ALTER TABLE simulador_grupos ADD CONSTRAINT uq_simulador_grupos_grupo_modalidade UNIQUE (numero_grupo, modalidade);
+      END IF;
+    END $$;
+  `);
+  console.log('Duplicatas simulador_grupos removidas e constraint única adicionada!');
+
   console.log('Migração concluída!');
 }
 

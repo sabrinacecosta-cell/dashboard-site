@@ -85,7 +85,12 @@ const ContemplacaoModel = {
         u.ultimo_lance_percent
       FROM medias m
       JOIN ultimo_mes u ON m.grupo = u.grupo
-      LEFT JOIN simulador_grupos sg ON sg.numero_grupo = m.grupo AND sg.modalidade = 'imovel'
+      LEFT JOIN (
+        SELECT DISTINCT ON (numero_grupo) numero_grupo, prazo_restante
+        FROM simulador_grupos
+        WHERE modalidade = 'imovel'
+        ORDER BY numero_grupo, id ASC
+      ) sg ON sg.numero_grupo = m.grupo
       ORDER BY m.grupo
     `);
     return result.rows;

@@ -48,6 +48,7 @@ router.get('/grupos', authMiddleware, async (req, res) => {
       FROM simulador_grupos sg
       LEFT JOIN ${ctable} c ON c.grupo = sg.numero_grupo
       WHERE sg.modalidade = $1
+        AND sg.id = (SELECT MIN(id) FROM simulador_grupos WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
       GROUP BY sg.id
       ORDER BY sg.numero_grupo ASC`,
       [modalidade]
