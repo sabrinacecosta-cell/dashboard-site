@@ -120,6 +120,24 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
             </button>
           ))}
         </div>
+        {active && (!msg.semanas || msg.semanas < 4) && (
+          <button
+            onClick={() => onOptionClick('__mais_datas__', 'Ver mais datas')}
+            style={{
+              padding: '0.38rem 0.75rem',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontFamily: 'var(--font-sans)',
+              textAlign: 'left',
+            }}
+          >
+            ↓ Ver mais datas
+          </button>
+        )}
       </div>
     );
   }
@@ -263,9 +281,9 @@ function AgendaChat({ isAdmin, user }) {
     }
   }
 
-  async function startBooking(autoDate = null) {
+  async function startBooking(autoDate = null, semanas = 1) {
     try {
-      const r = await api.get('/agenda/datas');
+      const r = await api.get(`/agenda/datas${semanas > 1 ? `?semanas=${semanas}` : ''}`);
       const datas = r.data || [];
       if (datas.length === 0) {
         addMsg('assistant', { type: 'text', content: 'Não há datas disponíveis para agendamento no momento.' });
@@ -284,7 +302,11 @@ function AgendaChat({ isAdmin, user }) {
       }
 
       setBooking({ step: 'date', date: null, slotStart: null, slotLabel: null, name: '', email: user?.email || '', assunto: '', availableDates: datas, availableSlots: [] });
-      addMsg('assistant', { type: 'dates_picker', datas });
+      addMsg('assistant', {
+        type: 'dates_picker',
+        datas,
+        semanas,
+      });
     } catch {
       addMsg('assistant', { type: 'text', content: 'Não foi possível carregar as datas disponíveis. Tente novamente.' });
     }
@@ -404,7 +426,8 @@ function AgendaChat({ isAdmin, user }) {
   async function interpret(raw) {
     const t = raw.toLowerCase();
     const wantsToday = isAdmin && (t.includes('hoje') || (t.includes('compromisso') && !t.includes('agendar')));
-    const wantsSemana = isAdmin && t.includes('semana');
+    const wantsSemana = isAdmin && t.includes('semana') && !t.includes('agendar');
+    const wantsMore = t.includes('mais') && (t.includes('data') || t.includes('semana') || t.includes('opção') || t.includes('opcao'));
     const wantsBook = t.includes('agendar') || t.includes('reunião') || t.includes('reuniao') || t.includes('marcar');
     const wantsAvail = t.includes('disponibilidade') || t.includes('disponív') || t.includes('horário') || t.includes('horario');
 
@@ -412,12 +435,14 @@ function AgendaChat({ isAdmin, user }) {
       await fetchToday();
     } else if (wantsSemana) {
       await fetchSemana();
+    } else if (wantsMore) {
+      await startBooking(null, 4);
     } else if (wantsBook || wantsAvail) {
       await startBooking(parseDateRef(t));
     } else {
       const tips = isAdmin
-        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "agenda desta semana"\n• "quero agendar uma reunião"'
-        : 'Posso ajudar com:\n• "quero agendar uma reunião"\n• "verificar disponibilidade"';
+        ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "agenda desta semana"\n• "quero agendar uma reunião"\n• "mostrar mais datas"'
+        : 'Posso ajudar com:\n• "quero agendar uma reunião"\n• "verificar disponibilidade"\n• "mostrar mais datas"';
       addMsg('assistant', { type: 'text', content: tips });
     }
   }
@@ -427,6 +452,13 @@ function AgendaChat({ isAdmin, user }) {
     if (!booking) return;
     if (msgType === 'dates_picker' && booking.step !== 'date') return;
     if (msgType === 'slots_picker' && booking.step !== 'slot') return;
+
+    // "Ver mais datas" button
+    if (value === '__mais_datas__') {
+      setLoading(true);
+      try { await startBooking(null, 4); } finally { setLoading(false); }
+      return;
+    }
 
     addMsg('user', { type: 'text', content: label });
     setLoading(true);
@@ -464,6 +496,26 @@ function AgendaChat({ isAdmin, user }) {
 
   const step = booking?.step ?? null;
 
+  async function quickAction(fn) {
+    if (loading) return;
+    setLoading(true);
+    try { await fn(); } finally { setLoading(false); }
+  }
+
+  const qBtnStyle = {
+    padding: '0.42rem 1rem',
+    borderRadius: '20px',
+    border: '1px solid var(--border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    fontSize: '0.82rem',
+    fontFamily: 'var(--font-sans)',
+    fontWeight: 500,
+    opacity: loading ? 0.5 : 1,
+    whiteSpace: 'nowrap',
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -475,6 +527,32 @@ function AgendaChat({ isAdmin, user }) {
       border: '1px solid var(--border)',
       overflow: 'hidden',
     }}>
+      {/* Quick action buttons */}
+      <div style={{
+        display: 'flex', gap: '0.5rem', padding: '0.65rem 1rem',
+        borderBottom: '1px solid var(--border)',
+        flexWrap: 'wrap',
+        background: 'var(--bg-secondary)',
+      }}>
+        {isAdmin && (
+          <button style={qBtnStyle} onClick={() => quickAction(fetchToday)}>
+            📋 Hoje
+          </button>
+        )}
+        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>
+          📅 Amanhã
+        </button>
+        {isAdmin ? (
+          <button style={qBtnStyle} onClick={() => quickAction(fetchSemana)}>
+            📆 Esta semana
+          </button>
+        ) : (
+          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>
+            📆 Esta semana
+          </button>
+        )}
+      </div>
+
       {/* Messages area */}
       <div style={{
         flex: 1,

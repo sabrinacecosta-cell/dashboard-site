@@ -4,6 +4,9 @@ const { google } = require('googleapis');
 const { oauth2Client, isConnected } = require('../config/google');
 const authMiddleware = require('../middlewares/authMiddleware');
 
+// Always included in every calendar invite
+const INTERNAL_ATTENDEES = ['joel@wfloinvest.com', 'sabrina.costa@wflowinvest.com'];
+
 // Brazil is always UTC-3 (no DST since 2019)
 const WORK_START = 9;
 const WORK_END = 18;
@@ -208,11 +211,15 @@ router.get('/agenda/datas', authMiddleware, async (req, res) => {
   if (!isConnected()) return res.status(503).json({ error: 'Google Calendar não conectado' });
 
   try {
+    // Default: next 7 days. Pass ?semanas=N for more weeks.
+    const semanas = Math.min(parseInt(req.query.semanas) || 1, 8);
+    const limitDays = semanas * 7;
+
     const dates = [];
     let day = new Date();
-    let checked = 0;
+    const cutoff = new Date(day.getTime() + limitDays * 24 * 60 * 60 * 1000);
 
-    while (dates.length < 30 && checked < 60) {
+    while (day < cutoff) {
       const dateStr = day.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         .split('/').reverse().join('-');
 
@@ -230,7 +237,6 @@ router.get('/agenda/datas', authMiddleware, async (req, res) => {
       }
 
       day = new Date(day.getTime() + 24 * 60 * 60 * 1000);
-      checked++;
     }
 
     res.json(dates);
@@ -293,7 +299,7 @@ router.post('/agenda/agendar', authMiddleware, async (req, res) => {
         description: `Reunião agendada via sistema online\n\nParticipantes: ${emailList.join(', ')}`,
         start: { dateTime: startTime.toISOString(), timeZone: 'America/Sao_Paulo' },
         end: { dateTime: endTime.toISOString(), timeZone: 'America/Sao_Paulo' },
-        attendees: emailList.map(email => ({ email: email.trim() })),
+        attendees: [...new Set([...emailList.map(e => e.trim()), ...INTERNAL_ATTENDEES])].map(email => ({ email })),
         conferenceData: {
           createRequest: {
             requestId: `meet-${Date.now()}`,
