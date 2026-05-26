@@ -180,6 +180,49 @@ function getPlaceholder(step) {
   }
 }
 
+// ── Natural language date resolver ───────────────────────────
+function parseDateRef(text) {
+  const t = text.toLowerCase();
+
+  const addDays = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d;
+  };
+
+  const toStr = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  if (t.includes('hoje')) return toStr(new Date());
+  if (t.includes('depois de amanhã') || t.includes('depois de amanha')) return toStr(addDays(2));
+  if (t.includes('amanhã') || t.includes('amanha')) return toStr(addDays(1));
+
+  const DAY_MAP = {
+    'segunda-feira': 1, 'segunda': 1,
+    'terça-feira': 2, 'terca-feira': 2, 'terça': 2, 'terca': 2,
+    'quarta-feira': 3, 'quarta': 3,
+    'quinta-feira': 4, 'quinta': 4,
+    'sexta-feira': 5, 'sexta': 5,
+  };
+
+  const isNextWeek = t.includes('próxima') || t.includes('proxima') || t.includes('semana que vem');
+
+  for (const [key, target] of Object.entries(DAY_MAP)) {
+    if (t.includes(key)) {
+      const current = new Date().getDay();
+      let diff = (target - current + 7) % 7 || 7;
+      if (isNextWeek) diff += 7;
+      return toStr(addDays(diff));
+    }
+  }
+
+  return null;
+}
+
 // ── Chat component ───────────────────────────────────────────
 function AgendaChat({ isAdmin, user }) {
   const [messages, setMessages] = useState(() => [{
@@ -220,7 +263,7 @@ function AgendaChat({ isAdmin, user }) {
     }
   }
 
-  async function startBooking() {
+  async function startBooking(autoDate = null) {
     try {
       const r = await api.get('/agenda/datas');
       const datas = r.data || [];
@@ -228,6 +271,18 @@ function AgendaChat({ isAdmin, user }) {
         addMsg('assistant', { type: 'text', content: 'Não há datas disponíveis para agendamento no momento.' });
         return;
       }
+
+      if (autoDate) {
+        const match = datas.find(d => d.date === autoDate);
+        if (match) {
+          setBooking({ step: 'date', date: null, slotStart: null, slotLabel: null, name: '', email: user?.email || '', assunto: '', availableDates: datas, availableSlots: [] });
+          addMsg('user', { type: 'text', content: match.label });
+          await selectDate(match.date, match.label);
+          return;
+        }
+        addMsg('assistant', { type: 'text', content: 'Essa data não tem horários disponíveis. Escolha uma das opções abaixo:' });
+      }
+
       setBooking({ step: 'date', date: null, slotStart: null, slotLabel: null, name: '', email: user?.email || '', assunto: '', availableDates: datas, availableSlots: [] });
       addMsg('assistant', { type: 'dates_picker', datas });
     } catch {
@@ -278,11 +333,23 @@ function AgendaChat({ isAdmin, user }) {
 
     if (step === 'date') {
       const lower = text.toLowerCase();
+
+      // Try natural language first ("amanhã", "segunda", etc.)
+      const dateRef = parseDateRef(lower);
+      if (dateRef) {
+        const match = booking.availableDates.find(d => d.date === dateRef);
+        if (match) { await selectDate(match.date, match.label); return; }
+        addMsg('assistant', { type: 'text', content: 'Essa data não está disponível. Escolha uma das opções acima.' });
+        return;
+      }
+
       const match = booking.availableDates.find(d =>
-        d.label.toLowerCase().includes(lower) || d.dayOfWeek?.toLowerCase().includes(lower) || d.date === text
+        d.label.toLowerCase().includes(lower) ||
+        d.dayOfWeek?.toLowerCase().includes(lower) ||
+        d.date === text
       );
       if (match) await selectDate(match.date, match.label);
-      else addMsg('assistant', { type: 'text', content: 'Por favor clique em uma das datas acima.' });
+      else addMsg('assistant', { type: 'text', content: 'Por favor clique em uma das datas acima ou digite "amanhã", "segunda", etc.' });
       return;
     }
 
@@ -346,7 +413,7 @@ function AgendaChat({ isAdmin, user }) {
     } else if (wantsSemana) {
       await fetchSemana();
     } else if (wantsBook || wantsAvail) {
-      await startBooking();
+      await startBooking(parseDateRef(t));
     } else {
       const tips = isAdmin
         ? 'Posso ajudar com:\n• "compromissos de hoje"\n• "agenda desta semana"\n• "quero agendar uma reunião"'
