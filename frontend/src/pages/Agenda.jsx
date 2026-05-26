@@ -585,15 +585,9 @@ function AgendaChat({ isAdmin, user }) {
         flexWrap: 'nowrap',
         background: 'var(--bg-secondary)',
       }}>
-        {isAdmin && (
-          <button style={qBtnStyle} onClick={() => quickAction(fetchToday)}>Hoje</button>
-        )}
+        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('hoje')))}>Hoje</button>
         <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(parseDateRef('amanhã')))}>Amanhã</button>
-        {isAdmin ? (
-          <button style={qBtnStyle} onClick={() => quickAction(fetchSemana)}>Esta semana</button>
-        ) : (
-          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
-        )}
+        <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
       </div>
 
       {/* Input bar */}
