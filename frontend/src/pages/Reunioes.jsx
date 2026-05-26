@@ -831,8 +831,17 @@ function Reunioes() {
     } catch {}
   }, []);
 
+  // Auto-importa ao montar para garantir que reuniões de hoje e futuras apareçam
+  useEffect(() => {
+    async function init() {
+      try { await api.post('/reunioes/importar'); } catch {}
+      loadReunioes();
+      loadRetornosHoje();
+    }
+    init();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { loadReunioes(); }, [loadReunioes]);
-  useEffect(() => { loadRetornosHoje(); }, [loadRetornosHoje]);
 
   async function importar() {
     setImportando(true);

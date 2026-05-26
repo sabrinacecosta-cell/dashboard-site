@@ -164,7 +164,7 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     const timeMin = new Date();
     timeMin.setDate(timeMin.getDate() - 90);
     const timeMax = new Date();
-    timeMax.setDate(timeMax.getDate() + 30); // inclui reuniões futuras (próximas 4 semanas)
+    timeMax.setDate(timeMax.getDate() + 60); // inclui reuniões futuras (próximos 2 meses)
 
     console.log('[importar] Calendar timeMin:', timeMin.toISOString());
     console.log('[importar] Calendar timeMax:', timeMax.toISOString());
