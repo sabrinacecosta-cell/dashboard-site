@@ -73,6 +73,69 @@ router.get('/reunioes/metricas/motivos', authMiddleware, adminOnly, async (req, 
   }
 });
 
+// ── Reuniões por semana do mês ───────────────────────────────
+router.get('/reunioes/metricas/semanas', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { ano = new Date().getFullYear(), mes = new Date().getMonth() + 1 } = req.query;
+
+    const r = await db.query(`
+      SELECT
+        CEIL(EXTRACT(DAY FROM data_reuniao) / 7.0)::int AS semana,
+        COUNT(*)::int                                    AS total,
+        COUNT(*) FILTER (WHERE status = 'fechou')::int   AS fechamentos
+      FROM reunioes
+      WHERE EXTRACT(YEAR  FROM data_reuniao) = $1
+        AND EXTRACT(MONTH FROM data_reuniao) = $2
+      GROUP BY semana
+      ORDER BY semana
+    `, [ano, mes]);
+
+    const semanas = [1, 2, 3, 4].map(w => {
+      const row = r.rows.find(x => parseInt(x.semana) === w);
+      return { semana: `Sem. ${w}`, total: parseInt(row?.total || 0), fechamentos: parseInt(row?.fechamentos || 0) };
+    });
+
+    res.json(semanas);
+  } catch (err) {
+    console.error('metricas/semanas:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar métricas por semana' });
+  }
+});
+
+// ── Evolução dos últimos 6 meses ─────────────────────────────
+router.get('/reunioes/metricas/evolucao', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const r = await db.query(`
+      SELECT
+        EXTRACT(YEAR  FROM data_reuniao)::int AS ano,
+        EXTRACT(MONTH FROM data_reuniao)::int AS mes,
+        COUNT(*)::int                          AS total,
+        COUNT(*) FILTER (WHERE status = 'fechou')::int      AS fechamentos,
+        ROUND(
+          COUNT(*) FILTER (WHERE status = 'fechou') * 100.0
+          / NULLIF(COUNT(*) FILTER (WHERE status IN ('fechou','nao_fechou')), 0),
+        1) AS taxa_conversao
+      FROM reunioes
+      WHERE data_reuniao >= NOW() - INTERVAL '6 months'
+      GROUP BY ano, mes
+      ORDER BY ano, mes
+    `);
+
+    const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const rows = r.rows.map(row => ({
+      label:          `${MESES[row.mes - 1]}/${String(row.ano).slice(2)}`,
+      taxa_conversao: parseFloat(row.taxa_conversao || 0),
+      total:          row.total,
+      fechamentos:    row.fechamentos,
+    }));
+
+    res.json(rows);
+  } catch (err) {
+    console.error('metricas/evolucao:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar evolução' });
+  }
+});
+
 // ── Importar do Calendar + Gmail ─────────────────────────────
 router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, async (req, res) => {
   try {

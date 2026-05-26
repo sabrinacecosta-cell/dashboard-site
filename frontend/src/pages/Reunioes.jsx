@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import {
+  PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, CartesianGrid,
+} from 'recharts';
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
 const DAY_NAMES = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
@@ -50,6 +55,22 @@ function fmtWeekLabel(days) {
   }
   return `${first.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} a ${last.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
 }
+
+const CORES = {
+  fechou:      '#22c55e',
+  nao_fechou:  '#ef4444',
+  retorno:     '#3b82f6',
+  em_andamento:'#f5a623',
+  cinza:       '#6b7280',
+};
+
+const TT = {
+  contentStyle: { background: '#1c1c1c', border: '1px solid #333', borderRadius: '8px', fontSize: '0.82rem' },
+  itemStyle:    { color: '#e0e0e0' },
+  labelStyle:   { color: '#aaa' },
+};
+
+const MESES_PTBR = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── Style helpers ─────────────────────────────────────────────
 const btn = (variant = 'default', small = false) => ({
@@ -499,40 +520,251 @@ function WeeklyGrid({ reunioes, weekDays, onCardClick }) {
   );
 }
 
-// ── Barra de resumo ───────────────────────────────────────────
+// ── Barra de resumo da semana ─────────────────────────────────
 function SummaryBar({ reunioes }) {
   const total       = reunioes.length;
   const fechamentos = reunioes.filter(r => r.status === 'fechou').length;
   const retornos    = reunioes.filter(r => r.status === 'retorno').length;
+  const naoFechou   = reunioes.filter(r => r.status === 'nao_fechou').length;
+  const emAndamento = reunioes.filter(r => r.status === 'em_andamento').length;
   const tarefas     = reunioes.flatMap(r => (r.tarefas || []).filter(t => !t.concluida));
 
-  const cardStyle = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: '10px',
-    padding: '0.85rem 1rem',
-  };
+  const pieData = [
+    { name: 'Fechou negócio',   value: fechamentos, color: CORES.fechou },
+    { name: 'Retorno agendado', value: retornos,    color: CORES.retorno },
+    { name: 'Não fechou',       value: naoFechou,   color: CORES.nao_fechou },
+    { name: 'Em andamento',     value: emAndamento, color: CORES.em_andamento },
+  ].filter(d => d.value > 0);
+
+  const motivosData = Object.values(
+    reunioes
+      .filter(r => r.status === 'nao_fechou' && r.motivo_nao_fechamento)
+      .reduce((acc, r) => {
+        const m = r.motivo_nao_fechamento;
+        acc[m] = acc[m] || { motivo: m, contagem: 0 };
+        acc[m].contagem++;
+        return acc;
+      }, {})
+  ).sort((a, b) => b.contagem - a.contagem);
+
+  const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem 1rem' };
+  const noData    = <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', margin: '3.5rem 0' }}>Sem dados suficientes para exibir</p>;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.65rem', marginTop: '0.85rem' }}>
-      <div style={cardStyle}>
-        <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Reuniões</p>
-        <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700 }}>{total}</p>
+    <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+      {/* Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.65rem' }}>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Reuniões</p>
+          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700 }}>{total}</p>
+        </div>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.fechou, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Fechamentos</p>
+          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.fechou }}>{fechamentos}</p>
+        </div>
+        <div style={cardStyle}>
+          <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.retorno, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Retornos</p>
+          <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.retorno }}>{retornos}</p>
+        </div>
+        {tarefas.length > 0 && (
+          <div style={cardStyle}>
+            <p style={{ margin: '0 0 0.45rem', fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Próximas ações</p>
+            {tarefas.slice(0, 5).map((t, i) => (
+              <p key={i} style={{ margin: '0.12rem 0', fontSize: '0.76rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>• {t.descricao}</p>
+            ))}
+          </div>
+        )}
       </div>
-      <div style={cardStyle}>
-        <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: '#4caf50', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Fechamentos</p>
-        <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: '#4caf50' }}>{fechamentos}</p>
-      </div>
-      <div style={cardStyle}>
-        <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: '#2196f3', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Retornos</p>
-        <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: '#2196f3' }}>{retornos}</p>
-      </div>
-      {tarefas.length > 0 && (
-        <div style={{ ...cardStyle, gridColumn: 'span 1' }}>
-          <p style={{ margin: '0 0 0.45rem', fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Próximas ações</p>
-          {tarefas.slice(0, 5).map((t, i) => (
-            <p key={i} style={{ margin: '0.12rem 0', fontSize: '0.76rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>• {t.descricao}</p>
-          ))}
+
+      {/* Gráficos da semana */}
+      {total > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: motivosData.length > 0 ? '1fr 1fr' : '1fr', gap: '0.65rem' }}>
+          {/* Pizza: resultado */}
+          <div style={{ ...cardStyle, padding: '1rem' }}>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Resultado das Reuniões</p>
+            {pieData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={210}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={72} dataKey="value">
+                    {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip {...TT} formatter={(v, n) => [v, n]} />
+                  <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : noData}
+          </div>
+
+          {/* Barras horizontais: motivos */}
+          {motivosData.length > 0 && (
+            <div style={{ ...cardStyle, padding: '1rem' }}>
+              <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Motivos de Não Fechamento</p>
+              <ResponsiveContainer width="100%" height={210}>
+                <BarChart layout="vertical" data={motivosData} margin={{ left: 8, right: 24, top: 4 }}>
+                  <XAxis type="number" tick={{ fontSize: 11, fill: '#888' }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="motivo" width={130} tick={{ fontSize: 11, fill: '#888' }} />
+                  <Tooltip {...TT} formatter={(v) => [v, 'Ocorrências']} />
+                  <Bar dataKey="contagem" fill={CORES.nao_fechou} radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Métricas mensais ──────────────────────────────────────────
+function MetricasMensais() {
+  const [open, setOpen]           = useState(false);
+  const [anoMes, setAnoMes]       = useState(() => { const n = new Date(); return { ano: n.getFullYear(), mes: n.getMonth() + 1 }; });
+  const [metricas, setMetricas]   = useState(null);
+  const [semanas, setSemanas]     = useState([]);
+  const [evolucao, setEvolucao]   = useState([]);
+  const [loadingMes, setLoadingMes] = useState(false);
+
+  const loadMes = useCallback(async () => {
+    setLoadingMes(true);
+    try {
+      const [mr, sr] = await Promise.all([
+        api.get(`/reunioes/metricas/mes?ano=${anoMes.ano}&mes=${anoMes.mes}`),
+        api.get(`/reunioes/metricas/semanas?ano=${anoMes.ano}&mes=${anoMes.mes}`),
+      ]);
+      setMetricas(mr.data);
+      setSemanas(sr.data);
+    } catch {} finally { setLoadingMes(false); }
+  }, [anoMes]);
+
+  const loadEvolucao = useCallback(async () => {
+    try { const r = await api.get('/reunioes/metricas/evolucao'); setEvolucao(r.data); } catch {}
+  }, []);
+
+  useEffect(() => { if (open) { loadMes(); loadEvolucao(); } }, [open, loadMes, loadEvolucao]);
+
+  function navMes(delta) {
+    setAnoMes(prev => {
+      let m = prev.mes + delta, a = prev.ano;
+      if (m > 12) { m = 1; a++; } if (m < 1) { m = 12; a--; }
+      return { ano: a, mes: m };
+    });
+  }
+
+  const taxa     = metricas?.taxa_conversao ?? null;
+  const convData = metricas ? [
+    { name: 'Convertidas',     value: parseInt(metricas.fechamentos || 0), color: CORES.fechou },
+    { name: 'Não convertidas', value: parseInt(metricas.nao_fechou  || 0), color: CORES.nao_fechou },
+  ].filter(d => d.value > 0) : [];
+
+  const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem 1rem' };
+  const noData    = <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', margin: '4rem 0' }}>Sem dados suficientes para exibir</p>;
+
+  return (
+    <div style={{ marginTop: '0.85rem' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer', width: '100%', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, fontFamily: 'var(--font-sans)' }}
+      >
+        <span>📊 Métricas do Mês</span>
+        <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{open ? '▲ Recolher' : '▼ Expandir'}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* Navegação de mês */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button onClick={() => navMes(-1)} style={btn('default', true)}>←</button>
+            <span style={{ fontWeight: 600, fontSize: '0.9rem', textTransform: 'capitalize', minWidth: '180px', textAlign: 'center' }}>
+              {MESES_PTBR[anoMes.mes - 1]} / {anoMes.ano}
+            </span>
+            <button onClick={() => navMes(1)} style={btn('default', true)}>→</button>
+          </div>
+
+          {loadingMes && <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Carregando…</p>}
+
+          {!loadingMes && metricas && (
+            <>
+              {/* Cards mensais */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.65rem' }}>
+                <div style={cardStyle}>
+                  <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Total</p>
+                  <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700 }}>{metricas.total || 0}</p>
+                </div>
+                <div style={cardStyle}>
+                  <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.fechou, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Fechamentos</p>
+                  <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.fechou }}>{metricas.fechamentos || 0}</p>
+                </div>
+                <div style={{ ...cardStyle, borderColor: taxa !== null ? 'var(--accent)' : 'var(--border)' }}>
+                  <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>Conversão</p>
+                  <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: 'var(--accent)' }}>{taxa ?? '—'}%</p>
+                </div>
+                <div style={cardStyle}>
+                  <p style={{ margin: '0 0 0.2rem', fontSize: '0.7rem', color: CORES.retorno, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Retornos</p>
+                  <p style={{ margin: 0, fontSize: '1.7rem', fontWeight: 700, color: CORES.retorno }}>{metricas.retornos || 0}</p>
+                </div>
+              </div>
+
+              {/* Gráficos mensais: barras por semana + pizza conversão */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.65rem' }}>
+                {/* Barras agrupadas por semana */}
+                <div style={{ ...cardStyle, padding: '1rem' }}>
+                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Reuniões × Fechamentos por Semana</p>
+                  {semanas.some(s => s.total > 0) ? (
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={semanas} barCategoryGap="35%">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" vertical={false} />
+                        <XAxis dataKey="semana" tick={{ fontSize: 11, fill: '#888' }} />
+                        <YAxis tick={{ fontSize: 11, fill: '#888' }} allowDecimals={false} />
+                        <Tooltip {...TT} />
+                        <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
+                        <Bar dataKey="total"       name="Total"        fill={CORES.cinza}  radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="fechamentos" name="Fechamentos"  fill={CORES.fechou} radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : noData}
+                </div>
+
+                {/* Pizza de conversão (donut) */}
+                <div style={{ ...cardStyle, padding: '1rem' }}>
+                  <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    Taxa de Conversão — {MESES_PTBR[anoMes.mes - 1]}
+                  </p>
+                  {convData.length > 0 ? (
+                    <div style={{ position: 'relative' }}>
+                      <ResponsiveContainer width="100%" height={210}>
+                        <PieChart>
+                          <Pie data={convData} cx="50%" cy="46%" innerRadius={55} outerRadius={82} startAngle={90} endAngle={-270} dataKey="value">
+                            {convData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                          </Pie>
+                          <Tooltip {...TT} formatter={(v, n) => [v, n]} />
+                          <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div style={{ position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                        <p style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)' }}>{taxa ?? '—'}%</p>
+                      </div>
+                    </div>
+                  ) : noData}
+                </div>
+              </div>
+
+              {/* Linha: evolução 6 meses */}
+              <div style={{ ...cardStyle, padding: '1rem' }}>
+                <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Evolução de Conversão</p>
+                {evolucao.length >= 2 ? (
+                  <ResponsiveContainer width="100%" height={210}>
+                    <LineChart data={evolucao} margin={{ left: 0, right: 24, top: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#888' }} />
+                      <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11, fill: '#888' }} />
+                      <Tooltip {...TT} formatter={(v) => [`${v}%`, 'Conversão']} />
+                      <Line type="monotone" dataKey="taxa_conversao" name="Conversão" stroke={CORES.fechou} strokeWidth={2} dot={{ fill: CORES.fechou, r: 4 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : noData}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -675,8 +907,9 @@ function Reunioes() {
         : <WeeklyGrid reunioes={reunioes} weekDays={weekDays} onCardClick={setSelectedReuniao} />
       }
 
-      {/* Barra de resumo */}
+      {/* Barra de resumo + Métricas mensais */}
       {!loading && <SummaryBar reunioes={reunioes} />}
+      {!loading && <MetricasMensais />}
 
       {/* Modal da reunião */}
       {selectedReuniao && (
