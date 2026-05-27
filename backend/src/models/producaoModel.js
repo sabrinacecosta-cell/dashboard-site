@@ -1,15 +1,21 @@
 const db = require('../config/database');
 
-// Lista de emails com acesso admin
+// Administradores da plataforma
 const ADMIN_EMAILS = [
   'sabrina@jtdkinvest.com',
   'joel@jtdkinvest.com',
-  'joel@wflowinvest.com'
+  'joel@wflowinvest.com',
+];
+
+// Emails com visão completa de vendas (admins + convidados especiais)
+const EMAILS_VENDAS_COMPLETAS = [
+  ...ADMIN_EMAILS,
+  'paula.santana@xpi.com.br', // visão completa de vendas; sem acesso admin
 ];
 
 const ProducaoModel = {
   isAdmin(email) {
-    return ADMIN_EMAILS.includes(email?.toLowerCase());
+    return EMAILS_VENDAS_COMPLETAS.includes(email?.toLowerCase());
   },
 
   async findByAssessor(nomeAssessor, emailAssessor) {
