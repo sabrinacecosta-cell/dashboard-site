@@ -669,7 +669,8 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
 (12,'auto','002133',250,524.93,'DIEGO MEDINA OSORIO',70000.0,'Tati Leite','tatiana.leite@wflowinvest.com','WFLOW',2025,'PF','SP','Reduzida 50%',0.17),
 (12,'auto','002133',1985,449.94,'DIEGO MEDINA OSORIO',60000.0,'Tati Leite','tatiana.leite@wflowinvest.com','WFLOW',2025,'PF','SP','Reduzida 50%',0.17),
 (12,'imovel','001038',797,2667.92,'GUILHERME FRANQUIM SACCANI',560959.98,'Joel Figueredo','joel@wflowinvest.com','WFLOW',2025,'PF','SP','Reduzida 50%',0.12),
-(12,'auto','002133',1433,524.93,'DIEGO MEDINA OSORIO',70000.0,'Tati Leite','tatiana.leite@wflowinvest.com','WFLOW',2025,'PF','SP','Reduzida 50%',0.17)
+(12,'auto','002133',1433,524.93,'DIEGO MEDINA OSORIO',70000.0,'Tati Leite','tatiana.leite@wflowinvest.com','WFLOW',2025,'PF','SP','Reduzida 50%',0.17),
+(11,NULL,NULL,NULL,NULL,'MARCIO NEGRÃO',29000000,'Fernanda Sykora','fer_sy@hotmail.com','SELFE BTG',2025,NULL,NULL,NULL,NULL)
   `);
   console.log('Producao Nov/Dez 2025 reinserida com sucesso!');
 
