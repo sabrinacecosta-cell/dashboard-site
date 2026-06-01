@@ -8,6 +8,9 @@ import {
 } from 'recharts';
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+
+const TITULO_IGNORADO     = ['clube da programação', 'terapia'];
+const TITULO_NAO_COMERCIAL = ['kickoff de produtos'];
 const DAY_NAMES = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 
 const STATUS_LABELS = {
@@ -530,7 +533,10 @@ function WeeklyGrid({ reunioes, weekDays, onCardClick }) {
 }
 
 // ── Barra de resumo da semana ─────────────────────────────────
-function SummaryBar({ reunioes, proximosRetornos = [] }) {
+function SummaryBar({ reunioes: reunioesRaw, proximosRetornos = [] }) {
+  const reunioes = reunioesRaw.filter(r =>
+    !TITULO_NAO_COMERCIAL.some(t => (r.titulo || '').toLowerCase().includes(t))
+  );
   const total       = reunioes.length;
   const fechamentos = reunioes.filter(r => r.status === 'fechou').length;
   const retornos    = reunioes.filter(r => r.status === 'retorno').length;
@@ -664,17 +670,51 @@ function MetricasMensais() {
   const loadMes = useCallback(async () => {
     setLoadingMes(true);
     try {
-      const [mr, sr] = await Promise.all([
-        api.get(`/reunioes/metricas/mes?ano=${anoMes.ano}&mes=${anoMes.mes}`),
-        api.get(`/reunioes/metricas/semanas?ano=${anoMes.ano}&mes=${anoMes.mes}`),
-      ]);
-      setMetricas(mr.data);
-      setSemanas(sr.data);
+      const r = await api.get(`/reunioes?periodo=mes&ano=${anoMes.ano}&mes=${anoMes.mes}`);
+      const all = r.data.filter(m =>
+        !TITULO_NAO_COMERCIAL.some(t => (m.titulo || '').toLowerCase().includes(t))
+      );
+      const fechamentos  = all.filter(m => m.status === 'fechou').length;
+      const nao_fechou   = all.filter(m => m.status === 'nao_fechou').length;
+      const retornos     = all.filter(m => m.status === 'retorno').length;
+      const finalizadas  = fechamentos + nao_fechou;
+      const taxa_conversao = finalizadas > 0 ? Math.round((fechamentos / finalizadas) * 100) : null;
+      setMetricas({ total: all.length, fechamentos, nao_fechou, retornos, taxa_conversao });
+
+      const semanasMap = {};
+      all.forEach(m => {
+        const key = `S${Math.ceil(new Date(m.data_reuniao).getDate() / 7)}`;
+        if (!semanasMap[key]) semanasMap[key] = { semana: key, total: 0, fechamentos: 0 };
+        semanasMap[key].total++;
+        if (m.status === 'fechou') semanasMap[key].fechamentos++;
+      });
+      setSemanas(Object.values(semanasMap).sort((a, b) => a.semana.localeCompare(b.semana)));
     } catch {} finally { setLoadingMes(false); }
   }, [anoMes]);
 
   const loadEvolucao = useCallback(async () => {
-    try { const r = await api.get('/reunioes/metricas/evolucao'); setEvolucao(r.data); } catch {}
+    try {
+      const now = new Date();
+      const months = Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
+      });
+      const responses = await Promise.all(
+        months.map(({ ano, mes }) => api.get(`/reunioes?periodo=mes&ano=${ano}&mes=${mes}`))
+      );
+      const results = responses.map((resp, i) => {
+        const { ano, mes } = months[i];
+        const all = resp.data.filter(m =>
+          !TITULO_NAO_COMERCIAL.some(t => (m.titulo || '').toLowerCase().includes(t))
+        );
+        const fechamentos = all.filter(m => m.status === 'fechou').length;
+        const nao_fechou  = all.filter(m => m.status === 'nao_fechou').length;
+        const finalizadas = fechamentos + nao_fechou;
+        const taxa_conversao = finalizadas > 0 ? Math.round((fechamentos / finalizadas) * 100) : 0;
+        return { label: `${MESES_PTBR[mes - 1].slice(0, 3)}/${ano}`, taxa_conversao };
+      });
+      setEvolucao(results);
+    } catch {}
   }, []);
 
   useEffect(() => { if (open) { loadMes(); loadEvolucao(); } }, [open, loadMes, loadEvolucao]);
@@ -851,7 +891,9 @@ function Reunioes() {
 
       const filtered = all.filter(r => {
         const d = new Date(r.data_reuniao);
-        return d >= monday && d <= fridayEnd;
+        if (d < monday || d > fridayEnd) return false;
+        const titulo = (r.titulo || '').toLowerCase();
+        return !TITULO_IGNORADO.some(t => titulo.includes(t));
       });
       setReunioes(filtered);
     } catch (e) {

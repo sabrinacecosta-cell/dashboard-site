@@ -150,22 +150,11 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
   try {
     console.log('[importar] === INÍCIO ===');
 
-    // ── 1. Diagnóstico do token ─────────────────────────────
-    const db2 = require('../config/database');
-    const tokenRow = await db2.query('SELECT tokens, atualizado_em FROM google_tokens ORDER BY id DESC LIMIT 1');
-    if (tokenRow.rows.length > 0) {
-      const t = tokenRow.rows[0].tokens;
-      console.log('[importar] token no banco — atualizado_em:', tokenRow.rows[0].atualizado_em);
-      console.log('[importar] has access_token:', !!t.access_token);
-      console.log('[importar] has refresh_token:', !!t.refresh_token);
-      console.log('[importar] scope:', t.scope || '(sem scope)');
-      console.log('[importar] expiry_date:', t.expiry_date ? new Date(t.expiry_date).toISOString() : '(sem expiry)');
-    } else {
-      console.log('[importar] AVISO: nenhum token no banco — precisa re-autorizar /auth/google');
-    }
-    const creds = require('../config/google').oauth2Client.credentials;
-    console.log('[importar] oauth2Client has access_token:', !!creds?.access_token);
-    console.log('[importar] oauth2Client has refresh_token:', !!creds?.refresh_token);
+    // ── 1. Garante coluna de controle e lê último sync ──────
+    await db.query(`ALTER TABLE google_tokens ADD COLUMN IF NOT EXISTS ultima_sincronizacao_reunioes TIMESTAMP`);
+    const syncRow = await db.query('SELECT ultima_sincronizacao_reunioes FROM google_tokens ORDER BY id DESC LIMIT 1');
+    const ultimaSync = syncRow.rows[0]?.ultima_sincronizacao_reunioes || null;
+    console.log('[importar] ultima_sincronizacao_reunioes:', ultimaSync || '(primeira vez)');
 
     // ── 2. Calendar ─────────────────────────────────────────
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
@@ -173,26 +162,28 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     const timeMin = new Date();
     timeMin.setDate(timeMin.getDate() - 90);
     const timeMax = new Date();
-    timeMax.setDate(timeMax.getDate() + 60); // inclui reuniões futuras (próximos 2 meses)
+    timeMax.setDate(timeMax.getDate() + 60);
 
-    console.log('[importar] Calendar timeMin:', timeMin.toISOString());
-    console.log('[importar] Calendar timeMax:', timeMax.toISOString());
-    console.log('[importar] calendarId: primary');
+    const calParams = {
+      calendarId: 'primary',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: true,
+      orderBy: 'updated',
+      maxResults: 250,
+    };
+    if (ultimaSync) {
+      calParams.updatedMin = new Date(ultimaSync).toISOString();
+      console.log('[importar] modo incremental — updatedMin:', calParams.updatedMin);
+    } else {
+      console.log('[importar] modo completo — buscando todos os eventos da janela');
+    }
 
     let calRes;
     try {
-      calRes = await calendar.events.list({
-        calendarId: 'primary',
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime',
-        maxResults: 250,
-      });
+      calRes = await calendar.events.list(calParams);
     } catch (calErr) {
       console.error('[importar] ERRO Calendar.events.list:', calErr.message);
-      console.error('[importar] Calendar error code:', calErr.code);
-      console.error('[importar] Calendar error status:', calErr.status);
       throw calErr;
     }
 
@@ -288,6 +279,9 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
 
       imported++;
     }
+
+    // Salva timestamp para o próximo sync incremental
+    await db.query('UPDATE google_tokens SET ultima_sincronizacao_reunioes = NOW()');
 
     console.log('[importar] === FIM === imported:', imported, 'skipped:', skipped, 'total events:', events.length);
     res.json({ imported, skipped, total: events.length });
