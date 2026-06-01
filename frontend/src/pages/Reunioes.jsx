@@ -670,11 +670,17 @@ function MetricasMensais() {
   const loadMes = useCallback(async () => {
     setLoadingMes(true);
     try {
-      const r = await api.get(`/reunioes?periodo=mes&ano=${anoMes.ano}&mes=${anoMes.mes}`);
-      const all = r.data.filter(m =>
+      const [reuRes, vendRes] = await Promise.all([
+        api.get(`/reunioes?periodo=mes&ano=${anoMes.ano}&mes=${anoMes.mes}`),
+        api.get(`/producao?mes=${anoMes.mes}&ano=${anoMes.ano}`),
+      ]);
+      const all = reuRes.data.filter(m =>
         !TITULO_NAO_COMERCIAL.some(t => (m.titulo || '').toLowerCase().includes(t))
       );
-      const fechamentos  = all.filter(m => m.status === 'fechou').length;
+
+      // Fechamentos = clientes distintos confirmados na aba de Vendas
+      const vendItems = vendRes.data?.items || [];
+      const fechamentos  = new Set(vendItems.map(i => i.cliente)).size;
       const nao_fechou   = all.filter(m => m.status === 'nao_fechou').length;
       const retornos     = all.filter(m => m.status === 'retorno').length;
       const finalizadas  = fechamentos + nao_fechou;
@@ -699,15 +705,16 @@ function MetricasMensais() {
         const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
         return { ano: d.getFullYear(), mes: d.getMonth() + 1 };
       });
-      const responses = await Promise.all(
-        months.map(({ ano, mes }) => api.get(`/reunioes?periodo=mes&ano=${ano}&mes=${mes}`))
-      );
-      const results = responses.map((resp, i) => {
-        const { ano, mes } = months[i];
-        const all = resp.data.filter(m =>
+      const [reuResps, vendResps] = await Promise.all([
+        Promise.all(months.map(({ ano, mes }) => api.get(`/reunioes?periodo=mes&ano=${ano}&mes=${mes}`))),
+        Promise.all(months.map(({ ano, mes }) => api.get(`/producao?mes=${mes}&ano=${ano}`))),
+      ]);
+      const results = months.map(({ ano, mes }, i) => {
+        const all = reuResps[i].data.filter(m =>
           !TITULO_NAO_COMERCIAL.some(t => (m.titulo || '').toLowerCase().includes(t))
         );
-        const fechamentos = all.filter(m => m.status === 'fechou').length;
+        const vendItems = vendResps[i].data?.items || [];
+        const fechamentos = new Set(vendItems.map(v => v.cliente)).size;
         const nao_fechou  = all.filter(m => m.status === 'nao_fechou').length;
         const finalizadas = fechamentos + nao_fechou;
         const taxa_conversao = finalizadas > 0 ? Math.round((fechamentos / finalizadas) * 100) : 0;
