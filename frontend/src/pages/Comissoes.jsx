@@ -395,6 +395,25 @@ function Comissoes() {
         <p className="page-subtitle">Acompanhe seus ganhos</p>
       </div>
 
+      <div style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '8px',
+        marginBottom: '1.5rem',
+        padding: '10px 14px',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '8px',
+        color: 'var(--text-secondary)',
+        fontSize: '0.78rem',
+        lineHeight: '1.5',
+      }}>
+        <span style={{ flexShrink: 0 }}>⚠️</span>
+        <span>
+          A coluna de Comissão Líquida está descontando 20% de imposto. Essa será a base de cálculo da divisão entre o escritório, mesa e assessor (considerando o plano de carreira de cada um).
+        </span>
+      </div>
+
       {loading ? (
         <div className="page-loading">Carregando...</div>
       ) : error ? (
