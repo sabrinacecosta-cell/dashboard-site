@@ -34,7 +34,7 @@ const AdminController = {
         return res.status(403).json({ success: false, error: 'Acesso negado' });
       }
 
-      const count = UsuarioModel.resetAllPasswords();
+      const count = await UsuarioModel.resetAllPasswords();
 
       return res.json({
         success: true,

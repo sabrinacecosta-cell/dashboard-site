@@ -1,5 +1,6 @@
 const express = require('express');
 const AdminController = require('../controllers/adminController');
+const UsuarioModel = require('../models/usuarioModel');
 const authMiddleware = require('../middlewares/authMiddleware');
 const db = require('../config/database');
 
@@ -216,6 +217,40 @@ router.put('/admin/assessores/email', authMiddleware, adminOnly, async (req, res
       [email || null, assessor]
     );
     res.json({ updated: result.rowCount });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET — lista usuários (contas de login)
+router.get('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT id, nome, email, senha_hash IS NOT NULL AS tem_senha, criado_em FROM usuarios ORDER BY nome'
+    );
+    res.json(result.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST — cadastra novo usuário (sem senha; define via fluxo de primeiro acesso)
+router.post('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const nome = (req.body.nome || '').trim();
+    const email = (req.body.email || '').toLowerCase().trim();
+    if (!nome || !email) return res.status(400).json({ error: 'nome e email obrigatórios' });
+
+    const existente = await UsuarioModel.findByEmail(email);
+    if (existente) return res.status(409).json({ error: 'Já existe um usuário com este e-mail' });
+
+    const usuario = await UsuarioModel.create({ nome, email, senha_hash: null });
+    res.status(201).json({ success: true, usuario });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE — remove usuário
+router.delete('/admin/usuarios/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const result = await db.query('DELETE FROM usuarios WHERE id = $1', [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
+    res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

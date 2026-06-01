@@ -529,6 +529,94 @@ function SecaoAssessores() {
   );
 }
 
+/* ── 7. USUÁRIOS — Contas de login ────────────────────── */
+function SecaoUsuarios() {
+  const [usuarios, setUsuarios] = useState([]);
+  const [novoNome, setNovoNome]   = useState('');
+  const [novoEmail, setNovoEmail] = useState('');
+  const [status, setStatus]       = useState('');
+  const [salvando, setSalvando]   = useState(false);
+
+  const inp = {
+    padding: '4px 8px', borderRadius: '6px',
+    border: '1px solid var(--border)',
+    background: 'var(--bg-primary)',
+    color: 'var(--text-primary)', fontSize: '13px',
+  };
+
+  const carregar = useCallback(() => {
+    api.get('/admin/usuarios').then(r => setUsuarios(r.data));
+  }, []);
+
+  useEffect(() => { carregar(); }, [carregar]);
+
+  const adicionar = async () => {
+    const nome = novoNome.trim();
+    const email = novoEmail.trim();
+    if (!nome || !email) { setStatus('✗ Preencha nome e e-mail'); return; }
+    setSalvando(true);
+    try {
+      await api.post('/admin/usuarios', { nome, email });
+      setStatus('✓ Usuário cadastrado');
+      setNovoNome(''); setNovoEmail('');
+      carregar();
+    } catch (e) {
+      setStatus('✗ ' + (e.response?.data?.error || 'Erro ao cadastrar'));
+    } finally {
+      setSalvando(false);
+      setTimeout(() => setStatus(''), 4000);
+    }
+  };
+
+  const remover = async (u) => {
+    if (!window.confirm(`Remover o usuário ${u.nome} (${u.email})?`)) return;
+    try {
+      await api.delete(`/admin/usuarios/${u.id}`);
+      carregar();
+    } catch (e) {
+      setStatus('✗ ' + (e.response?.data?.error || 'Erro ao remover'));
+      setTimeout(() => setStatus(''), 4000);
+    }
+  };
+
+  return (
+    <>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 0, marginBottom: '12px' }}>
+        Cria a conta de login na tabela <code>usuarios</code>. O usuário acessa pela primeira vez definindo a senha (fluxo de redefinição). Diferente da seção de Assessores, que apenas vincula e-mail à produção.
+      </p>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Nome</label>
+          <input style={{ ...inp, width: '200px' }} value={novoNome} onChange={e => setNovoNome(e.target.value)} placeholder="Nome completo" />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>E-mail</label>
+          <input style={{ ...inp, width: '240px' }} value={novoEmail} onChange={e => setNovoEmail(e.target.value)} placeholder="email@wflowinvest.com" />
+        </div>
+        <button className="btn-admin-action" onClick={adicionar} disabled={salvando}>{salvando ? 'Salvando...' : 'Cadastrar usuário'}</button>
+        {status && <span style={{ fontSize: '12px', color: status.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status}</span>}
+      </div>
+      <div className="table-scroll">
+        <table>
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Senha definida</th><th></th></tr></thead>
+          <tbody>
+            {usuarios.map(u => (
+              <tr key={u.id}>
+                <td style={{ fontSize: '13px' }}>{u.nome}</td>
+                <td style={{ fontSize: '13px' }}>{u.email}</td>
+                <td style={{ fontSize: '13px' }}>{u.tem_senha ? '✓ Sim' : '— Não'}</td>
+                <td>
+                  <button className="btn-admin-sm" onClick={() => remover(u)}>Remover</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 /* ── PÁGINA PRINCIPAL ─────────────────────────────────── */
 export default function Admin() {
   const { user } = useAuth();
@@ -578,6 +666,9 @@ export default function Admin() {
       </Section>
       <Section title="6. Assessores — E-mails" open={!!open.assessores} onToggle={() => toggle('assessores')}>
         <SecaoAssessores />
+      </Section>
+      <Section title="7. Usuários — Contas de login" open={!!open.usuarios} onToggle={() => toggle('usuarios')}>
+        <SecaoUsuarios />
       </Section>
     </div>
   );
