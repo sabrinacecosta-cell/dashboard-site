@@ -6,7 +6,7 @@ const { oauth2Client, isConnected } = require('../config/google');
 const { searchMeetingEmails, extractActionItems } = require('../services/gmailService');
 const Anthropic = require('@anthropic-ai/sdk');
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 // Eventos pessoais/não-comerciais que não devem aparecer em Reuniões
 const TITLE_EXCLUSIONS = [

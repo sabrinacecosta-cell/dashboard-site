@@ -7,7 +7,7 @@ import {
   LineChart, Line, CartesianGrid,
 } from 'recharts';
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 const TITULO_IGNORADO     = ['clube da programação', 'terapia'];
 const TITULO_NAO_COMERCIAL = ['kickoff de produtos'];

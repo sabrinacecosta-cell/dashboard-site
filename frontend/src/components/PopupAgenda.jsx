@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 const INTERVAL_MS = 7_200_000; // 2 horas
 const AUTO_CLOSE_MS = 15_000;  // 15 segundos
 const STORAGE_KEY = 'popup_agenda_last_shown';

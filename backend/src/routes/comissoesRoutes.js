@@ -4,7 +4,7 @@ const db = require('../config/database');
 
 const router = express.Router();
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 // Emails que acessam a aba de comissões mas não visualizam nenhum dado
 const EMAILS_SEM_COMISSOES = ['paula.santana@xpi.com.br'];

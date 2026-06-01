@@ -94,13 +94,13 @@ function Layout({ children }) {
     { path: '/simulador', icon: '', label: 'Simulador' },
     { path: '/grupos', icon: '', label: 'Métricas' },
     { path: '/agenda', icon: '', label: 'Chat - agenda' },
-    ...(['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
+    ...(['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
       ? [{ path: '/reunioes', icon: '', label: 'Reuniões' }]
       : []),
     ...(EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '', label: 'Acompanhamento' }]
       : []),
-    ...(['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email)
+    ...(['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
       ? [{ path: '/admin', icon: '', label: 'Administração' }]
       : []),
   ];
@@ -135,7 +135,7 @@ function Layout({ children }) {
             {dropdownOpen && (
               <div className="sidebar-user-menu">
                 <span className="header-user-email">{user?.email}</span>
-                {['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'].includes(user?.email) && (
+                {['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
                   <>
                     <hr className="dropdown-divider" />
                     <button className="dropdown-btn" onClick={() => setResetModal(true)}>
@@ -193,7 +193,7 @@ function Layout({ children }) {
       </div>
 
       {/* Popup de agenda/retornos para admins */}
-      {['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
+      {['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
         <PopupAgenda userEmail={user.email} onNavigate={navigate} />
       )}
 

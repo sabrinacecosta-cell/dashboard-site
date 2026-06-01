@@ -13,7 +13,7 @@ import Agenda from './pages/Agenda';
 import Reunioes from './pages/Reunioes';
 import RedefinirSenha from './pages/RedefinirSenha';
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@wflowinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 function PrivateRoute({ children }) {
   const { signed, loading } = useAuth();

@@ -1,7 +1,7 @@
 const ImportService = require('../services/importService');
 const UsuarioModel = require('../models/usuarioModel');
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
 const AdminController = {
   async importarDados(req, res) {

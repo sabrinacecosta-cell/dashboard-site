@@ -6,7 +6,7 @@ const db = require('../config/database');
 
 const router = express.Router();
 
-const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com'];
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 const adminOnly = (req, res, next) => {
   if (!ADMIN_EMAILS.includes(req.userEmail)) return res.status(403).json({ error: 'Acesso restrito' });
   next();
