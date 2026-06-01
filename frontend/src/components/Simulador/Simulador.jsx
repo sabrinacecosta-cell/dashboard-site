@@ -460,7 +460,7 @@ export default function Simulador() {
     }
 
     const indicados = modalidade === 'imovel'
-      ? ['• Construção gradual de patrimônio imobiliário', '• Diversificação em ativos reais', '• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos']
+      ? ['• Construção gradual de patrimônio imobiliário', '• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos']
       : ['• Planejamento de aquisições futuras', '• Preservação de liquidez e rentabilidade dos investimentos'];
     const barH = 8 + indicados.length * 4.5;
     doc.setFillColor(...gold);
@@ -501,8 +501,14 @@ export default function Simulador() {
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
     doc.text('Consórcio XP', M, H - 6);
-    const dataValidade = new Date();
-    dataValidade.setDate(dataValidade.getDate() + 30);
+    // Validade = penúltimo dia útil do mês corrente
+    const dataValidade = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    let diasUteis = 0;
+    while (true) {
+      const dow = dataValidade.getDay();
+      if (dow !== 0 && dow !== 6) { diasUteis++; if (diasUteis === 2) break; }
+      dataValidade.setDate(dataValidade.getDate() - 1);
+    }
     doc.setFontSize(8);
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
