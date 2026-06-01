@@ -194,7 +194,7 @@ function TabelaComissoes({ rows, isAdmin }) {
   );
 }
 
-function ChatComissoes({ dados }) {
+function ChatComissoes() {
   const [pergunta, setPergunta] = useState('');
   const [historico, setHistorico] = useState([]);
   const [carregando, setCarregando] = useState(false);
@@ -217,47 +217,12 @@ function ChatComissoes({ dados }) {
     setCarregando(true);
 
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-      if (!apiKey) throw new Error('VITE_ANTHROPIC_API_KEY não configurada');
-
-      const dadosContexto = dados.map(r => ({
-        cliente: r.cliente,
-        contrato: r.contrato,
-        grupo_cota: fmtGrupoCota(r.grupo_cota_versao),
-        data_venda: fmtData(r.data_venda),
-        parcela: r.parcela,
-        valor_carta: Number(r.valor_carta),
-        comissao_bruta: Number(r.valor_comissao),
-        comissao_liquida: Number(r.valor_liquido) * 0.80,
-        mes_referencia: r.mes_referencia ? String(r.mes_referencia).split('T')[0].substring(0, 7) : null,
-      }));
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1024,
-          system: `Você é um assistente que responde perguntas sobre dados de comissões de consórcio. Responda de forma direta e objetiva em português. Use os valores monetários formatados em reais (R$). Dados disponíveis (${dadosContexto.length} registros): ${JSON.stringify(dadosContexto)}`,
-          messages: [{ role: 'user', content: texto }],
-        }),
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error?.message || 'Erro na API');
-      }
-
-      const data = await response.json();
-      const resposta = data.content?.[0]?.text || 'Sem resposta';
+      const { data } = await api.post('/comissoes/chat', { pergunta: texto });
+      const resposta = data.resposta || 'Sem resposta';
       setHistorico(h => [...h, { role: 'assistant', content: resposta }]);
     } catch (err) {
-      setHistorico(h => [...h, { role: 'assistant', content: `Erro: ${err.message}`, erro: true }]);
+      const mensagem = err.response?.data?.error || err.message || 'Erro ao processar a pergunta';
+      setHistorico(h => [...h, { role: 'assistant', content: `Erro: ${mensagem}`, erro: true }]);
     } finally {
       setCarregando(false);
       inputRef.current?.focus();
@@ -428,7 +393,7 @@ function Comissoes() {
         </div>
       ) : (
         <>
-          {isAdmin && <ChatComissoes dados={dados} />}
+          {isAdmin && <ChatComissoes />}
           {secoes.map(([ym, rows]) => (
             <div className="card" key={ym} style={{ marginBottom: '1.5rem' }}>
               <h3>{getTituloSecao(rows[0]?.mes_referencia)}</h3>
