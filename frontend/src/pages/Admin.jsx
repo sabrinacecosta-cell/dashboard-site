@@ -556,8 +556,10 @@ function SecaoUsuarios() {
     if (!nome || !email) { setStatus('✗ Preencha nome e e-mail'); return; }
     setSalvando(true);
     try {
-      await api.post('/admin/usuarios', { nome, email });
-      setStatus('✓ Usuário cadastrado');
+      const r = await api.post('/admin/usuarios', { nome, email });
+      setStatus(r.data?.emailEnviado === false
+        ? '✓ Usuário cadastrado (falha ao enviar e-mail — use "resetar senha")'
+        : '✓ Usuário cadastrado — e-mail para definir a senha enviado');
       setNovoNome(''); setNovoEmail('');
       carregar();
     } catch (e) {
@@ -582,7 +584,7 @@ function SecaoUsuarios() {
   return (
     <>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: 0, marginBottom: '12px' }}>
-        Cria a conta de login na tabela <code>usuarios</code>. O usuário acessa pela primeira vez definindo a senha (fluxo de redefinição). Diferente da seção de Assessores, que apenas vincula e-mail à produção.
+        Cria a conta de login na tabela <code>usuarios</code> e envia automaticamente um e-mail com link para o usuário definir a senha (válido por 7 dias). Diferente da seção de Assessores, que apenas vincula e-mail à produção.
       </p>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

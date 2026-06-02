@@ -6,15 +6,13 @@ import api from '../services/api';
 function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [novaSenha, setNovaSenha] = useState('');
-  const [primeiroAcesso, setPrimeiroAcesso] = useState(null);
   const [esqueceuSenha, setEsqueceuSenha] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState(false);
   const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, definirSenha } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   async function handleLogin(e) {
@@ -23,30 +21,10 @@ function Login() {
     setLoading(true);
 
     try {
-      const result = await login(email, senha);
-
-      if (result.primeiroAcesso) {
-        setPrimeiroAcesso(result);
-      } else {
-        navigate('/');
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao fazer login');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDefinirSenha(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await definirSenha(primeiroAcesso.usuarioId, novaSenha);
+      await login(email, senha);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao definir senha');
+      setError(err.response?.data?.error || 'Erro ao fazer login');
     } finally {
       setLoading(false);
     }
@@ -65,38 +43,6 @@ function Login() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (primeiroAcesso) {
-    return (
-      <div className="login-container">
-        <div className="card login-card">
-          <h1>{primeiroAcesso.redefinindo ? 'Redefinir Senha' : 'Primeiro Acesso'}</h1>
-          <p style={{ textAlign: 'center', marginBottom: 25, color: 'var(--text-secondary)' }}>
-            {primeiroAcesso.redefinindo
-              ? 'Escolha uma nova senha para continuar'
-              : 'Defina sua senha para continuar'}
-          </p>
-          <form onSubmit={handleDefinirSenha}>
-            <div className="form-group">
-              <label>Nova Senha</label>
-              <input
-                type="password"
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                required
-                minLength={6}
-              />
-            </div>
-            <button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : 'Definir Senha'}
-            </button>
-            {error && <p className="error">{error}</p>}
-          </form>
-        </div>
-      </div>
-    );
   }
 
   if (esqueceuSenha) {

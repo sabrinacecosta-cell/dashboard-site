@@ -1,6 +1,7 @@
 const express = require('express');
 const AdminController = require('../controllers/adminController');
 const UsuarioModel = require('../models/usuarioModel');
+const AuthService = require('../services/authService');
 const authMiddleware = require('../middlewares/authMiddleware');
 const db = require('../config/database');
 
@@ -21,11 +22,22 @@ router.post('/admin/resetar-senha-usuario', authMiddleware, adminOnly, async (re
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email obrigatório' });
     const result = await db.query(
-      'UPDATE usuarios SET senha_hash = NULL WHERE email = $1 RETURNING id',
+      'UPDATE usuarios SET senha_hash = NULL WHERE email = $1 RETURNING id, nome, email',
       [email.toLowerCase().trim()]
     );
     if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });
-    res.json({ success: true, message: `Senha de ${email} resetada com sucesso` });
+
+    let emailEnviado = true;
+    try {
+      await AuthService.enviarLinkRedefinicao(result.rows[0], { contexto: 'reset', horasValidade: 168 });
+    } catch (e) {
+      emailEnviado = false;
+      console.error('Falha ao enviar e-mail de reset:', e);
+    }
+    const message = emailEnviado
+      ? `Senha de ${email} resetada — e-mail com link para criar nova senha enviado`
+      : `Senha de ${email} resetada, mas falhou o envio do e-mail. Peça para usar "Esqueci minha senha".`;
+    res.json({ success: true, emailEnviado, message });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -230,7 +242,7 @@ router.get('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST — cadastra novo usuário (sem senha; define via fluxo de primeiro acesso)
+// POST — cadastra novo usuário (sem senha; recebe e-mail com link para definir a senha)
 router.post('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
   try {
     const nome = (req.body.nome || '').trim();
@@ -241,7 +253,15 @@ router.post('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
     if (existente) return res.status(409).json({ error: 'Já existe um usuário com este e-mail' });
 
     const usuario = await UsuarioModel.create({ nome, email, senha_hash: null });
-    res.status(201).json({ success: true, usuario });
+
+    let emailEnviado = true;
+    try {
+      await AuthService.enviarLinkRedefinicao(usuario, { contexto: 'novo', horasValidade: 168 });
+    } catch (e) {
+      emailEnviado = false;
+      console.error('Falha ao enviar e-mail de boas-vindas:', e);
+    }
+    res.status(201).json({ success: true, usuario, emailEnviado });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

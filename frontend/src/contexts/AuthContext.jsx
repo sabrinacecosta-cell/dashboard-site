@@ -29,18 +29,7 @@ export function AuthProvider({ children }) {
 
   async function login(email, senha) {
     const response = await api.post('/login', { email, senha });
-    
-    if (response.data.primeiroAcesso) {
-      return response.data;
-    }
 
-    localStorage.setItem('token', response.data.token);
-    setUser(response.data.usuario);
-    return response.data;
-  }
-
-  async function definirSenha(usuarioId, novaSenha) {
-    const response = await api.post('/definir-senha', { usuarioId, novaSenha });
     localStorage.setItem('token', response.data.token);
     setUser(response.data.usuario);
     return response.data;
@@ -55,10 +44,9 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{ 
       user, 
       loading, 
-      login, 
-      logout, 
-      definirSenha,
-      signed: !!user 
+      login,
+      logout,
+      signed: !!user
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,8 +1,6 @@
-const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const db = require('../config/database');
 const AuthService = require('../services/authService');
-const { enviarEmailRedefinicaoSenha } = require('../services/emailService');
 
 const AuthController = {
   async login(req, res) {
@@ -21,53 +19,23 @@ const AuthController = {
     }
   },
 
-  async definirSenha(req, res) {
-    try {
-      const { usuarioId, novaSenha } = req.body;
-
-      if (!usuarioId || !novaSenha) {
-        return res.status(400).json({ 
-          error: 'usuarioId e novaSenha são obrigatórios' 
-        });
-      }
-
-      if (novaSenha.length < 6) {
-        return res.status(400).json({ 
-          error: 'Senha deve ter no mínimo 6 caracteres' 
-        });
-      }
-
-      const resultado = await AuthService.definirSenha(usuarioId, novaSenha);
-
-      return res.json(resultado);
-    } catch (error) {
-      return res.status(400).json({ error: error.message });
-    }
-  },
-
   async esqueceuSenha(req, res) {
+    // Resposta sempre genérica para não revelar quais e-mails existem (anti-enumeração)
+    const respostaGenerica = { message: 'Se o e-mail estiver cadastrado, enviaremos as instruções de redefinição.' };
     try {
       const { email } = req.body;
       if (!email) return res.status(400).json({ error: 'Email é obrigatório' });
 
-      const result = await db.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-      if (!result.rows[0]) return res.status(404).json({ error: 'Email não encontrado' });
-
+      const result = await db.query('SELECT * FROM usuarios WHERE email = $1', [email.toLowerCase().trim()]);
       const u = result.rows[0];
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      if (!u) return res.json(respostaGenerica);
 
-      await db.query(
-        'INSERT INTO password_reset_tokens (usuario_id, token, expires_at) VALUES ($1, $2, $3)',
-        [u.id, token, expiresAt]
-      );
+      await AuthService.enviarLinkRedefinicao(u, { contexto: 'redefinicao', horasValidade: 1 });
 
-      const link = `${process.env.FRONTEND_URL}/redefinir-senha?token=${token}`;
-      await enviarEmailRedefinicaoSenha(u.email, u.nome, link);
-
-      return res.json({ message: 'E-mail enviado' });
+      return res.json(respostaGenerica);
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      console.error('Erro em esqueci-senha:', error);
+      return res.json(respostaGenerica);
     }
   },
 
@@ -91,7 +59,8 @@ const AuthController = {
 
       return res.json({ message: 'Senha redefinida com sucesso' });
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      console.error('Erro ao redefinir senha:', error);
+      return res.status(500).json({ error: 'Erro ao redefinir senha' });
     }
   },
 
