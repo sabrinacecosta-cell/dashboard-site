@@ -36,11 +36,6 @@ const UsuarioModel = {
     return result.rowCount > 0;
   },
 
-  async updateSenha(id, senha_hash) {
-    await db.query('UPDATE usuarios SET senha_hash = $1 WHERE id = $2', [senha_hash, id]);
-    return this.findById(id);
-  },
-
   async resetAllPasswords() {
     const result = await db.query('UPDATE usuarios SET senha_hash = NULL');
     return result.rowCount;
