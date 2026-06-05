@@ -7,7 +7,7 @@ const { enviarEmailRedefinicaoSenha } = require('./emailService');
 
 const AuthService = {
   async login(email, senha) {
-    const usuario = await UsuarioModel.findByEmail(email);
+    const usuario = await UsuarioModel.findByEmail(String(email).toLowerCase().trim());
 
     if (!usuario) {
       throw new Error('Usuário não encontrado');
