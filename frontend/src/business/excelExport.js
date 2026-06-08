@@ -191,13 +191,12 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     row.commit();
   }
 
-  setResumoRow(7,  'Lance Total',                      `M${totRow}`);
-  setResumoRow(8,  'Recursos próprios',                `J${totRow}`);
-  setResumoRow(9,  'Embutido',                         `L${totRow}`);
+  // r+7: vazio (separação após "Simulando com x parcelas pagas")
+  { const row = ws.getRow(rr(7)); applyBegeABC(row); row.commit(); }
 
-  // r+10: vazio
-  { const row = ws.getRow(rr(10)); applyBegeABC(row); row.commit(); }
-
+  setResumoRow(8,  'Lance Total',                      `M${totRow}`);
+  setResumoRow(9,  'Recursos próprios',                `J${totRow}`);
+  setResumoRow(10, 'Embutido',                         `L${totRow}`);
   setResumoRow(11, 'Crédito Disponível',               `N${totRow}`, moeda, true);
 
   // r+12: vazio (linha de separação antes do bloco lateral)
@@ -207,17 +206,20 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   setResumoRow(14, 'Fundo de reserva total',           `G${totRow}*C${totRow}`);
   setResumoRow(15, 'Saldo Devedor Inicial',            `C${rr(2)}+C${rr(13)}+C${rr(14)}`);
   const formulaSDC = temReductor
-    ? `C${rr(15)}-C${rr(7)}-C${rr(5)}`
+    ? `C${rr(15)}-C${rr(8)}-C${rr(5)}`
     : temLance
-      ? `C${rr(15)}-C${rr(7)}`
+      ? `C${rr(15)}-C${rr(8)}`
       : `C${rr(15)}`;
   setResumoRow(16, 'Saldo Devedor Após Contemplação',  formulaSDC);
+
+  // r+17: vazio (separação após "Saldo Devedor Após Contemplação")
+  { const row = ws.getRow(rr(17)); applyBegeABC(row); row.commit(); }
 
   // ── Bloco lateral (colunas D e E, linhas rr(12)–rr(16)) ─────────────────
   // Sem fundo, bordas thin, Cambria 11. Última linha (rr(16)) altura 14.
   const L = 12; // lateralOffset
   const lateralItems = [
-    { d: 'Diferença líquida do lance e o crédito',    eFormula: `C${rr(11)}-C${rr(8)}`,              eFmt: moeda },
+    { d: 'Diferença líquida do lance e o crédito',    eFormula: `C${rr(11)}-C${rr(9)}`,              eFmt: moeda },
     { d: 'Total de taxa adm',                          eFormula: `C${rr(2)}*B${totRow}`,               eFmt: moeda },
     { d: 'Total taxa dividido pelo crédito líquido',   eFormula: `E${rr(L+1)}/E${rr(L)}`,             eFmt: pct   },
     { d: 'Taxa dividida pelo prazo (a.m.)',             eFormula: `E${rr(L+2)}/D${totRow}`,             eFmt: pct   },
