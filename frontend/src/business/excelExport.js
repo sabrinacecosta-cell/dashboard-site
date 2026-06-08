@@ -115,8 +115,8 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   const totRowObj = ws.getRow(totRow);
 
   totRowObj.getCell(COL.A).value = 'TOTAL';
-  totRowObj.getCell(COL.B).value = { formula: `MEDIAN(B${firstData}:B${lastData})` };
-  totRowObj.getCell(COL.C).value = { formula: `MEDIAN(C${firstData}:C${lastData})` };
+  totRowObj.getCell(COL.B).value = { formula: `AVERAGE(B${firstData}:B${lastData})` };
+  totRowObj.getCell(COL.C).value = { formula: `AVERAGE(C${firstData}:C${lastData})` };
   totRowObj.getCell(COL.D).value = { formula: `MEDIAN(D${firstData}:D${lastData})` };
   totRowObj.getCell(COL.E).value = { formula: `SUM(E${firstData}:E${lastData})` };
   totRowObj.getCell(COL.G).value = { formula: `SUM(G${firstData}:G${lastData})` };
@@ -201,8 +201,8 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   // r+12: vazio (linha de separação antes do bloco lateral)
   { const row = ws.getRow(rr(12)); applyBegeABC(row); row.commit(); }
 
-  setResumoRow(13, 'Taxa administrativa',              `G${totRow}*B${firstData}`);
-  setResumoRow(14, 'Fundo de reserva',                 `G${totRow}*C${firstData}`);
+  setResumoRow(13, 'Taxa administrativa',              `G${totRow}*B${totRow}`);
+  setResumoRow(14, 'Fundo de reserva',                 `G${totRow}*C${totRow}`);
   setResumoRow(15, 'Saldo Devedor Inicial',            `C${rr(2)}+C${rr(13)}+C${rr(14)}`);
   const formulaSDC = temReductor
     ? `C${rr(15)}-C${rr(7)}-C${rr(5)}`
