@@ -78,8 +78,22 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     row.getCell(COL.E).value = rowData.qtde;
     row.getCell(COL.F).value = cotaVal;
     row.getCell(COL.G).value = { formula: `E${rowNum}*F${rowNum}` };
-    row.getCell(COL.H).value = { formula: `(F${rowNum}*(1+B${rowNum}+C${rowNum}))/D${rowNum}` };
-    row.getCell(COL.I).value = { formula: `C${rr(4)}` };
+    // Parcela inicial = carta total × (1+taxa+fundo) / prazo (÷2 quando há redutor 50%) — espelha a tela
+    const ehRedutor = rowData.redutor === 50;
+    const xCel = `$C$${rr(6)}`; // "Simulando com x parcelas pagas"
+    const saldoRow = `G${rowNum}*(1+B${rowNum}+C${rowNum})`;
+    row.getCell(COL.H).value = {
+      formula: ehRedutor
+        ? `(${saldoRow})/D${rowNum}/2`
+        : `(${saldoRow})/D${rowNum}`,
+    };
+    // Parcela pós contemplação por grupo (mesma lógica do Simulador): com redutor abate parcelas pagas + lance;
+    // sem redutor, abate o lance (e se não houver lance, mantém a parcela inicial)
+    row.getCell(COL.I).value = {
+      formula: ehRedutor
+        ? `MAX(0,((${saldoRow})-H${rowNum}*${xCel}-M${rowNum})/MAX(1,D${rowNum}-${xCel}))`
+        : `IF(M${rowNum}=0,H${rowNum},MAX(0,((${saldoRow})-M${rowNum})/MAX(1,D${rowNum}-${xCel})))`,
+    };
     row.getCell(COL.J).value = { formula: `G${rowNum}*${recPct}` };
     row.getCell(COL.K).value = rowData.lanceEmbPerc / 100;
     row.getCell(COL.L).value = { formula: `G${rowNum}*K${rowNum}` };
@@ -157,12 +171,8 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   setResumoRow(2,  'Carta de Crédito Total',          `G${totRow}`);
   setResumoRow(3,  'Parcela Inicial',                  `H${totRow}`);
-  const formulaPPC = temReductor
-    ? `C${rr(16)}/(MEDIAN(D${firstData}:D${lastData})-C${rr(6)})`
-    : temLance
-      ? `C${rr(16)}/MEDIAN(D${firstData}:D${lastData})`
-      : `H${totRow}`;
-  setResumoRow(4,  'Parcela pós contemplação',         formulaPPC);
+  // Soma das parcelas pós contemplação por grupo (coluna I) — bate com o total da tela
+  setResumoRow(4,  'Parcela pós contemplação',         `I${totRow}`);
   setResumoRow(5,  'Parcelas iniciais pagas',          `C${rr(3)}*C${rr(6)}`);
 
   // r+6: Simulando com x parcelas pagas (valor fixo negrito)
@@ -181,7 +191,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   setResumoRow(7,  'Lance Total',                      `M${totRow}`);
   setResumoRow(8,  'Recursos próprios',                `J${totRow}`);
-  setResumoRow(9,  'Embutido',                         `N${totRow}`);
+  setResumoRow(9,  'Embutido',                         `L${totRow}`);
 
   // r+10: vazio
   { const row = ws.getRow(rr(10)); applyBegeABC(row); row.commit(); }

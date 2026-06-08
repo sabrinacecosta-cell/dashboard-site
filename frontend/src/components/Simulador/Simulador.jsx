@@ -218,6 +218,7 @@ export default function Simulador() {
         fundoReserva:           l.fundoReserva,
         prazo:                  l.prazoRestante,
         qtde:                   l.qtde,
+        redutor:                l.redutor,
         cartaTotal:             l.cartaTotal,
         parcelaInicial:         l.parcelaInicialSim,
         parcelaPosContemplacao: l.parcelaPosContemplacao,
