@@ -4,6 +4,8 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   const workbook = new ExcelJS.Workbook();
   const ws = workbook.addWorksheet('Simulação');
+  // Oculta as linhas de grade na exibição da planilha inteira
+  ws.views = [{ showGridLines: false }];
 
   const n         = rows.length;
   const firstData = 2;
@@ -117,7 +119,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   totRowObj.getCell(COL.A).value = 'TOTAL';
   totRowObj.getCell(COL.B).value = { formula: `AVERAGE(B${firstData}:B${lastData})` };
   totRowObj.getCell(COL.C).value = { formula: `AVERAGE(C${firstData}:C${lastData})` };
-  totRowObj.getCell(COL.D).value = { formula: `MEDIAN(D${firstData}:D${lastData})` };
+  totRowObj.getCell(COL.D).value = { formula: `AVERAGE(D${firstData}:D${lastData})` };
   totRowObj.getCell(COL.E).value = { formula: `SUM(E${firstData}:E${lastData})` };
   totRowObj.getCell(COL.G).value = { formula: `SUM(G${firstData}:G${lastData})` };
   totRowObj.getCell(COL.H).value = { formula: `SUM(H${firstData}:H${lastData})` };
@@ -218,9 +220,14 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     { d: 'Diferença líquida do lance e o crédito',    eFormula: `C${rr(11)}-C${rr(8)}`,              eFmt: moeda },
     { d: 'Total de taxa adm',                          eFormula: `C${rr(2)}*B${totRow}`,               eFmt: moeda },
     { d: 'Total taxa dividido pelo crédito líquido',   eFormula: `E${rr(L+1)}/E${rr(L)}`,             eFmt: pct   },
-    { d: 'Taxa dividida pelo prazo (a.m.)',             eFormula: `E${rr(L+2)}/D${firstData}`,          eFmt: pct   },
+    { d: 'Taxa dividida pelo prazo (a.m.)',             eFormula: `E${rr(L+2)}/D${totRow}`,             eFmt: pct   },
     { d: 'Custo ao ano',                               eFormula: `E${rr(L+3)}*12`,                     eFmt: pct   },
   ];
+
+  // Cabeçalho "CET total" — mesclado e centrado em D:E, fundo preto, fonte branca negrito
+  ws.mergeCells(`D${rr(11)}:E${rr(11)}`);
+  [COL.D, COL.E].forEach(c => applyBlack(ws.getRow(rr(11)).getCell(c)));
+  ws.getRow(rr(11)).getCell(COL.D).value = 'CET total';
 
   lateralItems.forEach((item, i) => {
     const row  = ws.getRow(rr(L + i));
