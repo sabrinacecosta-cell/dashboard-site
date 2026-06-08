@@ -137,7 +137,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
 
   // ── RESUMO DA PROPOSTA ───────────────────────────────────────────────────
   // Coluna A = rótulo, coluna C = fórmula. Fundo bege em A, B e C.
-  const setResumoRow = (offset, label, formula, numFmt = moeda) => {
+  const setResumoRow = (offset, label, formula, numFmt = moeda, bold = false) => {
     const row = ws.getRow(rr(offset));
     if (label) {
       const a = row.getCell(COL.A);
@@ -148,7 +148,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
       const c = row.getCell(COL.C);
       c.value     = { formula };
       c.numFmt    = numFmt;
-      c.font      = { name: 'Cambria', size: 11 };
+      c.font      = { name: 'Cambria', size: 11, bold };
       c.alignment = { horizontal: 'center', vertical: 'middle' };
     }
     applyBegeABC(row);
@@ -198,13 +198,13 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   // r+10: vazio
   { const row = ws.getRow(rr(10)); applyBegeABC(row); row.commit(); }
 
-  setResumoRow(11, 'Crédito Disponível',               `N${totRow}`);
+  setResumoRow(11, 'Crédito Disponível',               `N${totRow}`, moeda, true);
 
   // r+12: vazio (linha de separação antes do bloco lateral)
   { const row = ws.getRow(rr(12)); applyBegeABC(row); row.commit(); }
 
-  setResumoRow(13, 'Taxa administrativa',              `G${totRow}*B${totRow}`);
-  setResumoRow(14, 'Fundo de reserva',                 `G${totRow}*C${totRow}`);
+  setResumoRow(13, 'Taxa administrativa total',        `G${totRow}*B${totRow}`);
+  setResumoRow(14, 'Fundo de reserva total',           `G${totRow}*C${totRow}`);
   setResumoRow(15, 'Saldo Devedor Inicial',            `C${rr(2)}+C${rr(13)}+C${rr(14)}`);
   const formulaSDC = temReductor
     ? `C${rr(15)}-C${rr(7)}-C${rr(5)}`
