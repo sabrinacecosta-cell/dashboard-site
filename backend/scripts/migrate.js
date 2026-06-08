@@ -168,19 +168,21 @@ async function migrate() {
   // NULL = usar taxa_adm para ambas as opções de parcela.
   await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS taxa_adm_redutor DECIMAL(5,4)`);
 
-  // Imóvel: 1043/1044/1045 → 23% com redutor
+  // Imóvel: taxa_adm_redutor (campanha redutor 50%). Reseta e redefine — autoritativo.
+  await db.query(`UPDATE simulador_grupos SET taxa_adm_redutor = NULL WHERE modalidade = 'imovel'`);
+  // Imóvel: 22% com redutor
   await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
-    WHERE modalidade = 'imovel' AND numero_grupo IN (1043, 1044, 1045)
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.22
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1038, 1042, 1043, 1044, 1051)
   `);
-  // Imóvel: 1047/1048/1049/1050 → 19% com redutor
-  await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
-    WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050)
-  `);
-  // Imóvel: 1054 → 18% com redutor
+  // Imóvel: 18% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.18
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050, 1055)
+  `);
+  // Imóvel: 23% com redutor
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
     WHERE modalidade = 'imovel' AND numero_grupo = 1054
   `);
   // Auto: 2130 → 19% com redutor
@@ -358,7 +360,7 @@ async function migrate() {
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
     UPDATE simulador_cotas sc
-    SET parcela = ROUND((sc.bem_referencia * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
+    SET parcela = ROUND((sc.cota * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
     FROM simulador_grupos sg
     WHERE sc.numero_grupo = sg.numero_grupo
       AND sc.modalidade = sg.modalidade
@@ -367,7 +369,7 @@ async function migrate() {
   `);
   await db.query(`
     UPDATE simulador_cotas sc
-    SET parcela = ROUND((sc.bem_referencia * (1 + COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+    SET parcela = ROUND((sc.cota * (1 + COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
     FROM simulador_grupos sg
     WHERE sc.numero_grupo = sg.numero_grupo
       AND sc.modalidade = sg.modalidade
