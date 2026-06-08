@@ -216,7 +216,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
   const L = 12; // lateralOffset
   const lateralItems = [
     { d: 'Diferença líquida do lance e o crédito',    eFormula: `C${rr(11)}-C${rr(8)}`,              eFmt: moeda },
-    { d: 'Total de taxa adm',                          eFormula: `C${rr(2)}*B${firstData}`,            eFmt: moeda },
+    { d: 'Total de taxa adm',                          eFormula: `C${rr(2)}*B${totRow}`,               eFmt: moeda },
     { d: 'Total taxa dividido pelo crédito líquido',   eFormula: `E${rr(L+1)}/E${rr(L)}`,             eFmt: pct   },
     { d: 'Taxa dividida pelo prazo (a.m.)',             eFormula: `E${rr(L+2)}/D${firstData}`,          eFmt: pct   },
     { d: 'Custo ao ano',                               eFormula: `E${rr(L+3)}*12`,                     eFmt: pct   },
