@@ -18,7 +18,15 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 
   return (
     <tr>
-      <td>{linha.grupo}</td>
+      <td>
+        {linha.grupo}
+        {linha.media_estimada && (
+          <span
+            className="sim-mult-badge-estimada"
+            title={`Média estimada com ${linha.meses_amostra} meses de dados`}
+          >*</span>
+        )}
+      </td>
       <td>
         <input
           type="number"
@@ -83,6 +91,14 @@ export default function Simulador() {
   const [incluirParcelaPosNoPDF, setIncluirParcelaPosNoPDF] = useState(true);
   const [simParcelasX, setSimParcelasX]                   = useState(18);
 
+  // Modo Multiplicador
+  const [modoMultiplicador, setModoMultiplicador] = useState(false);
+  const [multCredito, setMultCredito]             = useState('');
+  const [multEstrategia, setMultEstrategia]       = useState('completo');
+  const [multLoading, setMultLoading]             = useState(false);
+  const [multResultado, setMultResultado]         = useState(null);
+  const [multErro, setMultErro]                   = useState('');
+
   useEffect(() => {
     setLoadingGrupos(true);
     setGrupoSelecionado(null);
@@ -117,6 +133,55 @@ export default function Simulador() {
   const trocarModalidade = (nova) => {
     setModalidade(nova);
     setLinhasSim([]);
+    setMultResultado(null);
+    setMultErro('');
+  };
+
+  const montarPortfolio = async () => {
+    const credito = parseFloat(String(multCredito).replace(',', '.'));
+    if (!Number.isFinite(credito) || credito <= 0) {
+      setMultErro('Informe um crédito desejado maior que zero.');
+      return;
+    }
+    setMultErro('');
+    setMultLoading(true);
+    try {
+      const { data } = await api.get('/simulador/multiplicador', {
+        params: { modalidade, credito, estrategia: multEstrategia },
+      });
+      const novasLinhas = data.cesta.map(item => {
+        const g = grupos.find(gr => Number(gr.numero_grupo) === Number(item.grupo)) || {};
+        const redutorVal = item.com_redutor ? 50 : 0;
+        const lanceEmbutidoMax = item.lance_embutido_max_pct;
+        return {
+          id:                   Date.now() + Math.random(),
+          simKey:               `mult_${item.grupo}_${redutorVal}_${Math.random()}`,
+          grupo:                String(item.grupo),
+          credito:              item.cota_unitaria,
+          parcela:              item.parcela_unitaria,
+          redutor:              redutorVal,
+          lanceEmbutidoPercent: lanceEmbutidoMax,
+          lanceEmbutidoMax,
+          taxaAdm:              (redutorVal === 50 && g.taxa_adm_redutor != null)
+                                  ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm),
+          fundoReserva:         parseFloat(g.fundo_reserva),
+          prazoRestante:        parseInt(g.prazo_restante),
+          reajuste:             g.reajuste,
+          mesReajuste:          g.mes_reajuste,
+          qtde:                 item.qtde_cotas,
+          recProprios:          0,
+          media_estimada:       item.media_estimada,
+          meses_amostra:        item.meses_amostra,
+        };
+      });
+      setLinhasSim(novasLinhas);
+      setMultResultado(data);
+    } catch (err) {
+      setMultResultado(null);
+      setMultErro(err?.response?.data?.error || 'Erro ao montar o portfólio.');
+    } finally {
+      setMultLoading(false);
+    }
   };
 
   const adicionarLinhaSim = (cota, qtde = 1) => {
@@ -537,8 +602,103 @@ export default function Simulador() {
         </button>
       </div>
 
+      {/* Toggle Modo Multiplicador */}
+      <div className="sim-mult-toggle">
+        <button
+          className={`sim-mult-toggle-btn${modoMultiplicador ? ' active' : ''}`}
+          onClick={() => setModoMultiplicador(v => !v)}
+        >
+          {modoMultiplicador ? '← Modo Manual' : '⚡ Modo Multiplicador'}
+        </button>
+      </div>
+
+      {/* Painel do Modo Multiplicador */}
+      {modoMultiplicador && (
+        <div className="sim-mult-painel">
+          <h3 className="sim-mult-titulo">Modo Multiplicador</h3>
+
+          <div className="sim-mult-campo">
+            <label className="sim-mult-label">Crédito desejado</label>
+            <div className="sim-mult-input-wrapper">
+              <input
+                type="number"
+                className="sim-mult-input-credito"
+                min={0}
+                placeholder="0"
+                value={multCredito}
+                onChange={e => setMultCredito(e.target.value)}
+              />
+              <span className="sim-mult-input-sufixo">R$</span>
+            </div>
+          </div>
+
+          <div className="sim-mult-campo">
+            <label className="sim-mult-label">Estratégia de contemplação</label>
+            <div className="sim-mult-estrategia-group">
+              <label className="sim-mult-radio">
+                <input
+                  type="radio"
+                  name="mult-estrategia"
+                  value="primeira"
+                  checked={multEstrategia === 'primeira'}
+                  onChange={() => setMultEstrategia('primeira')}
+                />
+                Primeira contemplação
+              </label>
+              <label className="sim-mult-radio">
+                <input
+                  type="radio"
+                  name="mult-estrategia"
+                  value="completo"
+                  checked={multEstrategia === 'completo'}
+                  onChange={() => setMultEstrategia('completo')}
+                />
+                Portfólio completo
+              </label>
+            </div>
+          </div>
+
+          <button
+            className="sim-mult-btn-montar"
+            onClick={montarPortfolio}
+            disabled={multLoading}
+          >
+            {multLoading ? 'Montando...' : 'Montar portfólio'}
+          </button>
+
+          {multErro && <p className="sim-mult-erro">{multErro}</p>}
+
+          {multResultado && (
+            <div className="sim-mult-resumo cr-resumo-grid">
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Crédito líquido total</span>
+                <span className="cr-resumo-valor cr-verde">{formatarMoeda(multResultado.credito_liquido_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Crédito contratado total</span>
+                <span className="cr-resumo-valor">{formatarMoeda(multResultado.credito_contratado_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Parcela total</span>
+                <span className="cr-resumo-valor">{formatarMoeda(multResultado.parcela_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">
+                  {multResultado.estrategia === 'primeira'
+                    ? 'Tempo p/ 1ª contemplação'
+                    : 'Tempo do portfólio'}
+                </span>
+                <span className="cr-resumo-valor cr-ouro">
+                  {multResultado.tempo_esperado_meses.toFixed(1).replace('.', ',')} meses
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Grupos ou Cotas */}
-      {!grupoSelecionado ? (
+      {!modoMultiplicador && (!grupoSelecionado ? (
         <div className="sim-grupos-grid-area">
           <p className="sim-titulo-secao">Escolha um grupo</p>
           {loadingGrupos ? (
@@ -691,7 +851,7 @@ export default function Simulador() {
             </table>
           )}
         </div>
-      )}
+      ))}
 
       {/* Monte sua simulação */}
       <div className="sim-monte-container">

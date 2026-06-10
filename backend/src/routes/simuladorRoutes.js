@@ -79,4 +79,171 @@ router.get('/cotas', authMiddleware, async (req, res) => {
   }
 });
 
+// Grupos com campanha de redutor ativa em junho/2026
+const GRUPOS_REDUTOR_ATIVO = {
+  imovel: [1038, 1042, 1043, 1044, 1047, 1048, 1050, 1053, 1054, 1055],
+  auto:   [2130, 3002],
+};
+
+// Modo Multiplicador: monta um portfólio dividindo o crédito desejado entre
+// grupos para diversificar/acelerar a contemplação.
+router.get('/multiplicador', authMiddleware, async (req, res) => {
+  const { modalidade } = req.query;
+  const credito   = parseFloat(req.query.credito);
+  const estrategia = req.query.estrategia === 'primeira' ? 'primeira' : 'completo';
+
+  if (!modalidade || !['imovel', 'auto'].includes(modalidade))
+    return res.status(400).json({ error: 'modalidade inválida. Use imovel ou auto.' });
+  if (!Number.isFinite(credito) || credito <= 0)
+    return res.status(400).json({ error: 'credito deve ser um número maior que zero.' });
+
+  const ctable = modalidade === 'auto' ? 'contemplacao_auto' : 'contemplacao';
+  const redutorAtivo = GRUPOS_REDUTOR_ATIVO[modalidade] || [];
+
+  try {
+    // 1. Grupos ativos da modalidade (deduplicados por numero_grupo)
+    const gruposRes = await db.query(
+      `SELECT sg.* FROM simulador_grupos sg
+       WHERE sg.modalidade = $1
+         AND sg.id = (SELECT MIN(id) FROM simulador_grupos
+                      WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
+       ORDER BY sg.numero_grupo ASC`,
+      [modalidade]
+    );
+
+    const candidatos = [];
+    for (const g of gruposRes.rows) {
+      // Média de contemplação a partir de todos os registros disponíveis
+      const cont = await db.query(
+        `SELECT COALESCE(SUM(contemplados), 0) AS soma_cont,
+                COALESCE(SUM(qnt_lances), 0)  AS soma_lances,
+                COUNT(*)                       AS n
+         FROM ${ctable} WHERE grupo = $1`,
+        [g.numero_grupo]
+      );
+      const n          = parseInt(cont.rows[0].n);
+      const somaLances = parseFloat(cont.rows[0].soma_lances);
+      const somaCont   = parseFloat(cont.rows[0].soma_cont);
+      if (n === 0) continue;                       // sem registros: excluir
+      if (!somaLances) continue;                   // sem lances: média indefinida
+      const P = somaCont / somaLances;
+      if (!(P > 0)) continue;                       // sem contemplação: não há tempo
+
+      // Cotas do grupo
+      const cotasRes = await db.query(
+        `SELECT cota, parcela, redutor_parcela FROM simulador_cotas
+         WHERE numero_grupo = $1 AND modalidade = $2
+         ORDER BY cota DESC`,
+        [g.numero_grupo, modalidade]
+      );
+      const cotas = cotasRes.rows;
+      if (!cotas.length) continue;
+
+      // Regra de redutor: usa cota com redutor 0.5 só se o grupo está na campanha
+      const temRedutor   = cotas.some(c => parseFloat(c.redutor_parcela) === 0.5);
+      const usarRedutor  = temRedutor && redutorAtivo.includes(g.numero_grupo);
+      const filtroRedutor = usarRedutor ? 0.5 : 0;
+      const cotasFiltro = cotas.filter(c => parseFloat(c.redutor_parcela) === filtroRedutor);
+      if (!cotasFiltro.length) continue;
+
+      // Maior cota do grupo (cota DESC -> primeira)
+      const cotaEscolhida = cotasFiltro[0];
+      const cotaUnitaria  = parseFloat(cotaEscolhida.cota);
+      const parcelaUnit   = parseFloat(cotaEscolhida.parcela);
+      const lanceMax      = parseFloat(g.lance_embutido_max); // ex.: 0.50
+      const liquidoPorCota = cotaUnitaria * (1 - lanceMax);
+      if (!(liquidoPorCota > 0)) continue;
+
+      candidatos.push({
+        numero_grupo:   g.numero_grupo,
+        P,
+        media_estimada: n < 6,
+        meses_amostra:  n,
+        com_redutor:    usarRedutor,
+        cota_unitaria:  cotaUnitaria,
+        parcela_unit:   parcelaUnit,
+        lance_max:      lanceMax,
+        liquido_por_cota: liquidoPorCota,
+        qtde: 0,
+      });
+    }
+
+    if (!candidatos.length)
+      return res.status(404).json({ error: 'Nenhum grupo elegível para a modalidade informada.' });
+
+    // 2/3. Alocar cotas dividindo o crédito entre grupos.
+    // A cada passo adiciona a cota ao grupo que minimiza o tempo resultante
+    // (N+1)/P — o que favorece grupos com maior P e distribui para reduzir o
+    // máximo tempo de contemplação. Acumula até cobrir o crédito (arredonda p/ cima).
+    let liquidoTotal = 0;
+    let guard = 0;
+    const GUARD_MAX = 100000;
+    while (liquidoTotal < credito && guard < GUARD_MAX) {
+      let alvo = candidatos[0];
+      let melhorTempo = Infinity;
+      for (const c of candidatos) {
+        const tempo = (c.qtde + 1) / c.P;
+        if (tempo < melhorTempo) { melhorTempo = tempo; alvo = c; }
+      }
+      alvo.qtde += 1;
+      liquidoTotal += alvo.liquido_por_cota;
+      guard += 1;
+    }
+
+    // 4/5. Monta a cesta apenas com grupos que receberam cotas
+    let cesta = candidatos.filter(c => c.qtde > 0).map(c => {
+      const creditoContratado = c.cota_unitaria * c.qtde;
+      const creditoLiquido    = creditoContratado * (1 - c.lance_max);
+      return {
+        grupo:               c.numero_grupo,
+        qtde_cotas:          c.qtde,
+        cota_unitaria:       round2(c.cota_unitaria),
+        credito_contratado:  round2(creditoContratado),
+        credito_liquido:     round2(creditoLiquido),
+        lance_embutido_max_pct: Math.round(c.lance_max * 100),
+        parcela_unitaria:    round2(c.parcela_unit),
+        parcela_total_grupo: round2(c.parcela_unit * c.qtde),
+        com_redutor:         c.com_redutor,
+        media_contemplacao:  Number(c.P.toFixed(6)),
+        media_estimada:      c.media_estimada,
+        meses_amostra:       c.meses_amostra,
+        tempo_esperado_meses: round2(c.qtde / c.P),
+        _P:                  c.P,
+      };
+    });
+
+    // Estratégia: ordenação e tempo reportado
+    let tempoReportado;
+    if (estrategia === 'primeira') {
+      // Ordena por 1/P crescente (maior P primeiro); tempo = 1/maior P
+      cesta.sort((a, b) => (1 / b._P) - (1 / a._P)); // maior P primeiro
+      const maiorP = Math.max(...cesta.map(c => c._P));
+      tempoReportado = round2(1 / maiorP);
+    } else {
+      // Portfólio completo: tempo = MAX(tempo_esperado_grupo)
+      cesta.sort((a, b) => a.grupo - b.grupo);
+      tempoReportado = round2(Math.max(...cesta.map(c => c.tempo_esperado_meses)));
+    }
+    cesta = cesta.map(({ _P, ...rest }) => rest);
+
+    const creditoLiquidoTotal    = cesta.reduce((s, c) => s + c.credito_liquido, 0);
+    const creditoContratadoTotal = cesta.reduce((s, c) => s + c.credito_contratado, 0);
+    const parcelaTotal           = cesta.reduce((s, c) => s + c.parcela_total_grupo, 0);
+
+    return res.json({
+      credito_desejado:         round2(credito),
+      credito_liquido_total:    round2(creditoLiquidoTotal),
+      credito_contratado_total: round2(creditoContratadoTotal),
+      parcela_total:            round2(parcelaTotal),
+      tempo_esperado_meses:     tempoReportado,
+      estrategia,
+      cesta,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+function round2(v) { return Math.round((v + Number.EPSILON) * 100) / 100; }
+
 module.exports = router;
