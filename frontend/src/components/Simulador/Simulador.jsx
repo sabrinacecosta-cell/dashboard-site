@@ -602,16 +602,6 @@ export default function Simulador() {
         </button>
       </div>
 
-      {/* Toggle Modo Multiplicador */}
-      <div className="sim-mult-toggle">
-        <button
-          className={`sim-mult-toggle-btn${modoMultiplicador ? ' active' : ''}`}
-          onClick={() => setModoMultiplicador(v => !v)}
-        >
-          {modoMultiplicador ? '← Modo Manual' : '⚡ Modo Multiplicador'}
-        </button>
-      </div>
-
       {/* Painel do Modo Multiplicador */}
       {modoMultiplicador && (
         <div className="sim-mult-painel">
@@ -855,7 +845,15 @@ export default function Simulador() {
 
       {/* Monte sua simulação */}
       <div className="sim-monte-container">
-          <h3 className="sim-monte-titulo">Monte sua simulação</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 className="sim-monte-titulo" style={{ marginBottom: 0 }}>Monte sua simulação</h3>
+            <button
+              className="sim-toggle-mult-btn"
+              onClick={() => setModoMultiplicador(v => !v)}
+            >
+              {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
+            </button>
+          </div>
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
               <thead>
