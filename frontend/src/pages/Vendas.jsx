@@ -26,6 +26,28 @@ function Vendas() {
     loadProducao();
   }, [filtroMes, filtroAno, filtroEscritorio, filtroAssessor]);
 
+  // Meses disponíveis: quando há ano selecionado, deriva apenas os meses com
+  // dados daquele ano a partir dos próprios registros carregados (detalhes).
+  // Sem ano selecionado, usa o filterOptions padrão (todos os meses do banco).
+  const mesesDisponiveis = React.useMemo(() => {
+    if (!filtroAno || !producao?.detalhes) {
+      return producao?.filterOptions?.meses || [];
+    }
+    const set = new Set(
+      producao.detalhes
+        .filter(r => String(r.ano) === String(filtroAno))
+        .map(r => r.mes)
+    );
+    return [...set].sort((a, b) => Number(a) - Number(b));
+  }, [filtroAno, producao]);
+
+  // Ao trocar o ano, limpa o mês selecionado se ele não existir no novo ano.
+  useEffect(() => {
+    if (filtroMes && mesesDisponiveis.length > 0 && !mesesDisponiveis.includes(Number(filtroMes))) {
+      setFiltroMes('');
+    }
+  }, [filtroAno]);
+
   async function loadProducao() {
     try {
       setLoading(true);
@@ -138,7 +160,7 @@ function Vendas() {
               style={{ width: '100%', padding: '8px 12px' }}
             >
               <option value="">Todos</option>
-              {producao?.filterOptions?.meses?.map(m => (
+              {mesesDisponiveis.map(m => (
                 <option key={m} value={m}>{getMesNome(m)}</option>
               ))}
             </select>
