@@ -112,7 +112,6 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
   const [novaTarefa, setNovaTarefa]       = useState('');
   const [showNovaInput, setShowNovaInput] = useState(false);
   const [showAtaFull, setShowAtaFull]     = useState(false);
-  const [processando, setProcessando]     = useState(false);
   const [resumo, setResumo]               = useState(initial.resumo_ia || '');
   const [statusSugerido, setStatusSugerido] = useState(false);
   const [salvando, setSalvando]           = useState(false);
@@ -163,29 +162,6 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
     setStatus(novo);
     setStatusSugerido(false);
     await salvarStatus(novo);
-  }
-
-  async function processar() {
-    setProcessando(true);
-    try {
-      const r = await api.post(`/reunioes/${reuniao.id}/processar`);
-      setResumo(r.data.resumo_ia);
-
-      if (r.data.status_sugerido && !r.data.cached) {
-        const novoStatus = r.data.status_sugerido;
-        const novoMotivo = r.data.motivo || '';
-        const novoOQueTratar = r.data.o_que_tratar || '';
-        setStatus(novoStatus);
-        setStatusSugerido(true);
-        if (novoMotivo) setMotivo(novoMotivo);
-        if (novoOQueTratar) setMotivoRet(novoOQueTratar);
-        await salvarStatus(novoStatus, { motivo: novoMotivo || motivo, motivoRet: novoOQueTratar || motivoRet });
-      }
-    } catch (e) {
-      alert(e.response?.data?.error || 'Erro ao processar');
-    } finally {
-      setProcessando(false);
-    }
   }
 
   async function adicionarTarefa() {
@@ -280,10 +256,6 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
                   <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>{resumo}</p>
                 </div>
-              ) : reuniao.ata_original ? (
-                <button onClick={processar} disabled={processando} style={btn('accent')}>
-                  {processando ? '⏳ Processando…' : '✨ Processar com IA'}
-                </button>
               ) : (
                 <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sem ata para processar.</p>
               )}
