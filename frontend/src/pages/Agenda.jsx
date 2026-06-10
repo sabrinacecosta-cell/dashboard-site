@@ -43,13 +43,11 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
             padding: '0.55rem 0.75rem',
             display: 'flex', flexDirection: 'column', gap: '0.15rem',
           }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--accent)', fontWeight: 600 }}>
-              🕙 {formatTime(ev.start)} – {formatTime(ev.end)}
+            <span style={{ fontSize: '0.78rem', color: 'var(--accent)', fontWeight: 600 }}> {formatTime(ev.start)} – {formatTime(ev.end)}
             </span>
             <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{ev.title}</span>
             {ev.attendees?.length > 0 && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                👥 {ev.attendees.join(', ')}
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}> {ev.attendees.join(', ')}
               </span>
             )}
           </div>
@@ -115,8 +113,7 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
                 textAlign: 'left',
                 opacity: active ? 1 : 0.5,
               }}
-            >
-              📅 {d.label} ({d.dayOfWeek}) — {d.slotsAvailable} horário{d.slotsAvailable !== 1 ? 's' : ''}
+            > {d.label} ({d.dayOfWeek}) — {d.slotsAvailable} horário{d.slotsAvailable !== 1 ? 's' : ''}
             </button>
           ))}
         </div>
@@ -163,8 +160,7 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
                 fontFamily: 'var(--font-sans)',
                 opacity: active ? 1 : 0.5,
               }}
-            >
-              🕐 {slot.label}
+            > {slot.label}
             </button>
           ))}
         </div>
@@ -193,7 +189,7 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
   if (type === 'booking_success') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-        <span>✅ {msg.message}</span>
+        <span> {msg.message}</span>
         <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
           Um convite foi enviado para {msg.email}.
         </span>
@@ -283,11 +279,11 @@ function parseDateRef(text) {
   }
 
   const DAY_MAP = {
-    'segunda-feira': 1, 'segunda': 1,
-    'terça-feira': 2, 'terca-feira': 2, 'terça': 2, 'terca': 2,
-    'quarta-feira': 3, 'quarta': 3,
-    'quinta-feira': 4, 'quinta': 4,
-    'sexta-feira': 5, 'sexta': 5,
+ 'segunda-feira': 1, 'segunda': 1,
+ 'terça-feira': 2, 'terca-feira': 2, 'terça': 2, 'terca': 2,
+ 'quarta-feira': 3, 'quarta': 3,
+ 'quinta-feira': 4, 'quinta': 4,
+ 'sexta-feira': 5, 'sexta': 5,
   };
 
   const isNextWeek = t.includes('próxima') || t.includes('proxima') || t.includes('semana que vem');
@@ -498,7 +494,7 @@ function AgendaChat({ isAdmin, user }) {
       setBooking(newBk);
       addMsg('assistant', {
         type: 'text',
-        content: `Confira os detalhes:\n\n📅 ${formatDateLabel(newBk.date)}\n🕐 ${newBk.slotLabel}\n👤 ${newBk.name}\n📧 ${newBk.email}\n📧 joel@wflowinvest.com (já incluso)\n✉️ Remetente: sabrina@jtdkinvest.com${assunto ? '\n📝 ' + assunto : ''}\n\nConfirmar? (sim / não)`,
+        content: `Confira os detalhes:\n\n ${formatDateLabel(newBk.date)}\n ${newBk.slotLabel}\n ${newBk.name}\n ${newBk.email}\n joel@wflowinvest.com (já incluso)\n  Remetente: sabrina@jtdkinvest.com${assunto ? '\n ' + assunto : ''}\n\nConfirmar? (sim / não)`,
       });
       return;
     }
@@ -776,7 +772,7 @@ function Agenda() {
   return (
     <div className="page-agenda">
       <div className="page-header">
-        <h1>📅 Agendamentos</h1>
+        <h1> Agendamentos</h1>
         <p className="page-subtitle">
           {isAdmin ? 'Gerencie os compromissos da mesa' : 'Agende uma reunião com nossa equipe'}
         </p>

@@ -22,11 +22,11 @@ const fmtGrupoCota = (val) => {
 };
 
 const TITULO_SECAO = {
-  '2026-05': 'Base de cálculo abril | Exercício maio',
-  '2026-04': 'Base cálculo março | Exercício abril',
-  '2026-03': 'Base cálculo fevereiro | Exercício março',
-  '2026-02': 'Base cálculo janeiro | Exercício fevereiro',
-  '2026-01': 'Base cálculo dezembro | Exercício janeiro',
+ '2026-05': 'Base de cálculo abril | Exercício maio',
+ '2026-04': 'Base cálculo março | Exercício abril',
+ '2026-03': 'Base cálculo fevereiro | Exercício março',
+ '2026-02': 'Base cálculo janeiro | Exercício fevereiro',
+ '2026-01': 'Base cálculo dezembro | Exercício janeiro',
 };
 
 function getTituloSecao(mesRef) {
@@ -451,7 +451,7 @@ function Comissoes() {
         fontSize: '0.78rem',
         lineHeight: '1.5',
       }}>
-        <span style={{ flexShrink: 0 }}>⚠️</span>
+        <span style={{ flexShrink: 0 }}>  </span>
         <span>
           A coluna de Comissão Líquida está descontando 20% de imposto. Essa será a base de cálculo da divisão entre o escritório, mesa e assessor (considerando o plano de carreira de cada um).
         </span>
@@ -464,7 +464,7 @@ function Comissoes() {
       ) : dados.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <span className="empty-icon">📭</span>
+            <span className="empty-icon"> </span>
             <h3>Nenhuma comissão encontrada</h3>
             <p>Não há comissões registradas para o seu cadastro.</p>
           </div>

@@ -112,7 +112,7 @@ function AgendamentoForm({ initialEmail = '', onSuccess, onCancel }) {
   if (success) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-        <span style={{ fontSize: '2.5rem' }}>✅</span>
+        <span style={{ fontSize: '2.5rem' }}> </span>
         <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{success}</p>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
           Um convite foi enviado para {email}.

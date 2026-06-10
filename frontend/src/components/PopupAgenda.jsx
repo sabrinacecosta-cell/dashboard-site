@@ -96,11 +96,11 @@ function PopupAgenda({ userEmail, onNavigate }) {
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}>
-        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>📅 Agenda do dia</span>
+        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}> Agenda do dia</span>
         <button
           onClick={close}
           style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem', padding: '0 0.25rem' }}
-        >✕</button>
+        > </button>
       </div>
 
       <div style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', maxHeight: '340px', overflowY: 'auto' }}>

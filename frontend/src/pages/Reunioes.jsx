@@ -15,15 +15,15 @@ const DAY_NAMES = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 
 const STATUS_LABELS = {
   em_andamento: 'Em andamento',
-  fechou:       'Fechou negócio',
-  nao_fechou:   'Não fechou',
-  retorno:      'Retorno agendado',
+  fechou: 'Fechou negócio',
+  nao_fechou: 'Não fechou',
+  retorno: 'Retorno agendado',
 };
 const STATUS_COLORS = {
   em_andamento: '#f5a623',
-  fechou:       '#4caf50',
-  nao_fechou:   '#f44336',
-  retorno:      '#2196f3',
+  fechou: '#4caf50',
+  nao_fechou: '#f44336',
+  retorno: '#2196f3',
 };
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -60,11 +60,11 @@ function fmtWeekLabel(days) {
 }
 
 const CORES = {
-  fechou:      '#22c55e',
-  nao_fechou:  '#ef4444',
-  retorno:     '#3b82f6',
+  fechou: '#22c55e',
+  nao_fechou: '#ef4444',
+  retorno: '#3b82f6',
   em_andamento:'#f5a623',
-  cinza:       '#6b7280',
+  cinza: '#6b7280',
 };
 
 const TT = {
@@ -214,7 +214,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
               style={{ ...btn('danger', true), flexShrink: 0 }}
               title="Remover da lista"
             >Remover</button>
-            <button onClick={onClose} style={{ ...btn(), padding: '0.25rem 0.6rem', fontSize: '1rem', flexShrink: 0 }}>✕</button>
+            <button onClick={onClose} style={{ ...btn(), padding: '0.25rem 0.6rem', fontSize: '1rem', flexShrink: 0 }}> </button>
           </div>
 
           {/* ── Conteúdo rolável ── */}
@@ -234,7 +234,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
 
             {/* Ata */}
             <div>
-              <p style={sec}>📋 Ata da reunião</p>
+              <p style={sec}> Ata da reunião</p>
               {reuniao.ata_original ? (
                 <>
                   <div style={{ maxHeight: '200px', overflowY: 'auto', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem' }}>
@@ -242,8 +242,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
                       {reuniao.ata_original}
                     </pre>
                   </div>
-                  <button onClick={() => setShowAtaFull(true)} style={{ ...btn('default', true), marginTop: '0.5rem' }}>
-                    📄 Ver ata completa
+                  <button onClick={() => setShowAtaFull(true)} style={{ ...btn('default', true), marginTop: '0.5rem' }}> Ver ata completa
                   </button>
                 </>
               ) : (
@@ -253,7 +252,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
 
             {/* Resumo IA */}
             <div>
-              <p style={sec}>🤖 Resumo IA</p>
+              <p style={sec}> Resumo IA</p>
               {resumo ? (
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--accent)', borderRadius: '10px', padding: '0.85rem 1rem' }}>
                   <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', color: 'var(--text-secondary)' }}>{resumo}</p>
@@ -270,8 +269,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
                 {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
               {statusSugerido && (
-                <p style={{ margin: '0.4rem 0 0', fontSize: '0.75rem', color: 'var(--accent)', fontStyle: 'italic' }}>
-                  ✨ Status sugerido pela IA — você pode alterar
+                <p style={{ margin: '0.4rem 0 0', fontSize: '0.75rem', color: 'var(--accent)', fontStyle: 'italic' }}> Status sugerido pela IA — você pode alterar
                 </p>
               )}
             </div>
@@ -342,8 +340,8 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
                       if (e.key === 'Escape') { setShowNovaInput(false); setNovaTarefa(''); }
                     }}
                   />
-                  <button onClick={adicionarTarefa} style={btn('accent', true)}>✓</button>
-                  <button onClick={() => { setShowNovaInput(false); setNovaTarefa(''); }} style={btn('default', true)}>✕</button>
+                  <button onClick={adicionarTarefa} style={btn('accent', true)}> </button>
+                  <button onClick={() => { setShowNovaInput(false); setNovaTarefa(''); }} style={btn('default', true)}> </button>
                 </div>
               ) : (
                 <button onClick={() => setShowNovaInput(true)} style={{ ...btn('default', true), marginTop: '0.35rem' }}>
@@ -370,7 +368,7 @@ function ReuniaoModal({ reuniao: initial, onClose, onUpdate }) {
               <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, paddingRight: '1rem' }}>
                 Ata completa — {reuniao.titulo}
               </p>
-              <button onClick={() => setShowAtaFull(false)} style={{ ...btn(), padding: '0.2rem 0.6rem', flexShrink: 0 }}>✕</button>
+              <button onClick={() => setShowAtaFull(false)} style={{ ...btn(), padding: '0.2rem 0.6rem', flexShrink: 0 }}> </button>
             </div>
             <div style={{ overflowY: 'auto', padding: '1.25rem', flex: 1 }}>
               <pre style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
@@ -404,7 +402,7 @@ function RetornosDiaModal({ retornos, onClose, onUpdate }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h3 style={{ margin: 0, fontSize: '1rem' }}>Retornos para hoje</h3>
-          <button onClick={onClose} style={{ ...btn(), padding: '0.3rem 0.65rem' }}>✕</button>
+          <button onClick={onClose} style={{ ...btn(), padding: '0.3rem 0.65rem' }}> </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {retornos.map(ret => (
@@ -639,7 +637,7 @@ function ProximosPassosSemana({ reunioes }) {
   reunioes.forEach(r => {
     (r.tarefas || []).forEach(t => {
       itens.push({
-        key:           `${r.id}-${t.id}`,
+        key: `${r.id}-${t.id}`,
         reuniaoTitulo: r.titulo,
         descricao:     t.descricao,
         concluida:     t.concluida,
@@ -653,8 +651,7 @@ function ProximosPassosSemana({ reunioes }) {
 
   return (
     <div style={{ ...cardStyle, marginTop: '0.85rem' }}>
-      <p style={{ margin: '0 0 0.6rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-        ✅ Próximos Passos da Semana
+      <p style={{ margin: '0 0 0.6rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}> Próximos Passos da Semana
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
         {itens.map(item => (
@@ -772,7 +769,7 @@ function MetricasMensais() {
         onClick={() => setOpen(v => !v)}
         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.75rem 1rem', cursor: 'pointer', width: '100%', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600, fontFamily: 'var(--font-sans)' }}
       >
-        <span>📊 Métricas do Mês</span>
+        <span> Métricas do Mês</span>
         <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.78rem' }}>{open ? '▲ Recolher' : '▼ Expandir'}</span>
       </button>
 
@@ -824,8 +821,8 @@ function MetricasMensais() {
                         <YAxis tick={{ fontSize: 11, fill: '#888' }} allowDecimals={false} />
                         <Tooltip {...TT} />
                         <Legend wrapperStyle={{ fontSize: '0.75rem' }} />
-                        <Bar dataKey="total"       name="Total"        fill={CORES.cinza}  radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="fechamentos" name="Fechamentos"  fill={CORES.fechou} radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="total" name="Total" fill={CORES.cinza}  radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="fechamentos" name="Fechamentos" fill={CORES.fechou} radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : noData}
@@ -966,7 +963,7 @@ function Reunioes() {
     setImportMsg('');
     try {
       const r = await api.post('/reunioes/importar');
-      setImportMsg(`✓ ${r.data.imported} importada(s), ${r.data.skipped} já existia(m)`);
+      setImportMsg(` ${r.data.imported} importada(s), ${r.data.skipped} já existia(m)`);
       loadReunioes();
     } catch (e) {
       setImportMsg('Erro: ' + (e.response?.data?.error || 'falha ao importar'));
@@ -980,7 +977,7 @@ function Reunioes() {
     setImportMsg('');
     try {
       const r = await api.post('/reunioes/reimportar-atas');
-      setImportMsg(`✓ ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
+      setImportMsg(` ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
       loadReunioes();
     } catch (e) {
       setImportMsg('Erro: ' + (e.response?.data?.error || 'falha ao reimportar atas'));
@@ -995,7 +992,7 @@ function Reunioes() {
     setImportMsg('');
     try {
       const r = await api.post('/reunioes/limpar-e-reimportar');
-      setImportMsg(`✓ ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
+      setImportMsg(` ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
       loadReunioes();
     } catch (e) {
       setImportMsg('Erro: ' + (e.response?.data?.error || 'falha'));
@@ -1007,7 +1004,7 @@ function Reunioes() {
   if (!isAdmin) {
     return (
       <div className="page-agenda">
-        <div className="page-header"><h1>🤝 Reuniões</h1></div>
+        <div className="page-header"><h1> Reuniões</h1></div>
         <p style={{ color: 'var(--text-muted)' }}>Acesso restrito a administradores.</p>
       </div>
     );
@@ -1020,8 +1017,7 @@ function Reunioes() {
       {/* Banner de retornos hoje */}
       {retornosHoje.length > 0 && (
         <div style={{ background: 'rgba(244,67,54,.1)', border: '1px solid rgba(244,67,54,.3)', borderRadius: '10px', padding: '0.7rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <p style={{ margin: 0, fontSize: '0.88rem', color: '#f44336', fontWeight: 600 }}>
-            🔴 {retornosHoje.length} retorno{retornosHoje.length > 1 ? 's' : ''} para hoje
+          <p style={{ margin: 0, fontSize: '0.88rem', color: '#f44336', fontWeight: 600 }}> {retornosHoje.length} retorno{retornosHoje.length > 1 ? 's' : ''} para hoje
           </p>
           <button onClick={() => setShowRetModal(true)} style={btn('danger', true)}>Ver detalhes</button>
         </div>
@@ -1030,7 +1026,7 @@ function Reunioes() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.4rem' }}>🤝 Reuniões</h1>
+          <h1 style={{ margin: 0, fontSize: '1.4rem' }}> Reuniões</h1>
           <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Gestão de reuniões e follow-ups</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1043,10 +1039,10 @@ function Reunioes() {
             {importando ? '⏳ Importando…' : '⬇ Importar'}
           </button>
           <button onClick={reimportarAtas} disabled={reimportando} style={{ ...btn('default', true), opacity: reimportando ? 0.6 : 1 }}>
-            {reimportando ? '⏳ Reimportando…' : '📋 Reimportar atas'}
+            {reimportando ? '⏳ Reimportando…' : ' Reimportar atas'}
           </button>
           <button onClick={limparEReimportar} disabled={limpando} style={{ ...btn('danger', true), opacity: limpando ? 0.6 : 1 }}>
-            {limpando ? '⏳ Limpando…' : '🗑 Limpar e reimportar'}
+            {limpando ? '⏳ Limpando…' : ' Limpar e reimportar'}
           </button>
         </div>
       </div>

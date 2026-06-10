@@ -43,14 +43,14 @@ function SecaoComissoes() {
     if (!nomeNovo || nomeNovo === nomeAntigo) return;
     try {
       const res = await api.put('/admin/comissoes/cliente', { nomeAntigo, nomeNovo });
-      setStatus(s => ({ ...s, [nomeAntigo]: `✓ ${res.data.updated} linhas` }));
+      setStatus(s => ({ ...s, [nomeAntigo]: ` ${res.data.updated} linhas` }));
       setClientes(cs => cs.map(c => c === nomeAntigo ? nomeNovo : c));
       const newEdit = { ...editando };
       newEdit[nomeNovo] = nomeNovo;
       delete newEdit[nomeAntigo];
       setEditando(newEdit);
       setTimeout(() => setStatus(s => { const n = { ...s }; delete n[nomeAntigo]; delete n[nomeNovo]; return n; }), 3000);
-    } catch { setStatus(s => ({ ...s, [nomeAntigo]: '✗ Erro' })); }
+    } catch { setStatus(s => ({ ...s, [nomeAntigo]: ' Erro' })); }
   };
 
   return (
@@ -70,7 +70,7 @@ function SecaoComissoes() {
               </td>
               <td style={{ whiteSpace: 'nowrap' }}>
                 <button className="btn-admin-sm" onClick={() => salvar(c)}>Salvar</button>
-                {status[c] && <span style={{ marginLeft: '8px', fontSize: '12px', color: status[c].startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status[c]}</span>}
+                {status[c] && <span style={{ marginLeft: '8px', fontSize: '12px', color: status[c].startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{status[c]}</span>}
               </td>
             </tr>
           ))}
@@ -107,9 +107,9 @@ function SecaoPrazo() {
         lance_ultimo_mes: g.lance_ultimo_mes,
         sem_media_contemplacao: g.sem_media_contemplacao,
       });
-      setStatus(s => ({ ...s, [g.id]: '✓' }));
+      setStatus(s => ({ ...s, [g.id]: ' ' }));
       setTimeout(() => setStatus(s => { const n = { ...s }; delete n[g.id]; return n; }), 2000);
-    } catch { setStatus(s => ({ ...s, [g.id]: '✗' })); }
+    } catch { setStatus(s => ({ ...s, [g.id]: ' ' })); }
   };
 
   const decrementar = async () => {
@@ -142,7 +142,7 @@ function SecaoPrazo() {
                 </td>
                 <td>
                   <button className="btn-admin-sm" onClick={() => salvar(g)}>Salvar</button>
-                  {status[g.id] && <span style={{ marginLeft: '8px', fontSize: '12px', color: status[g.id] === '✓' ? 'var(--success)' : '#ff453a' }}>{status[g.id]}</span>}
+                  {status[g.id] && <span style={{ marginLeft: '8px', fontSize: '12px', color: status[g.id] === ' ' ? 'var(--success)' : '#ff453a' }}>{status[g.id]}</span>}
                 </td>
               </tr>
             ))}
@@ -187,9 +187,9 @@ function SecaoMedias() {
         lance_ultimo_mes: v.lance_ultimo_mes === '' ? null : parseFloat(v.lance_ultimo_mes),
         sem_media_contemplacao: v.sem_media_contemplacao,
       });
-      setStatus(s => ({ ...s, [g.id]: '✓' }));
+      setStatus(s => ({ ...s, [g.id]: ' ' }));
       setTimeout(() => setStatus(s => { const n = { ...s }; delete n[g.id]; return n; }), 2000);
-    } catch { setStatus(s => ({ ...s, [g.id]: '✗' })); }
+    } catch { setStatus(s => ({ ...s, [g.id]: ' ' })); }
   };
 
   const inp = (style) => ({
@@ -222,7 +222,7 @@ function SecaoMedias() {
                 </td>
                 <td>
                   <button className="btn-admin-sm" onClick={() => salvar(g)}>Salvar</button>
-                  {status[g.id] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[g.id] === '✓' ? 'var(--success)' : '#ff453a' }}>{status[g.id]}</span>}
+                  {status[g.id] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[g.id] === ' ' ? 'var(--success)' : '#ff453a' }}>{status[g.id]}</span>}
                 </td>
               </tr>
             );
@@ -268,9 +268,9 @@ function SecaoDadosMensais() {
       });
       setForm({ mes: '', lance_percent: '', qnt_lances: '', contemplados: '', contemplacao_mensal: '' });
       carregarRegistros(grupoSel);
-      setStatus('✓ Adicionado');
+      setStatus(' Adicionado');
       setTimeout(() => setStatus(''), 2000);
-    } catch { setStatus('✗ Erro'); }
+    } catch { setStatus(' Erro'); }
   };
 
   const excluir = async (id) => {
@@ -301,7 +301,7 @@ function SecaoDadosMensais() {
               </div>
             ))}
             <button className="btn-admin-action" onClick={adicionar}>Adicionar</button>
-            {status && <span style={{ fontSize: '12px', color: status.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status}</span>}
+            {status && <span style={{ fontSize: '12px', color: status.startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{status}</span>}
           </div>
 
           <div className="table-scroll">
@@ -315,7 +315,7 @@ function SecaoDadosMensais() {
                     <td>{r.qnt_lances}</td>
                     <td>{r.contemplados}</td>
                     <td>{r.contemplacao_mensal}</td>
-                    <td><button className="btn-admin-del" onClick={() => excluir(r.id)}>✕</button></td>
+                    <td><button className="btn-admin-del" onClick={() => excluir(r.id)}> </button></td>
                   </tr>
                 ))}
               </tbody>
@@ -360,9 +360,9 @@ function SecaoCotas() {
     const v = editCotas[id];
     try {
       await api.put(`/admin/cotas/${id}`, { bem_referencia: parseFloat(v.bem_referencia), parcela: parseFloat(v.parcela), redutor_parcela: parseFloat(v.redutor_parcela) });
-      setStatus(s => ({ ...s, [id]: '✓' }));
+      setStatus(s => ({ ...s, [id]: ' ' }));
       setTimeout(() => setStatus(s => { const n = { ...s }; delete n[id]; return n; }), 2000);
-    } catch { setStatus(s => ({ ...s, [id]: '✗' })); }
+    } catch { setStatus(s => ({ ...s, [id]: ' ' })); }
   };
 
   const excluirCota = async (id) => {
@@ -383,9 +383,9 @@ function SecaoCotas() {
       setCotas(cs => [...cs, res.data]);
       setEditCotas(s => ({ ...s, [res.data.id]: { bem_referencia: res.data.bem_referencia, parcela: res.data.parcela, redutor_parcela: res.data.redutor_parcela } }));
       setNovaForm({ bem_referencia: '', parcela: '', redutor_parcela: '0' });
-      setAddStatus('✓ Adicionado');
+      setAddStatus(' Adicionado');
       setTimeout(() => setAddStatus(''), 2000);
-    } catch { setAddStatus('✗ Erro'); }
+    } catch { setAddStatus(' Erro'); }
   };
 
   const inp = { padding: '4px 6px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '12px' };
@@ -414,8 +414,8 @@ function SecaoCotas() {
                       <td><input style={{ ...inp, width: '70px' }} value={v.redutor_parcela ?? ''} onChange={e => setEdit(c.id, 'redutor_parcela', e.target.value)} /></td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <button className="btn-admin-sm" onClick={() => salvarCota(c.id)}>Salvar</button>
-                        <button className="btn-admin-del" onClick={() => excluirCota(c.id)} style={{ marginLeft: '6px' }}>✕</button>
-                        {status[c.id] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[c.id] === '✓' ? 'var(--success)' : '#ff453a' }}>{status[c.id]}</span>}
+                        <button className="btn-admin-del" onClick={() => excluirCota(c.id)} style={{ marginLeft: '6px' }}> </button>
+                        {status[c.id] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[c.id] === ' ' ? 'var(--success)' : '#ff453a' }}>{status[c.id]}</span>}
                       </td>
                     </tr>
                   );
@@ -432,7 +432,7 @@ function SecaoCotas() {
               </div>
             ))}
             <button className="btn-admin-action" onClick={adicionarCota}>Adicionar cota</button>
-            {addStatus && <span style={{ fontSize: '12px', color: addStatus.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{addStatus}</span>}
+            {addStatus && <span style={{ fontSize: '12px', color: addStatus.startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{addStatus}</span>}
           </div>
         </>
       )}
@@ -468,16 +468,16 @@ function SecaoAssessores() {
   const salvar = async (assessor) => {
     try {
       const res = await api.put('/admin/assessores/email', { assessor, email: vals[assessor] || null });
-      setStatus(s => ({ ...s, [assessor]: `✓ ${res.data.updated} linhas` }));
+      setStatus(s => ({ ...s, [assessor]: ` ${res.data.updated} linhas` }));
       setTimeout(() => setStatus(s => { const n = { ...s }; delete n[assessor]; return n; }), 3000);
-    } catch { setStatus(s => ({ ...s, [assessor]: '✗ Erro' })); }
+    } catch { setStatus(s => ({ ...s, [assessor]: ' Erro' })); }
   };
 
   const adicionar = async () => {
     if (!novoNome.trim()) return;
     try {
       const res = await api.put('/admin/assessores/email', { assessor: novoNome.trim(), email: novoEmail.trim() || null });
-      setAddStatus(`✓ ${res.data.updated} linhas atualizadas`);
+      setAddStatus(` ${res.data.updated} linhas atualizadas`);
       setNovoNome(''); setNovoEmail('');
       const r = await api.get('/admin/assessores');
       setAssessores(r.data);
@@ -485,7 +485,7 @@ function SecaoAssessores() {
       r.data.forEach(a => { init[a.assessor] = a.email_assessor || ''; });
       setVals(init);
       setTimeout(() => setAddStatus(''), 3000);
-    } catch { setAddStatus('✗ Erro'); }
+    } catch { setAddStatus(' Erro'); }
   };
 
   return (
@@ -500,7 +500,7 @@ function SecaoAssessores() {
           <input style={{ ...inp, width: '240px' }} value={novoEmail} onChange={e => setNovoEmail(e.target.value)} placeholder="email@wflowinvest.com" />
         </div>
         <button className="btn-admin-action" onClick={adicionar}>Adicionar / Atualizar</button>
-        {addStatus && <span style={{ fontSize: '12px', color: addStatus.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{addStatus}</span>}
+        {addStatus && <span style={{ fontSize: '12px', color: addStatus.startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{addStatus}</span>}
       </div>
       <div className="table-scroll">
         <table>
@@ -518,7 +518,7 @@ function SecaoAssessores() {
                 </td>
                 <td>
                   <button className="btn-admin-sm" onClick={() => salvar(a.assessor)}>Salvar</button>
-                  {status[a.assessor] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[a.assessor].startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status[a.assessor]}</span>}
+                  {status[a.assessor] && <span style={{ marginLeft: '6px', fontSize: '12px', color: status[a.assessor].startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{status[a.assessor]}</span>}
                 </td>
               </tr>
             ))}
@@ -553,17 +553,17 @@ function SecaoUsuarios() {
   const adicionar = async () => {
     const nome = novoNome.trim();
     const email = novoEmail.trim();
-    if (!nome || !email) { setStatus('✗ Preencha nome e e-mail'); return; }
+    if (!nome || !email) { setStatus(' Preencha nome e e-mail'); return; }
     setSalvando(true);
     try {
       const r = await api.post('/admin/usuarios', { nome, email });
       setStatus(r.data?.emailEnviado === false
-        ? '✓ Usuário cadastrado (falha ao enviar e-mail — use "resetar senha")'
-        : '✓ Usuário cadastrado — e-mail para definir a senha enviado');
+        ? ' Usuário cadastrado (falha ao enviar e-mail — use "resetar senha")'
+        : ' Usuário cadastrado — e-mail para definir a senha enviado');
       setNovoNome(''); setNovoEmail('');
       carregar();
     } catch (e) {
-      setStatus('✗ ' + (e.response?.data?.error || 'Erro ao cadastrar'));
+      setStatus(' ' + (e.response?.data?.error || 'Erro ao cadastrar'));
     } finally {
       setSalvando(false);
       setTimeout(() => setStatus(''), 4000);
@@ -576,7 +576,7 @@ function SecaoUsuarios() {
       await api.delete(`/admin/usuarios/${u.id}`);
       carregar();
     } catch (e) {
-      setStatus('✗ ' + (e.response?.data?.error || 'Erro ao remover'));
+      setStatus(' ' + (e.response?.data?.error || 'Erro ao remover'));
       setTimeout(() => setStatus(''), 4000);
     }
   };
@@ -596,7 +596,7 @@ function SecaoUsuarios() {
           <input style={{ ...inp, width: '240px' }} value={novoEmail} onChange={e => setNovoEmail(e.target.value)} placeholder="email@wflowinvest.com" />
         </div>
         <button className="btn-admin-action" onClick={adicionar} disabled={salvando}>{salvando ? 'Salvando...' : 'Cadastrar usuário'}</button>
-        {status && <span style={{ fontSize: '12px', color: status.startsWith('✓') ? 'var(--success)' : '#ff453a' }}>{status}</span>}
+        {status && <span style={{ fontSize: '12px', color: status.startsWith(' ') ? 'var(--success)' : '#ff453a' }}>{status}</span>}
       </div>
       <div className="table-scroll">
         <table>
@@ -606,7 +606,7 @@ function SecaoUsuarios() {
               <tr key={u.id}>
                 <td style={{ fontSize: '13px' }}>{u.nome}</td>
                 <td style={{ fontSize: '13px' }}>{u.email}</td>
-                <td style={{ fontSize: '13px' }}>{u.tem_senha ? '✓ Sim' : '— Não'}</td>
+                <td style={{ fontSize: '13px' }}>{u.tem_senha ? ' Sim' : '— Não'}</td>
                 <td>
                   <button className="btn-admin-sm" onClick={() => remover(u)}>Remover</button>
                 </td>
@@ -632,7 +632,7 @@ export default function Admin() {
           <h1>Administração</h1>
         </div>
         <div className="card" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}> </div>
           <h3>Acesso restrito</h3>
           <p>Esta área é exclusiva para administradores.</p>
         </div>

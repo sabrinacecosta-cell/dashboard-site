@@ -69,7 +69,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
       <td>{formatarMoeda(lanceTotal)}</td>
       <td className="cr-credito-contemplado">{formatarMoeda(creditoContemplado)}</td>
       <td>
-        <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)}>✕</button>
+        <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)}> </button>
       </td>
     </tr>
   );
@@ -155,7 +155,7 @@ export default function Simulador() {
         const lanceEmbutidoMax = item.lance_embutido_max_pct;
         return {
           id:                   Date.now() + Math.random(),
-          simKey:               `mult_${item.grupo}_${redutorVal}_${Math.random()}`,
+          simKey: `mult_${item.grupo}_${redutorVal}_${Math.random()}`,
           grupo:                String(item.grupo),
           credito:              item.cota_unitaria,
           parcela:              item.parcela_unitaria,
@@ -344,7 +344,7 @@ export default function Simulador() {
       doc.setTextColor(...white);
       doc.setFont('helvetica', 'normal');
       doc.text(
-        `Olá, ${nomeCliente}. Segue o planejamento ${modalidade === 'imovel' ? 'imobiliário' : 'de automóvel'} feito para você.`,
+ `Olá, ${nomeCliente}. Segue o planejamento ${modalidade === 'imovel' ? 'imobiliário' : 'de automóvel'} feito para você.`,
         M, y + 5
       );
       y += 11;
@@ -591,14 +591,12 @@ export default function Simulador() {
         <button
           className={`sim-toggle-btn ${modalidade === 'imovel' ? 'active' : ''}`}
           onClick={() => trocarModalidade('imovel')}
-        >
-          🏠 Imóvel
+        > Imóvel
         </button>
         <button
           className={`sim-toggle-btn ${modalidade === 'auto' ? 'active' : ''}`}
           onClick={() => trocarModalidade('auto')}
-        >
-          🚗 Auto
+        > Auto
         </button>
       </div>
 

@@ -75,15 +75,13 @@ function Grupos() {
           type="button"
           className={`toggle-btn ${tipoSelecionado === 'auto' ? 'active' : ''}`}
           onClick={() => handleTipoChange('auto')}
-        >
-          🚗 Auto
+        > Auto
         </button>
         <button
           type="button"
           className={`toggle-btn ${tipoSelecionado === 'imovel' ? 'active' : ''}`}
           onClick={() => handleTipoChange('imovel')}
-        >
-          🏠 Imóvel
+        > Imóvel
         </button>
       </div>
 
@@ -164,7 +162,7 @@ function Grupos() {
       {Object.keys(dadosPorGrupo).length === 0 && (
         <div className="card">
           <div className="empty-state">
-            <span className="empty-icon">{tipoSelecionado === 'auto' ? '🚗' : '🏠'}</span>
+            <span className="empty-icon">{tipoSelecionado === 'auto' ? ' ' : ' '}</span>
             <h3>Nenhum dado disponível</h3>
             <p>Não há registros de contemplação para {tipoSelecionado === 'auto' ? 'Auto' : 'Imóvel'}.</p>
           </div>
