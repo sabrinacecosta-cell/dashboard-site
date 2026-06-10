@@ -185,15 +185,10 @@ async function migrate() {
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
     WHERE modalidade = 'imovel' AND numero_grupo = 1054
   `);
-  // Auto: 2130 → 19% com redutor
+  // Auto: 2130 e 3002 → 17% com redutor
   await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
-    WHERE modalidade = 'auto' AND numero_grupo = 2130
-  `);
-  // Auto: 3002 → 19% com redutor
-  await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
-    WHERE modalidade = 'auto' AND numero_grupo = 3002
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.17
+    WHERE modalidade = 'auto' AND numero_grupo IN (2130, 3002)
   `);
   console.log('Coluna taxa_adm_redutor e valores OK!');
 
