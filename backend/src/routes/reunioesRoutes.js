@@ -172,12 +172,7 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       orderBy: 'updated',
       maxResults: 250,
     };
-    if (ultimaSync) {
-      calParams.updatedMin = new Date(ultimaSync).toISOString();
-      console.log('[importar] modo incremental — updatedMin:', calParams.updatedMin);
-    } else {
-      console.log('[importar] modo completo — buscando todos os eventos da janela');
-    }
+    console.log('[importar] modo completo — buscando todos os eventos da janela');
 
     let calRes;
     try {
