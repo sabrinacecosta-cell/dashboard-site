@@ -658,6 +658,54 @@ function SummaryBar({ reunioes: reunioesRaw, proximosRetornos = [] }) {
   );
 }
 
+// ── Próximos Passos da Semana ─────────────────────────────────
+function ProximosPassosSemana({ reunioes }) {
+  const itens = [];
+  reunioes.forEach(r => {
+    (r.tarefas || []).forEach(t => {
+      itens.push({
+        key:           `${r.id}-${t.id}`,
+        reuniaoTitulo: r.titulo,
+        descricao:     t.descricao,
+        concluida:     t.concluida,
+      });
+    });
+  });
+
+  if (itens.length === 0) return null;
+
+  const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.85rem 1rem' };
+
+  return (
+    <div style={{ ...cardStyle, marginTop: '0.85rem' }}>
+      <p style={{ margin: '0 0 0.6rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+        ✅ Próximos Passos da Semana
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {itens.map(item => (
+          <div key={item.key} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+            <span
+              title={item.reuniaoTitulo}
+              style={{
+                flexShrink: 0, fontSize: '0.7rem', fontWeight: 700,
+                background: 'var(--bg-secondary)', color: 'var(--text-secondary)',
+                border: '1px solid var(--border)', borderRadius: '4px',
+                padding: '0.1rem 0.4rem', marginTop: '1px', maxWidth: '200px',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}
+            >{item.reuniaoTitulo}</span>
+            <span style={{
+              fontSize: '0.82rem',
+              color: item.concluida ? 'var(--text-muted)' : 'var(--text-primary)',
+              textDecoration: item.concluida ? 'line-through' : 'none',
+            }}>{item.descricao}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Métricas mensais ──────────────────────────────────────────
 function MetricasMensais() {
   const [open, setOpen]           = useState(false);
@@ -865,6 +913,7 @@ function Reunioes() {
   const [loading, setLoading]                 = useState(true);
   const [importando, setImportando]           = useState(false);
   const [importMsg, setImportMsg]             = useState('');
+  const [reimportando, setReimportando]       = useState(false);
   const [selectedReuniao, setSelectedReuniao] = useState(null);
   const [retornosHoje, setRetornosHoje]       = useState([]);
   const [proximosRetornos, setProximosRetornos] = useState([]);
@@ -950,6 +999,20 @@ function Reunioes() {
     }
   }
 
+  async function reimportarAtas() {
+    setReimportando(true);
+    setImportMsg('');
+    try {
+      const r = await api.post('/reunioes/reimportar-atas');
+      setImportMsg(`✓ ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
+      loadReunioes();
+    } catch (e) {
+      setImportMsg('Erro: ' + (e.response?.data?.error || 'falha ao reimportar atas'));
+    } finally {
+      setReimportando(false);
+    }
+  }
+
   if (!isAdmin) {
     return (
       <div className="page-agenda">
@@ -988,6 +1051,9 @@ function Reunioes() {
           <button onClick={importar} disabled={importando} style={{ ...btn('default', true), opacity: importando ? 0.6 : 1 }}>
             {importando ? '⏳ Importando…' : '⬇ Importar'}
           </button>
+          <button onClick={reimportarAtas} disabled={reimportando} style={{ ...btn('default', true), opacity: reimportando ? 0.6 : 1 }}>
+            {reimportando ? '⏳ Reimportando…' : '📋 Reimportar atas'}
+          </button>
         </div>
       </div>
 
@@ -1008,6 +1074,9 @@ function Reunioes() {
         ? <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', padding: '3rem 0', textAlign: 'center' }}>Carregando…</p>
         : <WeeklyGrid reunioes={reunioes} weekDays={weekDays} onCardClick={setSelectedReuniao} />
       }
+
+      {/* Próximos passos da semana (agrega tarefas das reuniões exibidas) */}
+      {!loading && <ProximosPassosSemana reunioes={reunioes} />}
 
       {/* Barra de resumo + Métricas mensais */}
       {!loading && <SummaryBar reunioes={reunioes} proximosRetornos={proximosRetornos} />}

@@ -328,6 +328,72 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
   }
 });
 
+// ── Reimportar atas para reuniões já existentes (backfill) ───
+router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    console.log('[reimportar-atas] === INÍCIO ===');
+
+    let emails = [];
+    try {
+      emails = await searchMeetingEmails();
+      console.log('[reimportar-atas] Gmail retornou', emails.length, 'e-mails com atas');
+    } catch (gmailErr) {
+      console.error('[reimportar-atas] ERRO Gmail:', gmailErr.message);
+      return res.status(502).json({ error: 'Falha ao buscar e-mails do Gmail: ' + gmailErr.message });
+    }
+
+    // Reuniões sem ata vinculada
+    const semAta = await db.query(
+      'SELECT id, titulo, data_reuniao FROM reunioes WHERE gmail_message_id IS NULL'
+    );
+    console.log('[reimportar-atas] reuniões sem ata:', semAta.rows.length);
+
+    let atualizadas = 0;
+    let sem_match = 0;
+
+    for (const r of semAta.rows) {
+      const eventStart = new Date(r.data_reuniao);
+      const titulo = r.titulo || '';
+
+      // Mesma lógica de match do import principal (título ou proximidade de data)
+      const matchEmail = emails.find(em => {
+        const titleMatch =
+          em.eventTitle.toLowerCase().includes(titulo.toLowerCase().slice(0, 20)) ||
+          titulo.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
+        const dateDiff = Math.abs(em.date - eventStart);
+        return titleMatch || dateDiff < 86_400_000;
+      });
+
+      if (!matchEmail) { sem_match++; continue; }
+
+      await db.query(
+        'UPDATE reunioes SET gmail_message_id = $1, ata_original = $2 WHERE id = $3',
+        [matchEmail.messageId, matchEmail.body || null, r.id]
+      );
+
+      // Tarefas: insere só se a reunião ainda não tiver nenhuma
+      if (matchEmail.body) {
+        const jaTem = await db.query('SELECT 1 FROM tarefas_reuniao WHERE reuniao_id = $1 LIMIT 1', [r.id]);
+        if (jaTem.rows.length === 0) {
+          const tarefas = extractActionItems(matchEmail.body);
+          for (const desc of tarefas) {
+            await db.query('INSERT INTO tarefas_reuniao (reuniao_id, descricao) VALUES ($1,$2)', [r.id, desc]);
+          }
+        }
+      }
+
+      atualizadas++;
+      console.log(`[reimportar-atas] ata vinculada | "${r.titulo}"`);
+    }
+
+    console.log('[reimportar-atas] === FIM === atualizadas:', atualizadas, 'sem_match:', sem_match);
+    res.json({ atualizadas, sem_match });
+  } catch (err) {
+    console.error('[reimportar-atas] ERRO FATAL:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Listar reuniões ──────────────────────────────────────────
 router.get('/reunioes', authMiddleware, adminOnly, async (req, res) => {
   try {

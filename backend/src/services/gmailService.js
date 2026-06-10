@@ -32,7 +32,7 @@ function extractBody(payload) {
 }
 
 function extractEventTitle(subject) {
-  const match = subject.match(/(?:Notas da reuni[aã]o|Meeting notes|Resumo da reuni[aã]o):\s*(.+)/i);
+  const match = subject.match(/(?:Notas da reuni[aã]o|Meeting notes|Resumo da reuni[aã]o|Anota[cç][oõ]es):\s*(.+)/i);
   return match ? match[1].trim() : subject;
 }
 
@@ -41,7 +41,7 @@ async function searchMeetingEmails() {
   const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
   // Query corrigida: OR apenas entre os subjects, newer_than aplicado a todos
-  const query = '(subject:"Notas da reunião" OR subject:"Meeting notes" OR subject:"Resumo da reunião") newer_than:90d';
+  const query = '(subject:"Notas da reunião" OR subject:"Meeting notes" OR subject:"Resumo da reunião" OR subject:"Anotações:") newer_than:90d';
   console.log('[gmailService] query:', query);
 
   let listRes;
