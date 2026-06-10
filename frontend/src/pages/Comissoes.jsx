@@ -40,6 +40,83 @@ function getYM(mesRef) {
   return String(mesRef).split('T')[0].substring(0, 7);
 }
 
+const CLIENTES_ESPECIAIS = [
+  'Eduardo de Franco Borges',
+  'Vinicius Graczki Lupatini',
+];
+
+function ResumoClientesEspeciais({ rows }) {
+  const clientes = CLIENTES_ESPECIAIS.map(nome => {
+    const alvo = nome.trim().toLowerCase();
+    const registros = rows.filter(r => r.cliente?.trim().toLowerCase() === alvo);
+    if (registros.length === 0) return null;
+
+    const bruto   = registros.reduce((s, r) => s + parseFloat(r.valor_comissao || 0), 0);
+    const liquido = registros.reduce((s, r) => s + parseFloat(r.valor_liquido || 0) * 0.80, 0);
+    const p67     = liquido * 0.67;
+    const p33     = liquido * 0.33;
+
+    return { nome, bruto, liquido, p67, p33 };
+  }).filter(Boolean);
+
+  if (clientes.length === 0) return null;
+
+  return (
+    <div style={{
+      display: 'flex',
+      gap: '12px',
+      flexWrap: 'wrap',
+      marginBottom: '16px',
+      padding: '14px 16px',
+      background: 'rgba(245, 192, 0, 0.06)',
+      border: '1px solid rgba(245, 192, 0, 0.18)',
+      borderRadius: '10px',
+    }}>
+      {clientes.map(c => (
+        <div key={c.nome} style={{ flex: 1, minWidth: '260px' }}>
+          <span style={{
+            display: 'block',
+            fontSize: '11px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.8px',
+            color: 'var(--cor-destaque, #F5C000)',
+            marginBottom: '10px',
+          }}>
+            {c.nome}
+          </span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {[
+              { label: 'Comissão Bruta', valor: c.bruto },
+              { label: 'Líquido (−20%)', valor: c.liquido, destaque: true },
+              { label: '67% do Líquido', valor: c.p67 },
+              { label: '33% do Líquido', valor: c.p33 },
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{
+                  fontSize: '10px',
+                  color: 'var(--text-secondary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}>
+                  {item.label}
+                </span>
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: item.destaque ? '#5DCAA5' : 'var(--text-primary)',
+                }}>
+                  {fmtMoeda(item.valor)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TabelaComissoes({ rows, isAdmin }) {
   const [clienteFiltro, setClienteFiltro] = useState('');
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -334,6 +411,7 @@ function Comissoes() {
   const [error, setError] = useState('');
 
   const isAdmin = ADMIN_EMAILS.includes(user?.email);
+  const podeVerResumoEspecial = isAdmin || user?.email === 'machado@belmontcapital.com.br';
 
   useEffect(() => {
     setLoading(true);
@@ -397,6 +475,7 @@ function Comissoes() {
           {secoes.map(([ym, rows]) => (
             <div className="card" key={ym} style={{ marginBottom: '1.5rem' }}>
               <h3>{getTituloSecao(rows[0]?.mes_referencia)}</h3>
+              {podeVerResumoEspecial && <ResumoClientesEspeciais rows={rows} />}
               <TabelaComissoes rows={rows} isAdmin={isAdmin} />
             </div>
           ))}
