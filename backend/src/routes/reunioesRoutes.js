@@ -169,38 +169,60 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       timeMin: timeMin.toISOString(),
       timeMax: timeMax.toISOString(),
       singleEvents: true,
-      orderBy: 'updated',
+      orderBy: 'startTime',
       maxResults: 250,
     };
-    console.log('[importar] modo completo — buscando todos os eventos da janela');
+    console.log('[importar] modo completo — buscando todos os eventos da janela (com paginação)');
 
-    let calRes;
-    try {
-      calRes = await calendar.events.list(calParams);
-    } catch (calErr) {
-      console.error('[importar] ERRO Calendar.events.list:', calErr.message);
-      throw calErr;
+    // Pagina por TODAS as páginas (nextPageToken). Sem isso, a janela de 150 dias
+    // passa de 250 eventos e os mais recentes ficam de fora.
+    const allItems = [];
+    let pageToken = null;
+    let pagina = 0;
+    do {
+      let calRes;
+      try {
+        calRes = await calendar.events.list({ ...calParams, pageToken: pageToken || undefined });
+      } catch (calErr) {
+        console.error('[importar] ERRO Calendar.events.list:', calErr.message);
+        throw calErr;
+      }
+      const items = calRes.data.items || [];
+      allItems.push(...items);
+      pageToken = calRes.data.nextPageToken || null;
+      pagina++;
+      console.log(`[importar] Calendar página ${pagina}: ${items.length} eventos (acumulado ${allItems.length})`);
+    } while (pageToken);
+
+    console.log('[importar] Calendar retornou', allItems.length, 'eventos no total (todas as páginas)');
+
+    // Filtro de exclusão com log por evento pulado
+    const events = [];
+    for (const e of allItems) {
+      const quando = e.start?.dateTime || e.start?.date || '(sem data)';
+      if (!e.summary) {
+        console.log('[importar] SKIP (sem título) |', quando);
+        continue;
+      }
+      const regra = TITLE_EXCLUSIONS.find(re => re.test(e.summary));
+      if (regra) {
+        console.log(`[importar] SKIP (exclusão de título) | "${e.summary}" | ${quando} | regra: ${regra}`);
+        continue;
+      }
+      events.push(e);
     }
-
-    const allItems = calRes.data.items || [];
-    console.log('[importar] Calendar retornou', allItems.length, 'eventos (total, com e sem título)');
-    const events = allItems.filter(e =>
-      e.summary && !TITLE_EXCLUSIONS.some(re => re.test(e.summary))
-    );
     console.log('[importar] Eventos após filtro de exclusão:', events.length);
 
-    // Remove registros já importados que correspondem às exclusões
+    // Remove registros já importados que correspondem às exclusões.
+    // Usa limites de palavra (~*) para casar com o filtro acima e NÃO apagar
+    // reuniões legítimas cujo título apenas contém o trecho (ex.: "Casagrande").
     await db.query(`
       DELETE FROM reunioes
-      WHERE titulo ILIKE '%casa%'
-         OR titulo ILIKE '%rotary%'
-         OR titulo ILIKE '%call semanal%'
-         OR titulo ILIKE '%tenis%'
-         OR titulo ILIKE '%tênis%'
+      WHERE titulo ~* '\\ycasa\\y'
+         OR titulo ~* '\\yrotary\\y'
+         OR titulo ~* 'call\\s+semanal'
+         OR titulo ~* 't[eê]nis'
     `);
-    if (events.length > 0) {
-      console.log('[importar] Primeiros 5 títulos:', events.slice(0, 5).map(e => `"${e.summary}" (${e.start?.dateTime || e.start?.date})`));
-    }
 
     // ── 3. Gmail ────────────────────────────────────────────
     let emails = [];
@@ -222,13 +244,30 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
     let skipped = 0;
 
     for (const event of events) {
+      // Dedup por google_event_id (mantido — garante zero duplicatas)
       const existing = await db.query(
         'SELECT id FROM reunioes WHERE google_event_id = $1',
         [event.id]
       );
-      if (existing.rows.length > 0) { skipped++; continue; }
+      if (existing.rows.length > 0) {
+        skipped++;
+        console.log(`[importar] SKIP (já importado) | "${event.summary}" | ${event.start?.dateTime || event.start?.date}`);
+        continue;
+      }
 
-      const eventStart = new Date(event.start?.dateTime || event.start?.date);
+      // Evento de dia inteiro usa start.date (sem hora). Monta a meia-noite LOCAL
+      // (sem 'Z') para preservar o dia do calendário; eventos com hora usam dateTime.
+      const isAllDay = !event.start?.dateTime;
+      const eventStart = isAllDay
+        ? new Date((event.start?.date || '') + 'T00:00:00')
+        : new Date(event.start.dateTime);
+
+      if (isNaN(eventStart.getTime())) {
+        skipped++;
+        console.log(`[importar] SKIP (sem data válida) | "${event.summary}"`);
+        continue;
+      }
+
       const matchEmail = emails.find(em => {
         const titleMatch =
           em.eventTitle.toLowerCase().includes(event.summary.toLowerCase().slice(0, 20)) ||
@@ -240,7 +279,9 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       const participantes = (event.attendees || []).map(a => a.email);
       const assessorEmail = participantes.find(e => ADMIN_EMAILS.includes(e)) || null;
 
-      const eventEnd = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+      const eventEnd = event.end?.dateTime
+        ? new Date(event.end.dateTime)
+        : (event.end?.date ? new Date(event.end.date + 'T00:00:00') : null);
 
       const ins = await db.query(`
         INSERT INTO reunioes
@@ -260,7 +301,7 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       ]);
 
       const reuniaoId = ins.rows[0].id;
-      console.log('[importar] inserido:', event.summary, '| com ata Gmail:', !!matchEmail);
+      console.log(`[importar] INSERIDO | "${event.summary}" | ${eventStart.toISOString()} | dia inteiro: ${isAllDay} | com ata Gmail: ${!!matchEmail}`);
 
       if (matchEmail?.body) {
         const tarefas = extractActionItems(matchEmail.body);
@@ -275,7 +316,7 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       imported++;
     }
 
-    // Salva timestamp para o próximo sync incremental
+    // Salva timestamp apenas para auditoria (não há mais sync incremental)
     await db.query('UPDATE google_tokens SET ultima_sincronizacao_reunioes = NOW()');
 
     console.log('[importar] === FIM === imported:', imported, 'skipped:', skipped, 'total events:', events.length);
