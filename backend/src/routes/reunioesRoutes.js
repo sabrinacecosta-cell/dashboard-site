@@ -331,6 +331,54 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
   }
 });
 
+// ── Limpar todas as atas e reimportar do zero ────────────────
+router.post('/reunioes/limpar-e-reimportar', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    await db.query('UPDATE reunioes SET gmail_message_id = NULL, ata_original = NULL, resumo_ia = NULL');
+    console.log('[limpar-e-reimportar] Todas as atas limpas');
+
+    let emails = [];
+    try {
+      emails = await searchMeetingEmails();
+      console.log('[limpar-e-reimportar] Gmail retornou', emails.length, 'e-mails');
+    } catch (gmailErr) {
+      return res.status(502).json({ error: 'Falha ao buscar e-mails: ' + gmailErr.message });
+    }
+
+    const todas = await db.query('SELECT id, titulo, data_reuniao, data_fim FROM reunioes');
+    let atualizadas = 0;
+    let sem_match = 0;
+
+    for (const r of todas.rows) {
+      const refTime = r.data_fim ? new Date(r.data_fim) : new Date(r.data_reuniao);
+      const titulo = r.titulo || '';
+
+      const matchEmail = emails.find(em => {
+        const titleMatch =
+          em.eventTitle.toLowerCase().includes(titulo.toLowerCase().slice(0, 20)) ||
+          titulo.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
+        const dateDiff = em.date - refTime;
+        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
+      });
+
+      if (!matchEmail) { sem_match++; continue; }
+
+      await db.query(
+        'UPDATE reunioes SET gmail_message_id = $1, ata_original = $2 WHERE id = $3',
+        [matchEmail.messageId, matchEmail.body || null, r.id]
+      );
+      atualizadas++;
+      console.log(`[limpar-e-reimportar] vinculada | "${r.titulo}"`);
+    }
+
+    console.log('[limpar-e-reimportar] atualizadas:', atualizadas, 'sem_match:', sem_match);
+    res.json({ atualizadas, sem_match, total: todas.rows.length });
+  } catch (err) {
+    console.error('[limpar-e-reimportar] ERRO:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Reimportar atas para reuniões já existentes (backfill) ───
 router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, res) => {
   try {

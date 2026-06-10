@@ -87,6 +87,8 @@ const btn = (variant = 'default', small = false) => ({
   fontWeight: variant === 'accent' ? 600 : 400,
   fontFamily: 'var(--font-sans)',
   whiteSpace: 'nowrap',
+  width: 'auto',
+  marginTop: 0,
 });
 
 const inp = {
@@ -486,6 +488,7 @@ function WeeklyGrid({ reunioes, weekDays, onCardClick }) {
                 <div
                   key={r.id}
                   onClick={() => onCardClick(r)}
+                  title={r.titulo}
                   style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderLeft: `3px solid ${cor}`, borderRadius: '6px', padding: '0.3rem 0.4rem', cursor: 'pointer', transition: 'opacity 0.15s' }}
                   onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
@@ -886,6 +889,7 @@ function Reunioes() {
   const [importando, setImportando]           = useState(false);
   const [importMsg, setImportMsg]             = useState('');
   const [reimportando, setReimportando]       = useState(false);
+  const [limpando, setLimpando]               = useState(false);
   const [selectedReuniao, setSelectedReuniao] = useState(null);
   const [retornosHoje, setRetornosHoje]       = useState([]);
   const [proximosRetornos, setProximosRetornos] = useState([]);
@@ -985,6 +989,21 @@ function Reunioes() {
     }
   }
 
+  async function limparEReimportar() {
+    if (!window.confirm('Isso vai apagar todas as atas vinculadas e reimportar do zero. Confirma?')) return;
+    setLimpando(true);
+    setImportMsg('');
+    try {
+      const r = await api.post('/reunioes/limpar-e-reimportar');
+      setImportMsg(`✓ ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
+      loadReunioes();
+    } catch (e) {
+      setImportMsg('Erro: ' + (e.response?.data?.error || 'falha'));
+    } finally {
+      setLimpando(false);
+    }
+  }
+
   if (!isAdmin) {
     return (
       <div className="page-agenda">
@@ -1025,6 +1044,9 @@ function Reunioes() {
           </button>
           <button onClick={reimportarAtas} disabled={reimportando} style={{ ...btn('default', true), opacity: reimportando ? 0.6 : 1 }}>
             {reimportando ? '⏳ Reimportando…' : '📋 Reimportar atas'}
+          </button>
+          <button onClick={limparEReimportar} disabled={limpando} style={{ ...btn('danger', true), opacity: limpando ? 0.6 : 1 }}>
+            {limpando ? '⏳ Limpando…' : '🗑 Limpar e reimportar'}
           </button>
         </div>
       </div>
