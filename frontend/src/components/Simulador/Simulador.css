@@ -1675,6 +1675,9 @@
 .sim-mult-radio input {
   accent-color: var(--cor-destaque);
   cursor: pointer;
+  width: auto !important;
+  padding: 0;
+  margin: 0;
 }
 
 .sim-mult-btn-montar {
