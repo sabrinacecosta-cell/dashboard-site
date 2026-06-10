@@ -1658,7 +1658,8 @@
 .sim-mult-estrategia-group {
   display: flex;
   gap: 24px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .sim-mult-radio {
@@ -1727,6 +1728,8 @@
   transition: all 0.2s;
   white-space: nowrap;
   letter-spacing: 0.3px;
+  width: auto;
+  margin-top: 0;
 }
 
 .sim-toggle-mult-btn:hover {
