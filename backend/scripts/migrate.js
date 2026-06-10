@@ -196,6 +196,24 @@ async function migrate() {
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
   console.log('Índices simulador OK!');
 
+  // Deduplica cotas idênticas (mesmo grupo/modalidade/bem/cota/redutor), mantendo o
+  // menor id, e cria índice único para impedir re-duplicação. Necessário porque o
+  // INSERT do grupo 2129 usa ON CONFLICT DO NOTHING (sem este índice, reinseria a
+  // cada boot). A coluna `cota` faz parte da chave porque há grupos (ex.: 1037) com
+  // cotas distintas para o mesmo bem_referencia — que devem ser preservadas.
+  await db.query(`
+    DELETE FROM simulador_cotas a USING simulador_cotas b
+    WHERE a.id > b.id
+      AND a.numero_grupo = b.numero_grupo
+      AND a.modalidade = b.modalidade
+      AND a.bem_referencia = b.bem_referencia
+      AND a.cota = b.cota
+      AND a.redutor_parcela = b.redutor_parcela
+  `);
+  await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_sim_cotas_natural
+    ON simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, redutor_parcela)`);
+  console.log('Cotas deduplicadas e índice único uq_sim_cotas_natural OK!');
+
   // Índices para busca por assessor
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_assessor ON producao(assessor)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_producao_email ON producao(email_assessor)`);
