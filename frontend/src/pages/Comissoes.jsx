@@ -71,44 +71,45 @@ function ResumoClientesEspeciais({ rows }) {
       border: '1px solid rgba(245, 192, 0, 0.18)',
       borderRadius: '10px',
     }}>
-      {clientes.map(c => (
-        <div key={c.nome} style={{ flex: 1, minWidth: '260px' }}>
+      {clientes.map((c, idx) => (
+        <div key={c.nome} style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          flex: '1',
+          minWidth: '180px',
+          paddingRight: idx < clientes.length - 1 ? '12px' : '0',
+          borderRight: idx < clientes.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
+        }}>
           <span style={{
-            display: 'block',
             fontSize: '11px',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.8px',
             color: 'var(--cor-destaque, #F5C000)',
-            marginBottom: '10px',
+            marginBottom: '4px',
           }}>
             {c.nome}
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            {[
-              { label: 'Comissão Bruta', valor: c.bruto },
-              { label: 'Líquido (−20%)', valor: c.liquido, destaque: true },
-              { label: '67% do Líquido', valor: c.p67 },
-              { label: '33% do Líquido', valor: c.p33 },
-            ].map(item => (
-              <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{
-                  fontSize: '10px',
-                  color: 'var(--text-secondary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}>
-                  {item.label}
-                </span>
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: item.destaque ? '#5DCAA5' : 'var(--text-primary)',
-                }}>
-                  {fmtMoeda(item.valor)}
-                </span>
-              </div>
-            ))}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Comissão Bruta</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{fmtMoeda(c.bruto)}</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Líquido (−20%)</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#5DCAA5' }}>{fmtMoeda(c.liquido)}</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>67% do Líquido</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{fmtMoeda(c.p67)}</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>33% do Líquido</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{fmtMoeda(c.p33)}</span>
           </div>
         </div>
       ))}
