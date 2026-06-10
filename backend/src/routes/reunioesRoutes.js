@@ -283,7 +283,7 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
           em.eventTitle.toLowerCase().includes(event.summary.toLowerCase().slice(0, 20)) ||
           event.summary.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
         const dateDiff = em.date - refTime; // email deve chegar APÓS o fim
-        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
+        return titleMatch && dateDiff >= -15 * 60_000 && dateDiff < 6 * 3_600_000;
       });
 
       const ins = await db.query(`
@@ -358,7 +358,7 @@ router.post('/reunioes/limpar-e-reimportar', authMiddleware, adminOnly, async (r
           em.eventTitle.toLowerCase().includes(titulo.toLowerCase().slice(0, 20)) ||
           titulo.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
         const dateDiff = em.date - refTime;
-        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
+        return titleMatch && dateDiff >= -15 * 60_000 && dateDiff < 6 * 3_600_000;
       });
 
       if (!matchEmail) { sem_match++; continue; }
@@ -413,7 +413,7 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
           em.eventTitle.toLowerCase().includes(titulo.toLowerCase().slice(0, 20)) ||
           titulo.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
         const dateDiff = em.date - refTime; // email deve chegar APÓS o fim
-        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
+        return titleMatch && dateDiff >= -15 * 60_000 && dateDiff < 6 * 3_600_000;
       });
 
       if (!matchEmail) { sem_match++; continue; }
