@@ -41,14 +41,13 @@ function getYM(mesRef) {
 }
 
 const CLIENTES_ESPECIAIS = [
-  'Eduardo de Franco Borges',
-  'Vinicius Graczki Lupatini',
+  { label: 'Eduardo de Franco Borges',  match: (nome) => nome?.trim().toLowerCase().includes('eduardo') && nome?.trim().toLowerCase().includes('franco') },
+  { label: 'Vinicius Graczki Lupatini', match: (nome) => nome?.trim().toLowerCase().includes('vinicius') && (nome?.trim().toLowerCase().includes('graczcki') || nome?.trim().toLowerCase().includes('graczki') || nome?.trim().toLowerCase().includes('lupatini') || nome?.trim().toLowerCase().includes('lupatine')) },
 ];
 
 function ResumoClientesEspeciais({ rows }) {
-  const clientes = CLIENTES_ESPECIAIS.map(nome => {
-    const alvo = nome.trim().toLowerCase();
-    const registros = rows.filter(r => r.cliente?.trim().toLowerCase() === alvo);
+  const clientes = CLIENTES_ESPECIAIS.map(({ label, match }) => {
+    const registros = rows.filter(r => match(r.cliente));
     if (registros.length === 0) return null;
 
     const bruto   = registros.reduce((s, r) => s + parseFloat(r.valor_comissao || 0), 0);
@@ -56,7 +55,7 @@ function ResumoClientesEspeciais({ rows }) {
     const p67     = liquido * 0.67;
     const p33     = liquido * 0.33;
 
-    return { nome, bruto, liquido, p67, p33 };
+    return { nome: label, bruto, liquido, p67, p33 };
   }).filter(Boolean);
 
   if (clientes.length === 0) return null;
