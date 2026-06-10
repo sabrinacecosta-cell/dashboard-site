@@ -268,20 +268,23 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
         continue;
       }
 
-      const matchEmail = emails.find(em => {
-        const titleMatch =
-          em.eventTitle.toLowerCase().includes(event.summary.toLowerCase().slice(0, 20)) ||
-          event.summary.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
-        const dateDiff = Math.abs(em.date - eventStart);
-        return titleMatch || dateDiff < 86_400_000;
-      });
-
       const participantes = (event.attendees || []).map(a => a.email);
       const assessorEmail = participantes.find(e => ADMIN_EMAILS.includes(e)) || null;
 
       const eventEnd = event.end?.dateTime
         ? new Date(event.end.dateTime)
         : (event.end?.date ? new Date(event.end.date + 'T00:00:00') : null);
+
+      // A ata chega imediatamente após o fim da reunião — compara com eventEnd
+      // e aceita janela de até 6 horas. Exige correspondência de título também.
+      const refTime = eventEnd || eventStart;
+      const matchEmail = emails.find(em => {
+        const titleMatch =
+          em.eventTitle.toLowerCase().includes(event.summary.toLowerCase().slice(0, 20)) ||
+          event.summary.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
+        const dateDiff = em.date - refTime; // email deve chegar APÓS o fim
+        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
+      });
 
       const ins = await db.query(`
         INSERT INTO reunioes
@@ -342,9 +345,9 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
       return res.status(502).json({ error: 'Falha ao buscar e-mails do Gmail: ' + gmailErr.message });
     }
 
-    // Reuniões sem ata vinculada
+    // Reuniões sem ata vinculada (busca data_fim também)
     const semAta = await db.query(
-      'SELECT id, titulo, data_reuniao FROM reunioes WHERE gmail_message_id IS NULL'
+      'SELECT id, titulo, data_reuniao, data_fim FROM reunioes WHERE gmail_message_id IS NULL'
     );
     console.log('[reimportar-atas] reuniões sem ata:', semAta.rows.length);
 
@@ -352,16 +355,17 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
     let sem_match = 0;
 
     for (const r of semAta.rows) {
-      const eventStart = new Date(r.data_reuniao);
+      const refTime = r.data_fim ? new Date(r.data_fim) : new Date(r.data_reuniao);
       const titulo = r.titulo || '';
 
-      // Mesma lógica de match do import principal (título ou proximidade de data)
+      // A ata chega imediatamente após o fim da reunião — compara com data_fim
+      // e aceita janela de até 6 horas. Exige correspondência de título.
       const matchEmail = emails.find(em => {
         const titleMatch =
           em.eventTitle.toLowerCase().includes(titulo.toLowerCase().slice(0, 20)) ||
           titulo.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
-        const dateDiff = Math.abs(em.date - eventStart);
-        return titleMatch || dateDiff < 86_400_000;
+        const dateDiff = em.date - refTime; // email deve chegar APÓS o fim
+        return titleMatch && dateDiff >= 0 && dateDiff < 6 * 3_600_000;
       });
 
       if (!matchEmail) { sem_match++; continue; }
