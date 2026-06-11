@@ -21,6 +21,9 @@ const fmtGrupoCota = (val) => {
   return `${parseInt(grupo)} / ${parseInt(cota)}`;
 };
 
+// Esconde no site qualquer mês anterior a este (não apaga do banco)
+const MES_MINIMO = '2026-06';
+
 const TITULO_SECAO = {
  '2026-06': 'Base de cálculo maio | Exercício junho',
  '2026-05': 'Base de cálculo abril | Exercício maio',
@@ -426,6 +429,7 @@ function Comissoes() {
     const map = {};
     dados.forEach(r => {
       const ym = getYM(r.mes_referencia);
+      if (ym < MES_MINIMO) return; // esconde meses anteriores a junho/2026
       if (!map[ym]) map[ym] = [];
       map[ym].push(r);
     });
