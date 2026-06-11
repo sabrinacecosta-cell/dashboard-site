@@ -22,6 +22,7 @@ const fmtGrupoCota = (val) => {
 };
 
 const TITULO_SECAO = {
+ '2026-06': 'Base de cálculo maio | Exercício junho',
  '2026-05': 'Base de cálculo abril | Exercício maio',
  '2026-04': 'Base cálculo março | Exercício abril',
  '2026-03': 'Base cálculo fevereiro | Exercício março',
