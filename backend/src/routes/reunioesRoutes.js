@@ -5,6 +5,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const { oauth2Client, isConnected } = require('../config/google');
 const { searchMeetingEmails, extractActionItems } = require('../services/gmailService');
 const Anthropic = require('@anthropic-ai/sdk');
+const { REUNIOES: MOCK_REUNIOES } = require('../data/mockData');
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
@@ -19,6 +20,8 @@ const TITLE_EXCLUSIONS = [
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function adminOnly(req, res, next) {
+  // Demo user passa pelo adminOnly; os handlers retornam mock quando necessário
+  if (req.isDemo) return next();
   if (!ADMIN_EMAILS.includes(req.userEmail)) {
     return res.status(403).json({ error: 'Acesso restrito a administradores' });
   }
@@ -34,6 +37,7 @@ function requireGoogle(req, res, next) {
 
 // ── Métricas (antes de /:id para não ser capturado) ──────────
 router.get('/reunioes/metricas/mes', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json({ total: '4', fechamentos: '2', nao_fechou: '1', retornos: '1', taxa_conversao: '66.7' });
   try {
     const { ano = new Date().getFullYear(), mes = new Date().getMonth() + 1 } = req.query;
 
@@ -60,6 +64,9 @@ router.get('/reunioes/metricas/mes', authMiddleware, adminOnly, async (req, res)
 });
 
 router.get('/reunioes/metricas/motivos', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json([
+    { motivo: 'Quer pensar sobre os valores', contagem: '1' },
+  ]);
   try {
     const { ano = new Date().getFullYear(), mes = new Date().getMonth() + 1 } = req.query;
 
@@ -84,6 +91,12 @@ router.get('/reunioes/metricas/motivos', authMiddleware, adminOnly, async (req, 
 
 // ── Reuniões por semana do mês ───────────────────────────────
 router.get('/reunioes/metricas/semanas', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json([
+    { semana: 'Sem. 1', total: 1, fechamentos: 1 },
+    { semana: 'Sem. 2', total: 2, fechamentos: 1 },
+    { semana: 'Sem. 3', total: 1, fechamentos: 0 },
+    { semana: 'Sem. 4', total: 0, fechamentos: 0 },
+  ]);
   try {
     const { ano = new Date().getFullYear(), mes = new Date().getMonth() + 1 } = req.query;
 
@@ -113,6 +126,22 @@ router.get('/reunioes/metricas/semanas', authMiddleware, adminOnly, async (req, 
 
 // ── Evolução dos últimos 6 meses ─────────────────────────────
 router.get('/reunioes/metricas/evolucao', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) {
+    const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const hoje = new Date();
+    const evo = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(hoje);
+      d.setMonth(d.getMonth() - i);
+      evo.push({
+        label: `${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`,
+        total: [3, 4, 2, 5, 3, 4][5 - i],
+        fechamentos: [2, 2, 1, 3, 2, 2][5 - i],
+        taxa_conversao: [66.7, 50.0, 50.0, 60.0, 66.7, 66.7][5 - i],
+      });
+    }
+    return res.json(evo);
+  }
   try {
     const r = await db.query(`
       SELECT
@@ -448,6 +477,7 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
 
 // ── Listar reuniões ──────────────────────────────────────────
 router.get('/reunioes', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json(MOCK_REUNIOES);
   try {
     const { periodo, ano, mes } = req.query;
 
@@ -496,6 +526,11 @@ router.delete('/reunioes/:id', authMiddleware, adminOnly, async (req, res) => {
 
 // ── Detalhe de reunião ───────────────────────────────────────
 router.get('/reunioes/:id', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) {
+    const r = MOCK_REUNIOES.find(x => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'Reunião não encontrada' });
+    return res.json(r);
+  }
   try {
     const r = await db.query(`
       SELECT r.*,
@@ -664,6 +699,13 @@ router.put('/tarefas/:id/concluir', authMiddleware, adminOnly, async (req, res) 
 
 // ── Retornos ─────────────────────────────────────────────────
 router.get('/retornos/pendentes', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) {
+    const hoje = new Date();
+    const em3dias = new Date(hoje); em3dias.setDate(hoje.getDate() + 3);
+    return res.json([
+      { id: 'ret-demo-1', reuniao_id: 'rdemo-1', reuniao_titulo: 'Apresentação portfólio — Roberto Silva', participantes: JSON.stringify(['demo@jtdkinvest.com', 'roberto.silva@email.com']), data_retorno: em3dias.toISOString(), concluido: false, motivo: 'Quer pensar sobre os valores' },
+    ]);
+  }
   try {
     const r = await db.query(`
       SELECT rp.*, r.titulo AS reuniao_titulo, r.participantes

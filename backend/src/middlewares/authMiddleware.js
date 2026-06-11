@@ -24,6 +24,7 @@ const authMiddleware = (req, res, next) => {
     
     req.userId = decoded.id;
     req.userEmail = decoded.email;
+    req.isDemo = decoded.is_demo === true;
 
     return next();
   } catch (err) {

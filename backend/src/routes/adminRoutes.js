@@ -9,15 +9,23 @@ const router = express.Router();
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 const adminOnly = (req, res, next) => {
+  // Demo user passa pelo adminOnly mas os handlers individuais retornam mock
+  if (req.isDemo) return next();
   if (!ADMIN_EMAILS.includes(req.userEmail)) return res.status(403).json({ error: 'Acesso restrito' });
   next();
 };
 
-// Existing routes
-router.post('/admin/importar', authMiddleware, AdminController.importarDados);
-router.post('/admin/resetar-senhas', authMiddleware, AdminController.resetarSenhas);
+// Bloqueia qualquer escrita do usuário demo
+const demoReadOnly = (req, res, next) => {
+  if (req.isDemo) return res.status(403).json({ error: 'Indisponível no modo demo' });
+  next();
+};
 
-router.post('/admin/resetar-senha-usuario', authMiddleware, adminOnly, async (req, res) => {
+// Existing routes
+router.post('/admin/importar', authMiddleware, demoReadOnly, AdminController.importarDados);
+router.post('/admin/resetar-senhas', authMiddleware, demoReadOnly, AdminController.resetarSenhas);
+
+router.post('/admin/resetar-senha-usuario', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email obrigatório' });
@@ -80,7 +88,7 @@ router.get('/admin/cotas', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // PUT — update client name in all comissoes rows
-router.put('/admin/comissoes/cliente', authMiddleware, adminOnly, async (req, res) => {
+router.put('/admin/comissoes/cliente', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { nomeAntigo, nomeNovo } = req.body;
     if (!nomeAntigo || !nomeNovo) return res.status(400).json({ error: 'nomeAntigo e nomeNovo obrigatórios' });
@@ -90,7 +98,7 @@ router.put('/admin/comissoes/cliente', authMiddleware, adminOnly, async (req, re
 });
 
 // PUT — decrement all prazo_restante
-router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, async (req, res) => {
+router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     await db.query('UPDATE simulador_grupos SET prazo_restante = prazo_restante - 1 WHERE prazo_restante > 0');
     await db.query(`
@@ -116,7 +124,7 @@ router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, async (re
 });
 
 // PUT — update a single grupo
-router.put('/admin/grupos/:id', authMiddleware, adminOnly, async (req, res) => {
+router.put('/admin/grupos/:id', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { prazo_restante, media_contemplacao, lance_maximo_contemplado, lance_ultimo_mes, sem_media_contemplacao } = req.body;
     await db.query(
@@ -151,7 +159,7 @@ router.put('/admin/grupos/:id', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // POST — add contemplacao row
-router.post('/admin/contemplacao', authMiddleware, adminOnly, async (req, res) => {
+router.post('/admin/contemplacao', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { tipo, grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal } = req.body;
     const table = tipo === 'auto' ? 'contemplacao_auto' : 'contemplacao';
@@ -165,7 +173,7 @@ router.post('/admin/contemplacao', authMiddleware, adminOnly, async (req, res) =
 });
 
 // DELETE — remove contemplacao row
-router.delete('/admin/contemplacao/:id', authMiddleware, adminOnly, async (req, res) => {
+router.delete('/admin/contemplacao/:id', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { tipo } = req.query;
     const table = tipo === 'auto' ? 'contemplacao_auto' : 'contemplacao';
@@ -175,7 +183,7 @@ router.delete('/admin/contemplacao/:id', authMiddleware, adminOnly, async (req, 
 });
 
 // PUT — update cota
-router.put('/admin/cotas/:id', authMiddleware, adminOnly, async (req, res) => {
+router.put('/admin/cotas/:id', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { bem_referencia, parcela, redutor_parcela } = req.body;
     await db.query(
@@ -187,7 +195,7 @@ router.put('/admin/cotas/:id', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // POST — add cota
-router.post('/admin/cotas', authMiddleware, adminOnly, async (req, res) => {
+router.post('/admin/cotas', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { numero_grupo, modalidade, bem_referencia, parcela, redutor_parcela } = req.body;
     const result = await db.query(
@@ -199,7 +207,7 @@ router.post('/admin/cotas', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // DELETE — remove cota
-router.delete('/admin/cotas/:id', authMiddleware, adminOnly, async (req, res) => {
+router.delete('/admin/cotas/:id', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     await db.query('DELETE FROM simulador_cotas WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
@@ -208,6 +216,11 @@ router.delete('/admin/cotas/:id', authMiddleware, adminOnly, async (req, res) =>
 
 // GET — lista assessores com/sem email na producao
 router.get('/admin/assessores', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json([
+    { assessor: 'Ana Lima',       email_assessor: 'demo@jtdkinvest.com' },
+    { assessor: 'Carlos Mendes',  email_assessor: 'carlos.mendes@demo.com' },
+    { assessor: 'Fernanda Souza', email_assessor: 'fernanda.souza@demo.com' },
+  ]);
   try {
     const result = await db.query(`
       SELECT DISTINCT assessor, email_assessor
@@ -220,7 +233,7 @@ router.get('/admin/assessores', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // PUT — atualiza email de assessor em toda a producao
-router.put('/admin/assessores/email', authMiddleware, adminOnly, async (req, res) => {
+router.put('/admin/assessores/email', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const { assessor, email } = req.body;
     if (!assessor) return res.status(400).json({ error: 'assessor obrigatório' });
@@ -234,6 +247,12 @@ router.put('/admin/assessores/email', authMiddleware, adminOnly, async (req, res
 
 // GET — lista usuários (contas de login)
 router.get('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json([
+    { id: 'u-demo-1', nome: 'Ana Lima',       email: 'ana.lima@demo.com',      tem_senha: true, criado_em: new Date('2024-01-10') },
+    { id: 'u-demo-2', nome: 'Carlos Mendes',  email: 'carlos.mendes@demo.com', tem_senha: true, criado_em: new Date('2024-02-05') },
+    { id: 'u-demo-3', nome: 'Fernanda Souza', email: 'fernanda.souza@demo.com',tem_senha: true, criado_em: new Date('2024-03-20') },
+    { id: 'u-demo-4', nome: 'Usuário Demo',   email: 'demo@jtdkinvest.com',    tem_senha: true, criado_em: new Date('2024-01-01') },
+  ]);
   try {
     const result = await db.query(
       'SELECT id, nome, email, senha_hash IS NOT NULL AS tem_senha, criado_em FROM usuarios ORDER BY nome'
@@ -243,7 +262,7 @@ router.get('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // POST — cadastra novo usuário (sem senha; recebe e-mail com link para definir a senha)
-router.post('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
+router.post('/admin/usuarios', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const nome = (req.body.nome || '').trim();
     const email = (req.body.email || '').toLowerCase().trim();
@@ -266,7 +285,7 @@ router.post('/admin/usuarios', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // DELETE — remove usuário
-router.delete('/admin/usuarios/:id', authMiddleware, adminOnly, async (req, res) => {
+router.delete('/admin/usuarios/:id', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
     const result = await db.query('DELETE FROM usuarios WHERE id = $1', [req.params.id]);
     if (result.rowCount === 0) return res.status(404).json({ error: 'Usuário não encontrado' });

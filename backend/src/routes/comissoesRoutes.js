@@ -3,6 +3,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const authMiddleware = require('../middlewares/authMiddleware');
 const db = require('../config/database');
 
+const { COMISSOES } = require('../data/mockData');
 const router = express.Router();
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -27,6 +28,7 @@ const fmtGrupoCota = (val) => {
 const EMAILS_SEM_COMISSOES = ['paula.santana@xpi.com.br'];
 
 router.get('/comissoes', authMiddleware, async (req, res) => {
+  if (req.isDemo) return res.json(COMISSOES);
   // Usuários bloqueados de ver dados de comissões recebem array vazio
   if (EMAILS_SEM_COMISSOES.includes(req.userEmail)) {
     return res.json([]);
@@ -50,6 +52,7 @@ router.get('/comissoes', authMiddleware, async (req, res) => {
 // POST /comissoes/chat — chat de IA sobre os dados de comissões (admin-only)
 // A chave da Anthropic fica no servidor; o front não a acessa.
 router.post('/comissoes/chat', authMiddleware, async (req, res) => {
+  if (req.isDemo) return res.status(403).json({ error: 'Indisponível no modo demo' });
   if (!ADMIN_EMAILS.includes(req.userEmail)) {
     return res.status(403).json({ error: 'Acesso restrito' });
   }

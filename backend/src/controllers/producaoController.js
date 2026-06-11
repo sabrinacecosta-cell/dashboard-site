@@ -1,7 +1,9 @@
 const ProducaoService = require('../services/producaoService');
+const { PRODUCAO } = require('../data/mockData');
 
 const ProducaoController = {
   async getMinhaProducao(req, res) {
+    if (req.isDemo) return res.json(PRODUCAO);
     try {
       // Extrai filtros da query string (apenas para admins)
       const filters = {

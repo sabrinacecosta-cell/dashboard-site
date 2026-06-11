@@ -25,7 +25,7 @@ const AuthService = {
     }
 
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
+      { id: usuario.id, email: usuario.email, is_demo: usuario.is_demo === true },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -36,6 +36,7 @@ const AuthService = {
         id: usuario.id,
         nome: usuario.nome,
         email: usuario.email,
+        is_demo: usuario.is_demo === true,
       },
     };
   },

@@ -8,7 +8,7 @@ const UsuarioModel = {
   },
 
   async findById(id) {
-    const result = await db.query('SELECT id, nome, email FROM usuarios WHERE id = $1', [id]);
+    const result = await db.query('SELECT id, nome, email, is_demo FROM usuarios WHERE id = $1', [id]);
     return result.rows[0] || null;
   },
 
