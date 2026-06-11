@@ -878,7 +878,7 @@ function MetricasMensais() {
 // ── Página principal ──────────────────────────────────────────
 function Reunioes() {
   const { user } = useAuth();
-  const isAdmin = ADMIN_EMAILS.includes(user?.email);
+  const isAdmin = user?.is_demo === true || ADMIN_EMAILS.includes(user?.email);
 
   const [weekOffset, setWeekOffset]           = useState(0);
   const [reunioes, setReunioes]               = useState([]);

@@ -12,6 +12,12 @@ const dia = (offsetDias = 0) => {
   d.setDate(d.getDate() + offsetDias);
   return d.toISOString();
 };
+// Data+hora válida (ISO) para reuniões: diaHora(-5, '14:00') → 2026-06-05T14:00:00Z
+const diaHora = (offsetDias = 0, hora = '09:00') => {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() + offsetDias);
+  return `${d.toISOString().slice(0, 10)}T${hora}:00Z`;
+};
 
 // ── Comissões ────────────────────────────────────────────────
 const COMISSOES = [
@@ -87,22 +93,22 @@ function getProducaoDemo() {
 // ── Reuniões ─────────────────────────────────────────────────
 const REUNIOES = [
   {
-    id: 'rdemo-1', titulo: 'Apresentação portfólio — Roberto Silva', data_reuniao: dia(-5) + 'T14:00:00Z', data_fim: dia(-5) + 'T15:00:00Z',
+    id: 'rdemo-1', titulo: 'Apresentação portfólio — Roberto Silva', data_reuniao: diaHora(-5, '14:00'), data_fim: diaHora(-5, '15:00'),
     participantes: JSON.stringify(['demo@jtdkinvest.com', 'roberto.silva@email.com']),
     status: 'retorno', motivo_retorno: 'Quer pensar sobre os valores', ata_original: 'Reunião realizada com Roberto Silva. Apresentamos simulação de portfólio de R$250k. Cliente demonstrou interesse mas pediu prazo para avaliar com a família.', resumo_ia: 'Apresentação de portfólio de R$250k. Cliente interessado, solicitou prazo de 1 semana para decisão com a família. Próximo passo: follow-up na sexta-feira.', assessor_email: 'demo@jtdkinvest.com', tarefas: [{ id: 'tdemo-1', descricao: 'Enviar simulação por e-mail', concluida: true }, { id: 'tdemo-2', descricao: 'Ligar sexta-feira para follow-up', concluida: false }],
   },
   {
-    id: 'rdemo-2', titulo: 'Reunião Mariana Costa — Imóvel', data_reuniao: dia(-12) + 'T10:00:00Z', data_fim: dia(-12) + 'T11:00:00Z',
+    id: 'rdemo-2', titulo: 'Reunião Mariana Costa — Imóvel', data_reuniao: diaHora(-12, '10:00'), data_fim: diaHora(-12, '11:00'),
     participantes: JSON.stringify(['demo@jtdkinvest.com', 'mariana.costa@email.com']),
     status: 'fechou', ata_original: 'Reunião com Mariana Costa para fechar consórcio de imóvel R$180k. Cliente assinou proposta ao final da reunião.', resumo_ia: 'Fechamento de consórcio imóvel R$180k. Cliente assinou proposta. Grupo 1235, cota 0032.', assessor_email: 'demo@jtdkinvest.com', tarefas: [{ id: 'tdemo-3', descricao: 'Enviar documentação para a administradora', concluida: true }],
   },
   {
-    id: 'rdemo-3', titulo: 'Prospecção — Empresa Construtora ABC', data_reuniao: dia(-2) + 'T16:00:00Z', data_fim: dia(-2) + 'T17:00:00Z',
+    id: 'rdemo-3', titulo: 'Prospecção — Empresa Construtora ABC', data_reuniao: diaHora(-2, '16:00'), data_fim: diaHora(-2, '17:00'),
     participantes: JSON.stringify(['demo@jtdkinvest.com', 'diretoria@construtorabc.com.br']),
     status: 'em_andamento', ata_original: null, resumo_ia: null, assessor_email: 'demo@jtdkinvest.com', tarefas: [],
   },
   {
-    id: 'rdemo-4', titulo: 'Revisão carteira — Fernando Machado', data_reuniao: dia(2) + 'T09:00:00Z', data_fim: dia(2) + 'T09:30:00Z',
+    id: 'rdemo-4', titulo: 'Revisão carteira — Fernando Machado', data_reuniao: diaHora(2, '09:00'), data_fim: diaHora(2, '09:30'),
     participantes: JSON.stringify(['demo@jtdkinvest.com', 'fernando.machado@email.com']),
     status: 'em_andamento', ata_original: null, resumo_ia: null, assessor_email: 'demo@jtdkinvest.com', tarefas: [],
   },
