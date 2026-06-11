@@ -24,7 +24,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // NÃO faz precache do index.html: a "casca" do app vem sempre fresca
+        // da rede, evitando que mudanças de frontend "voltem atrás" no reload.
+        globPatterns: ['**/*.{js,css,ico,png,svg}'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\/api\/.*/i,
