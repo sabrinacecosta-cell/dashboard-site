@@ -51,6 +51,11 @@ router.post('/admin/resetar-senha-usuario', authMiddleware, adminOnly, demoReadO
 
 // GET — data for admin page
 router.get('/admin/comissoes/clientes', authMiddleware, adminOnly, async (req, res) => {
+  if (req.isDemo) return res.json([
+    'Beatriz Lopes Carvalho', 'Fernando Machado Jr.', 'Juliana Neves Brandão',
+    'Mariana Costa Pereira', 'Patrícia Duarte Melo', 'Ricardo Oliveira Pinto',
+    'Roberto Alves Silva', 'Thiago Ramos Fontes',
+  ]);
   try {
     const result = await db.query('SELECT DISTINCT cliente FROM comissoes WHERE cliente IS NOT NULL ORDER BY cliente');
     res.json(result.rows.map(r => r.cliente));

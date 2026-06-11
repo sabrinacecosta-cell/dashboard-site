@@ -17,7 +17,7 @@ function Acompanhamento() {
   const [clienteIdx, setClienteIdx] = useState(0);
 
   useEffect(() => {
-    if (user && !EMAILS_PERMITIDOS.includes(user.email)) {
+    if (user && !user.is_demo && !EMAILS_PERMITIDOS.includes(user.email)) {
       navigate('/vendas');
     }
   }, [user, navigate]);

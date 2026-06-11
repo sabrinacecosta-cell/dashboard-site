@@ -26,16 +26,63 @@ const COMISSOES = [
 ];
 
 // ── Produção (Vendas) ────────────────────────────────────────
-const PRODUCAO = [
-  { nome: 'Ana Lima',       email: 'demo@jtdkinvest.com',        mes: mes(0),  vendas: 4, valor_total: 790000 },
-  { nome: 'Carlos Mendes',  email: 'carlos.mendes@demo.com',     mes: mes(0),  vendas: 2, valor_total: 560000 },
-  { nome: 'Fernanda Souza', email: 'fernanda.souza@demo.com',    mes: mes(0),  vendas: 1, valor_total: 140000 },
-  { nome: 'Ana Lima',       email: 'demo@jtdkinvest.com',        mes: mes(-1), vendas: 3, valor_total: 620000 },
-  { nome: 'Carlos Mendes',  email: 'carlos.mendes@demo.com',     mes: mes(-1), vendas: 2, valor_total: 340000 },
-  { nome: 'Fernanda Souza', email: 'fernanda.souza@demo.com',    mes: mes(-1), vendas: 1, valor_total: 180000 },
-  { nome: 'Ana Lima',       email: 'demo@jtdkinvest.com',        mes: mes(-2), vendas: 2, valor_total: 300000 },
-  { nome: 'Carlos Mendes',  email: 'carlos.mendes@demo.com',     mes: mes(-2), vendas: 3, valor_total: 480000 },
+// Cada registro representa uma venda; o objeto final é montado em
+// getProducaoDemo() no mesmo formato que producaoService retornaria.
+const mesNum = (offset = 0) => {
+  const d = new Date(hoje);
+  d.setMonth(d.getMonth() + offset);
+  return { mes: d.getMonth() + 1, ano: d.getFullYear() };
+};
+const m0 = mesNum(0), m1 = mesNum(-1), m2 = mesNum(-2);
+
+const PRODUCAO_DETALHES = [
+  { cliente: 'Roberto Alves Silva',   assessor: 'Ana Lima',       email_assessor: 'demo@jtdkinvest.com',     escritorio: 'JTDK Matriz',       valor_do_bem: 120000, mes: m2.mes, ano: m2.ano, modalidade: 'Imóvel',    grupo: 1234, cota: '0056', parcela: 1800, natureza_sujeito: 'Pessoa Física',    uf: 'RS', tipo_produto: 'Imóvel',    taxa_adm: 0.18 },
+  { cliente: 'Mariana Costa Pereira', assessor: 'Ana Lima',       email_assessor: 'demo@jtdkinvest.com',     escritorio: 'JTDK Matriz',       valor_do_bem: 180000, mes: m2.mes, ano: m2.ano, modalidade: 'Imóvel',    grupo: 1235, cota: '0032', parcela: 2200, natureza_sujeito: 'Pessoa Física',    uf: 'SC', tipo_produto: 'Imóvel',    taxa_adm: 0.18 },
+  { cliente: 'Fernando Machado Jr.',  assessor: 'Carlos Mendes',  email_assessor: 'carlos.mendes@demo.com',  escritorio: 'JTDK Filial Sul',   valor_do_bem: 250000, mes: m1.mes, ano: m1.ano, modalidade: 'Imóvel',    grupo: 1240, cota: '0010', parcela: 3100, natureza_sujeito: 'Pessoa Física',    uf: 'PR', tipo_produto: 'Imóvel',    taxa_adm: 0.17 },
+  { cliente: 'Beatriz Lopes Carvalho',assessor: 'Carlos Mendes',  email_assessor: 'carlos.mendes@demo.com',  escritorio: 'JTDK Filial Sul',   valor_do_bem: 90000,  mes: m1.mes, ano: m1.ano, modalidade: 'Automóvel', grupo: 1241, cota: '0022', parcela: 1500, natureza_sujeito: 'Pessoa Física',    uf: 'RS', tipo_produto: 'Automóvel', taxa_adm: 0.16 },
+  { cliente: 'Thiago Ramos Fontes',   assessor: 'Ana Lima',       email_assessor: 'demo@jtdkinvest.com',     escritorio: 'JTDK Matriz',       valor_do_bem: 210000, mes: m0.mes, ano: m0.ano, modalidade: 'Imóvel',    grupo: 1250, cota: '0041', parcela: 2800, natureza_sujeito: 'Pessoa Física',    uf: 'SP', tipo_produto: 'Imóvel',    taxa_adm: 0.18 },
+  { cliente: 'Juliana Neves Brandão', assessor: 'Carlos Mendes',  email_assessor: 'carlos.mendes@demo.com',  escritorio: 'JTDK Filial Sul',   valor_do_bem: 350000, mes: m0.mes, ano: m0.ano, modalidade: 'Imóvel',    grupo: 1251, cota: '0015', parcela: 4200, natureza_sujeito: 'Pessoa Jurídica',  uf: 'SC', tipo_produto: 'Imóvel',    taxa_adm: 0.17 },
+  { cliente: 'Ricardo Oliveira Pinto',assessor: 'Fernanda Souza', email_assessor: 'fernanda.souza@demo.com', escritorio: 'JTDK Filial Norte', valor_do_bem: 140000, mes: m0.mes, ano: m0.ano, modalidade: 'Automóvel', grupo: 1252, cota: '0008', parcela: 1950, natureza_sujeito: 'Pessoa Física',    uf: 'BA', tipo_produto: 'Automóvel', taxa_adm: 0.16 },
+  { cliente: 'Patrícia Duarte Melo',  assessor: 'Ana Lima',       email_assessor: 'demo@jtdkinvest.com',     escritorio: 'JTDK Matriz',       valor_do_bem: 450000, mes: m0.mes, ano: m0.ano, modalidade: 'Imóvel',    grupo: 1253, cota: '0033', parcela: 5500, natureza_sujeito: 'Pessoa Jurídica',  uf: 'SP', tipo_produto: 'Imóvel',    taxa_adm: 0.18 },
 ];
+
+// Monta o objeto de produção no mesmo formato de producaoService.getProducaoAdmin()
+function getProducaoDemo() {
+  const agrupaPorChave = (chave, rotulo) => {
+    const map = {};
+    for (const r of PRODUCAO_DETALHES) {
+      const k = r[chave];
+      if (!map[k]) map[k] = { [rotulo]: k, total: 0, quantidade: 0 };
+      map[k].total += r.valor_do_bem;
+      map[k].quantidade += 1;
+    }
+    return Object.values(map).sort((a, b) => b.total - a.total);
+  };
+
+  const porMesMap = {};
+  for (const r of PRODUCAO_DETALHES) {
+    if (!porMesMap[r.mes]) porMesMap[r.mes] = { mes: r.mes, total: 0, quantidade: 0 };
+    porMesMap[r.mes].total += r.valor_do_bem;
+    porMesMap[r.mes].quantidade += 1;
+  }
+  const porMes = Object.values(porMesMap).sort((a, b) => a.mes - b.mes);
+
+  const valorTotal = PRODUCAO_DETALHES.reduce((s, r) => s + r.valor_do_bem, 0);
+  const meses = [...new Set(PRODUCAO_DETALHES.map(r => r.mes))].sort((a, b) => a - b);
+  const anos = [...new Set(PRODUCAO_DETALHES.map(r => r.ano))].sort((a, b) => a - b);
+  const escritorios = [...new Set(PRODUCAO_DETALHES.map(r => r.escritorio))];
+  const assessores = [...new Set(PRODUCAO_DETALHES.map(r => r.assessor))];
+
+  return {
+    isAdmin: true,
+    totais: { quantidade: PRODUCAO_DETALHES.length, valorTotal },
+    porEscritorio: agrupaPorChave('escritorio', 'escritorio'),
+    porMes,
+    porAssessor: agrupaPorChave('assessor', 'assessor'),
+    filterOptions: { meses, anos, escritorios, assessores },
+    detalhes: PRODUCAO_DETALHES,
+  };
+}
 
 // ── Reuniões ─────────────────────────────────────────────────
 const REUNIOES = [
@@ -62,12 +109,12 @@ const REUNIOES = [
 ];
 
 // ── Acompanhamento ───────────────────────────────────────────
+// Shape conforme esperado por Acompanhamento.jsx (agrupa por cliente_nome).
 const ACOMPANHAMENTO = [
-  { id: 'ademo-1', cliente_nome: 'Roberto Alves Silva',    grupo: 1234, cota: 56,  tipo: 'imovel', valor_carta: 120000, parcela_atual: 1800,  lance_ofertado: 25, status_contemplacao: 'aguardando', proxima_assembleia: dia(10), observacoes: 'Prefere contemplação por lance' },
-  { id: 'ademo-2', cliente_nome: 'Mariana Costa Pereira',  grupo: 1235, cota: 32,  tipo: 'imovel', valor_carta: 180000, parcela_atual: 2200,  lance_ofertado: 30, status_contemplacao: 'contemplado', proxima_assembleia: null, observacoes: 'Contemplada em 04/2026' },
-  { id: 'ademo-3', cliente_nome: 'Fernando Machado Jr.',   grupo: 1240, cota: 10,  tipo: 'imovel', valor_carta: 250000, parcela_atual: 3100,  lance_ofertado: 0,  status_contemplacao: 'aguardando', proxima_assembleia: dia(15), observacoes: '' },
-  { id: 'ademo-4', cliente_nome: 'Thiago Ramos Fontes',    grupo: 1250, cota: 41,  tipo: 'imovel', valor_carta: 210000, parcela_atual: 2800,  lance_ofertado: 28, status_contemplacao: 'aguardando', proxima_assembleia: dia(8),  observacoes: 'Quer tentar lance na próxima assembleia' },
-  { id: 'ademo-5', cliente_nome: 'Patrícia Duarte Melo',   grupo: 1253, cota: 33,  tipo: 'imovel', valor_carta: 450000, parcela_atual: 5500,  lance_ofertado: 35, status_contemplacao: 'aguardando', proxima_assembleia: dia(20), observacoes: 'Cliente VIP — acompanhar de perto' },
+  { id: 'ademo-1', cliente_nome: 'Roberto Alves Silva', cliente_cpf: '123.456.789-00', grupo: 1234, cota: '0056-00', contrato: '2024-00123', data_venda: '12/03/2024', prazo_grupo: 200, taxa_adm: '18%', proximo_reajuste: '03/2027', parcelas_pagas: 27, soma_parcelas_pagas: 48600,  prazo_restante: 173, saldo_devedor: 95000 },
+  { id: 'ademo-2', cliente_nome: 'Roberto Alves Silva', cliente_cpf: '123.456.789-00', grupo: 1240, cota: '0010-00', contrato: '2024-00201', data_venda: '11/04/2024', prazo_grupo: 180, taxa_adm: '17%', proximo_reajuste: '04/2027', parcelas_pagas: 26, soma_parcelas_pagas: 80600,  prazo_restante: 154, saldo_devedor: 168000 },
+  { id: 'ademo-3', cliente_nome: 'Mariana Costa Pereira', cliente_cpf: '987.654.321-00', grupo: 1235, cota: '0032-00', contrato: '2024-00124', data_venda: '22/03/2024', prazo_grupo: 200, taxa_adm: '18%', proximo_reajuste: '03/2027', parcelas_pagas: 27, soma_parcelas_pagas: 59400,  prazo_restante: 173, saldo_devedor: 142000 },
+  { id: 'ademo-4', cliente_nome: 'Patrícia Duarte Melo', cliente_cpf: '456.789.123-00', grupo: 1253, cota: '0033-00', contrato: '2024-00313', data_venda: '05/06/2024', prazo_grupo: 220, taxa_adm: '18%', proximo_reajuste: '06/2027', parcelas_pagas: 24, soma_parcelas_pagas: 132000, prazo_restante: 196, saldo_devedor: 380000 },
 ];
 
-module.exports = { COMISSOES, PRODUCAO, REUNIOES, ACOMPANHAMENTO };
+module.exports = { COMISSOES, getProducaoDemo, REUNIOES, ACOMPANHAMENTO };

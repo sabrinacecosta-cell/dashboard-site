@@ -40,7 +40,7 @@ function AdminRoute({ children }) {
     return <Navigate to="/login" />;
   }
 
-  if (!ADMIN_EMAILS.includes(user?.email)) {
+  if (!user?.is_demo && !ADMIN_EMAILS.includes(user?.email)) {
     return <Navigate to="/vendas" />;
   }
 

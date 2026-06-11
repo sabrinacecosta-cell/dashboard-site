@@ -625,7 +625,7 @@ export default function Admin() {
   const [open, setOpen] = useState({});
   const toggle = (k) => setOpen(s => ({ ...s, [k]: !s[k] }));
 
-  if (!ADMIN_EMAILS.includes(user?.email)) {
+  if (!user?.is_demo && !ADMIN_EMAILS.includes(user?.email)) {
     return (
       <div className="page-admin">
         <div className="page-header">
