@@ -87,6 +87,7 @@ export default function Simulador() {
   const [qtdesCotas, setQtdesCotas]               = useState({});
   const [linhasSim, setLinhasSim]                 = useState([]);
   const [showModalNomeSim, setShowModalNomeSim]   = useState(false);
+  const [modalAcaoSim, setModalAcaoSim]           = useState('pdf'); // 'pdf' | 'excel'
   const [nomeClienteInputSim, setNomeClienteInputSim] = useState('');
   const [incluirParcelaPosNoPDF, setIncluirParcelaPosNoPDF] = useState(true);
   const [simParcelasX, setSimParcelasX]                   = useState(18);
@@ -275,7 +276,10 @@ export default function Simulador() {
     saldoDevedor:           totaisSim.saldoDevedor,
   }), [totaisSim]);
 
-  const gerarExcel = () => {
+  const gerarExcel = (nomeCliente) => {
+    const projeto = modalidade === 'imovel' ? 'Projeto imóvel' : 'Projeto auto';
+    const nomeLimpo = nomeCliente ? nomeCliente.replace(/[\\/:*?"<>|]/g, '').trim() : '';
+    const nomeBase = nomeLimpo ? `${nomeLimpo} - ${projeto}` : projeto;
     gerarExcelSimulacao({
       rows: linhasSimCalc.map(l => ({
         grupo:                  l.grupo,
@@ -301,7 +305,7 @@ export default function Simulador() {
         creditoContemplado:     totaisSim.creditoContemplado,
       },
       simularParcelas: simParcelasX,
-      nomeArquivo: `simulacao-xp-${modalidade}.xlsx`,
+      nomeArquivo: `${nomeBase}.xlsx`,
       temReductor: linhasSimCalc.some(l => l.redutor === 50),
       temLance: linhasSimCalc.some(l => l.lanceTotal > 0),
     });
@@ -928,10 +932,10 @@ export default function Simulador() {
           </label>
 
           <div className="sim-acoes">
-            <button className="sim-btn-excel" onClick={gerarExcel}>
+            <button className="sim-btn-excel" onClick={() => { setModalAcaoSim('excel'); setShowModalNomeSim(true); }}>
               Gerar Excel
             </button>
-            <button className="sim-btn-pdf" onClick={() => setShowModalNomeSim(true)}>
+            <button className="sim-btn-pdf" onClick={() => { setModalAcaoSim('pdf'); setShowModalNomeSim(true); }}>
               Gerar PDF
             </button>
           </div>
@@ -951,7 +955,9 @@ export default function Simulador() {
               onKeyDown={e => {
                 if (e.key !== 'Enter') return;
                 setShowModalNomeSim(false);
-                gerarPDFSim(nomeClienteInputSim.trim() || null);
+                const nome = nomeClienteInputSim.trim() || null;
+                if (modalAcaoSim === 'excel') gerarExcel(nome);
+                else gerarPDFSim(nome);
                 setNomeClienteInputSim('');
               }}
               autoFocus
@@ -964,11 +970,13 @@ export default function Simulador() {
                 className="sim-modal-btn-gerar"
                 onClick={() => {
                   setShowModalNomeSim(false);
-                  gerarPDFSim(nomeClienteInputSim.trim() || null);
+                  const nome = nomeClienteInputSim.trim() || null;
+                  if (modalAcaoSim === 'excel') gerarExcel(nome);
+                  else gerarPDFSim(nome);
                   setNomeClienteInputSim('');
                 }}
               >
-                Gerar PDF
+                {modalAcaoSim === 'excel' ? 'Gerar Excel' : 'Gerar PDF'}
               </button>
             </div>
           </div>
