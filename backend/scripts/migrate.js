@@ -751,6 +751,15 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   await db.query(`ALTER TABLE reunioes ADD COLUMN IF NOT EXISTS data_fim TIMESTAMP`);
   console.log('Coluna data_fim em reunioes OK!');
 
+  // Reuniões excluídas manualmente: impede que o import as recrie do Calendar.
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS reunioes_excluidas (
+      google_event_id TEXT PRIMARY KEY,
+      excluida_em      TIMESTAMP DEFAULT NOW()
+    )
+  `);
+  console.log('Tabela "reunioes_excluidas" OK!');
+
   // Remove duplicatas em simulador_grupos (mantém o id menor por numero_grupo+modalidade)
   await db.query(`
     DELETE FROM simulador_grupos

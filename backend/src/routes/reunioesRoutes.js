@@ -268,11 +268,26 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
       console.error('[importar] Gmail error status:', gmailErr.status);
     }
 
+    // Reuniões excluídas manualmente pelo usuário — não reimportar.
+    await db.query(`CREATE TABLE IF NOT EXISTS reunioes_excluidas (
+      google_event_id TEXT PRIMARY KEY,
+      excluida_em      TIMESTAMP DEFAULT NOW()
+    )`);
+    const excluidasRes = await db.query('SELECT google_event_id FROM reunioes_excluidas');
+    const excluidas = new Set(excluidasRes.rows.map(r => r.google_event_id));
+
     // ── 4. Inserção ─────────────────────────────────────────
     let imported = 0;
     let skipped = 0;
 
     for (const event of events) {
+      // Pula eventos que o usuário excluiu manualmente.
+      if (excluidas.has(event.id)) {
+        skipped++;
+        console.log(`[importar] SKIP (excluído pelo usuário) | "${event.summary}"`);
+        continue;
+      }
+
       // Dedup por google_event_id (mantido — garante zero duplicatas)
       const existing = await db.query(
         'SELECT id FROM reunioes WHERE google_event_id = $1',
@@ -517,6 +532,21 @@ router.get('/reunioes', authMiddleware, adminOnly, async (req, res) => {
 // ── Remover reunião ──────────────────────────────────────────
 router.delete('/reunioes/:id', authMiddleware, adminOnly, async (req, res) => {
   try {
+    await db.query(`CREATE TABLE IF NOT EXISTS reunioes_excluidas (
+      google_event_id TEXT PRIMARY KEY,
+      excluida_em      TIMESTAMP DEFAULT NOW()
+    )`);
+    // Registra o evento na blocklist (se vier do Calendar) para que o import
+    // automático não recrie a reunião excluída.
+    const r = await db.query('SELECT google_event_id FROM reunioes WHERE id = $1', [req.params.id]);
+    const gid = r.rows[0]?.google_event_id;
+    if (gid) {
+      await db.query(
+        `INSERT INTO reunioes_excluidas (google_event_id) VALUES ($1)
+         ON CONFLICT (google_event_id) DO NOTHING`,
+        [gid]
+      );
+    }
     await db.query('DELETE FROM reunioes WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) {
