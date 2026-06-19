@@ -442,58 +442,57 @@ export default function Simulador() {
     }
     y += cardH + 8;
 
-    // Cards de informações por grupo
+    // Cards de informações por grupo.
+    // Vários grupos: um único quadro com as MÉDIAS dos grupos usados.
+    // Um grupo: quadro detalhado do grupo (como antes).
     const gruposUnicos = [...new Map(linhasSim.map(l => [l.grupo, l])).values()];
     const nGrupos = gruposUnicos.length;
     const infoCardH = 40;
-    const infoCardW = nGrupos <= 2 ? (W - 2 * M - (nGrupos - 1) * 6) / nGrupos : W - 2 * M;
-    if (nGrupos <= 2) {
-      gruposUnicos.forEach((l, i) => {
-        const cx = M + i * (infoCardW + 6);
-        doc.setFillColor(...darkCard);
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(cx, y, infoCardW, infoCardH, 4, 4, 'FD');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`GRUPO ${l.grupo}`, cx + 6, y + 7);
-        doc.setFontSize(8.5);
-        doc.setTextColor(...white);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Prazo restante: ${l.prazoRestante} meses`, cx + 6, y + 14);
-        doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, cx + 6, y + 21);
-        doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, cx + 6, y + 28);
-        doc.setFontSize(7);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, cx + 6, y + 36);
-      });
-      y += infoCardH + 8;
+    const infoCardW = W - 2 * M;
+
+    doc.setFillColor(...darkCard);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(M, y, infoCardW, infoCardH, 4, 4, 'FD');
+
+    if (nGrupos > 1) {
+      const media = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+      const prazoMedio = Math.round(media(gruposUnicos.map(l => l.prazoRestante || 0)));
+      const lanceMedio = Math.round(media(gruposUnicos.map(l => l.lanceEmbutidoMax || 0)));
+      const taxaMedia  = media(gruposUnicos.map(l => l.taxaAdm || 0));
+      const fundoMedio = media(gruposUnicos.map(l => l.fundoReserva || 0));
+      doc.setFontSize(6.5);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`MÉDIA DE ${nGrupos} GRUPOS`, M + 6, y + 7);
+      doc.setFontSize(8.5);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Prazo restante médio: ${prazoMedio} meses`, M + 6, y + 14);
+      doc.text(`Lance embutido máximo médio: ${lanceMedio}%`, M + 6, y + 21);
+      doc.text(`Taxa administrativa média: ${formatarPercentual(taxaMedia)}   Fundo de reserva médio: ${formatarPercentual(fundoMedio)}`, M + 6, y + 28);
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Os valores demonstrados são as somas e/ou as médias de todos os grupos.', M + 6, y + 36);
     } else {
-      gruposUnicos.forEach(l => {
-        doc.setFillColor(...darkCard);
-        doc.setDrawColor(...gold);
-        doc.setLineWidth(0.5);
-        doc.roundedRect(M, y, infoCardW, infoCardH, 4, 4, 'FD');
-        doc.setFontSize(6.5);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`GRUPO ${l.grupo}`, M + 6, y + 7);
-        doc.setFontSize(8.5);
-        doc.setTextColor(...white);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
-        doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
-        doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
-        doc.setFontSize(7);
-        doc.setTextColor(...grey);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, M + 6, y + 36);
-        y += infoCardH + 5;
-      });
-      y += 3;
+      const l = gruposUnicos[0];
+      doc.setFontSize(6.5);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`GRUPO ${l.grupo}`, M + 6, y + 7);
+      doc.setFontSize(8.5);
+      doc.setTextColor(...white);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
+      doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
+      doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Reajuste: ${l.reajuste || '—'}   Mês: ${l.mesReajuste || '—'}`, M + 6, y + 36);
     }
+    y += infoCardH + 8;
 
     const gruposComAviso = [1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042];
     const temGrupoComAviso = linhasSim.some(l => gruposComAviso.includes(Number(l.grupo)));
@@ -602,61 +601,6 @@ export default function Simulador() {
         > Auto
         </button>
       </div>
-
-      {/* Painel do Modo Multiplicador */}
-      {modoMultiplicador && (
-        <div className="sim-mult-painel">
-          <h3 className="sim-mult-titulo">Modo Multiplicador</h3>
-
-          <div className="sim-mult-campo">
-            <label className="sim-mult-label">Crédito desejado</label>
-            <div className="sim-mult-input-wrapper">
-              <input
-                type="number"
-                className="sim-mult-input-credito"
-                min={0}
-                placeholder="0"
-                value={multCredito}
-                onChange={e => setMultCredito(e.target.value)}
-              />
-              <span className="sim-mult-input-sufixo">R$</span>
-            </div>
-          </div>
-
-          <button
-            className="sim-mult-btn-montar"
-            onClick={montarPortfolio}
-            disabled={multLoading}
-          >
-            {multLoading ? 'Montando...' : 'Montar portfólio'}
-          </button>
-
-          {multErro && <p className="sim-mult-erro">{multErro}</p>}
-
-          {multResultado && (
-            <div className="sim-mult-resumo cr-resumo-grid">
-              <div className="cr-resumo-item">
-                <span className="cr-resumo-label">Crédito líquido total</span>
-                <span className="cr-resumo-valor cr-verde">{formatarMoeda(multResultado.credito_liquido_total)}</span>
-              </div>
-              <div className="cr-resumo-item">
-                <span className="cr-resumo-label">Crédito contratado total</span>
-                <span className="cr-resumo-valor">{formatarMoeda(multResultado.credito_contratado_total)}</span>
-              </div>
-              <div className="cr-resumo-item">
-                <span className="cr-resumo-label">Parcela total</span>
-                <span className="cr-resumo-valor">{formatarMoeda(multResultado.parcela_total)}</span>
-              </div>
-              <div className="cr-resumo-item">
-                <span className="cr-resumo-label">Tempo do portfólio</span>
-                <span className="cr-resumo-valor cr-ouro">
-                  {multResultado.tempo_esperado_meses.toFixed(1).replace('.', ',')} meses
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Grupos ou Cotas — sempre visíveis para permitir adicionar cotas manualmente */}
       {(!grupoSelecionado ? (
@@ -813,6 +757,61 @@ export default function Simulador() {
           )}
         </div>
       ))}
+
+      {/* Painel do Modo Multiplicador — logo abaixo dos cards e acima de "Monte sua simulação" */}
+      {modoMultiplicador && (
+        <div className="sim-mult-painel">
+          <h3 className="sim-mult-titulo">Modo Multiplicador</h3>
+
+          <div className="sim-mult-campo">
+            <label className="sim-mult-label">Crédito desejado</label>
+            <div className="sim-mult-input-wrapper">
+              <input
+                type="number"
+                className="sim-mult-input-credito"
+                min={0}
+                placeholder="0"
+                value={multCredito}
+                onChange={e => setMultCredito(e.target.value)}
+              />
+              <span className="sim-mult-input-sufixo">R$</span>
+            </div>
+          </div>
+
+          <button
+            className="sim-mult-btn-montar"
+            onClick={montarPortfolio}
+            disabled={multLoading}
+          >
+            {multLoading ? 'Montando...' : 'Montar portfólio'}
+          </button>
+
+          {multErro && <p className="sim-mult-erro">{multErro}</p>}
+
+          {multResultado && (
+            <div className="sim-mult-resumo cr-resumo-grid">
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Crédito líquido total</span>
+                <span className="cr-resumo-valor cr-verde">{formatarMoeda(multResultado.credito_liquido_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Crédito contratado total</span>
+                <span className="cr-resumo-valor">{formatarMoeda(multResultado.credito_contratado_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Parcela total</span>
+                <span className="cr-resumo-valor">{formatarMoeda(multResultado.parcela_total)}</span>
+              </div>
+              <div className="cr-resumo-item">
+                <span className="cr-resumo-label">Tempo do portfólio</span>
+                <span className="cr-resumo-valor cr-ouro">
+                  {multResultado.tempo_esperado_meses.toFixed(1).replace('.', ',')} meses
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Monte sua simulação */}
       <div className="sim-monte-container">

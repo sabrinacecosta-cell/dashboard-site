@@ -80,6 +80,12 @@ const GRUPOS_REDUTOR_ATIVO = {
   auto:   [2130, 3002],
 };
 
+// Modo Multiplicador (imóvel): grupos permitidos e ordem de prioridade.
+// Abaixo do limite, prioriza na ordem definida; acima, usa todos (diversifica).
+const MULT_GRUPOS_IMOVEL    = [1036, 1037, 1038, 1040, 1042, 1043, 1044];
+const MULT_PRIORIDADE_IMOVEL = [1040, 1036, 1042, 1043, 1044, 1037, 1038];
+const MULT_LIMITE_USAR_TODOS = 3_000_000; // crédito acima disso usa todos os grupos
+
 // Modo Multiplicador: monta um portfólio dividindo o crédito desejado entre
 // grupos para diversificar/acelerar a contemplação.
 router.get('/multiplicador', authMiddleware, async (req, res) => {
@@ -107,6 +113,9 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
 
     const candidatos = [];
     for (const g of gruposRes.rows) {
+      // Imóvel: o multiplicador usa apenas a lista de grupos permitida.
+      if (modalidade === 'imovel' && !MULT_GRUPOS_IMOVEL.includes(Number(g.numero_grupo))) continue;
+
       // Usa a média de contemplação CURADA de simulador_grupos (autoritativa,
       // a mesma exibida nas Métricas). Não recalcular da tabela bruta — os
       // valores ali foram corrigidos no migrate e divergem do SUM/SUM bruto.
@@ -163,28 +172,46 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
     if (!candidatos.length)
       return res.status(404).json({ error: 'Nenhum grupo elegível para a modalidade informada.' });
 
-    // 2/3. Alocar cotas concentrando nos grupos com melhor média (maior P).
-    // A cada passo adiciona a cota ao grupo de menor "custo" = (N+1)/P. Abrir
-    // um grupo ainda vazio recebe uma penalidade (CONCENTRACAO_FATOR), o que
-    // mantém as cotas concentradas nos melhores grupos e só abre novos grupos
-    // quando a média do melhor já não compensa — algo que acontece naturalmente
-    // quanto maior for o crédito. Acumula até cobrir o crédito (arredonda p/ cima).
-    const CONCENTRACAO_FATOR = 2; // quão saturado um grupo fica antes de abrir o próximo
-    candidatos.sort((a, b) => b.P - a.P); // melhor média primeiro (desempate)
+    // 2/3. Alocar cotas até cobrir o crédito (arredonda p/ cima).
+    const GUARD_MAX = 100000;
+    const usarTodos = modalidade === 'imovel' && credito > MULT_LIMITE_USAR_TODOS;
+
+    // Função de custo: menor custo recebe a próxima cota.
+    let custoFn;
+    if (modalidade === 'imovel' && !usarTodos) {
+      // Abaixo do limite: prioriza estritamente a ordem definida pelo cliente.
+      // custo = (N+1) * rank → concentra no 1º da ordem e abre os próximos
+      // (na ordem de prioridade) conforme o crédito cresce. Não usa a média aqui.
+      const rank = new Map(MULT_PRIORIDADE_IMOVEL.map((g, i) => [g, i + 1]));
+      const rankDe = c => rank.get(Number(c.numero_grupo)) || (MULT_PRIORIDADE_IMOVEL.length + 1);
+      candidatos.sort((a, b) => rankDe(a) - rankDe(b));
+      custoFn = c => (c.qtde + 1) * rankDe(c);
+    } else {
+      // Acima do limite (ou auto): diversifica minimizando o tempo de
+      // contemplação — adiciona à cota de menor (N+1)/P (maior média recebe mais).
+      candidatos.sort((a, b) => b.P - a.P);
+      custoFn = c => (c.qtde + 1) / c.P;
+    }
+
     let liquidoTotal = 0;
     let guard = 0;
-    const GUARD_MAX = 100000;
     while (liquidoTotal < credito && guard < GUARD_MAX) {
       let alvo = candidatos[0];
       let melhorCusto = Infinity;
       for (const c of candidatos) {
-        const penalidade = c.qtde === 0 ? CONCENTRACAO_FATOR : 1;
-        const custo = ((c.qtde + 1) / c.P) * penalidade;
+        const custo = custoFn(c);
         if (custo < melhorCusto) { melhorCusto = custo; alvo = c; }
       }
       alvo.qtde += 1;
       liquidoTotal += alvo.liquido_por_cota;
       guard += 1;
+    }
+
+    // Acima do limite: garante que TODOS os grupos permitidos sejam usados.
+    if (usarTodos) {
+      for (const c of candidatos) {
+        if (c.qtde === 0) { c.qtde = 1; liquidoTotal += c.liquido_por_cota; }
+      }
     }
 
     // 4/5. Monta a cesta apenas com grupos que receberam cotas
@@ -209,9 +236,15 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
       };
     });
 
-    // Sempre prioriza os grupos com as maiores médias de contemplação (maior P primeiro).
-    // Tempo reportado = tempo do portfólio completo (MAX por grupo).
-    cesta.sort((a, b) => b._P - a._P);
+    // Ordem de exibição: no imóvel abaixo do limite segue a ordem de prioridade;
+    // caso contrário, maior média primeiro. Tempo = portfólio completo (MAX por grupo).
+    if (modalidade === 'imovel' && !usarTodos) {
+      const rankExib = new Map(MULT_PRIORIDADE_IMOVEL.map((g, i) => [g, i + 1]));
+      cesta.sort((a, b) =>
+        (rankExib.get(Number(a.grupo)) || 99) - (rankExib.get(Number(b.grupo)) || 99));
+    } else {
+      cesta.sort((a, b) => b._P - a._P);
+    }
     const tempoReportado = round2(Math.max(...cesta.map(c => c.tempo_esperado_meses)));
     cesta = cesta.map(({ _P, ...rest }) => rest);
 
