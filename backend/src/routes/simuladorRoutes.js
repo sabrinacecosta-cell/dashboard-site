@@ -35,9 +35,6 @@ router.get('/grupos', authMiddleware, async (req, res) => {
     const result = await db.query(
       `SELECT
         sg.*,
-        ROUND(
-          SUM(c.contemplados)::numeric / NULLIF(SUM(c.qnt_lances), 0), 6
-        ) AS media_contemplacao,
         (
           SELECT lance_percent
           FROM ${ctable}
@@ -46,10 +43,8 @@ router.get('/grupos', authMiddleware, async (req, res) => {
           LIMIT 1
         ) AS lance_ultimo_mes
       FROM simulador_grupos sg
-      LEFT JOIN ${ctable} c ON c.grupo = sg.numero_grupo
       WHERE sg.modalidade = $1
         AND sg.id = (SELECT MIN(id) FROM simulador_grupos WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
-      GROUP BY sg.id
       ORDER BY sg.numero_grupo ASC`,
       [modalidade]
     );
@@ -112,21 +107,19 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
 
     const candidatos = [];
     for (const g of gruposRes.rows) {
-      // Média de contemplação a partir de todos os registros disponíveis
+      // Usa a média de contemplação CURADA de simulador_grupos (autoritativa,
+      // a mesma exibida nas Métricas). Não recalcular da tabela bruta — os
+      // valores ali foram corrigidos no migrate e divergem do SUM/SUM bruto.
+      if (g.sem_media_contemplacao) continue;       // grupo sem média confiável: excluir
+      const P = parseFloat(g.media_contemplacao);
+      if (!(P > 0)) continue;                       // sem média: não há tempo estimável
+
+      // Tamanho da amostra (só para o badge de "média estimada")
       const cont = await db.query(
-        `SELECT COALESCE(SUM(contemplados), 0) AS soma_cont,
-                COALESCE(SUM(qnt_lances), 0)  AS soma_lances,
-                COUNT(*)                       AS n
-         FROM ${ctable} WHERE grupo = $1`,
+        `SELECT COUNT(*) AS n FROM ${ctable} WHERE grupo = $1`,
         [g.numero_grupo]
       );
-      const n          = parseInt(cont.rows[0].n);
-      const somaLances = parseFloat(cont.rows[0].soma_lances);
-      const somaCont   = parseFloat(cont.rows[0].soma_cont);
-      if (n === 0) continue;                       // sem registros: excluir
-      if (!somaLances) continue;                   // sem lances: média indefinida
-      const P = somaCont / somaLances;
-      if (!(P > 0)) continue;                       // sem contemplação: não há tempo
+      const n = parseInt(cont.rows[0].n);
 
       // Cotas do grupo
       const cotasRes = await db.query(
