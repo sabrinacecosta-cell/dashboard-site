@@ -90,7 +90,6 @@ const GRUPOS_REDUTOR_ATIVO = {
 router.get('/multiplicador', authMiddleware, async (req, res) => {
   const { modalidade } = req.query;
   const credito   = parseFloat(req.query.credito);
-  const estrategia = req.query.estrategia === 'primeira' ? 'primeira' : 'completo';
 
   if (!modalidade || !['imovel', 'auto'].includes(modalidade))
     return res.status(400).json({ error: 'modalidade inválida. Use imovel ou auto.' });
@@ -212,18 +211,10 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
       };
     });
 
-    // Estratégia: ordenação e tempo reportado
-    let tempoReportado;
-    if (estrategia === 'primeira') {
-      // Ordena por 1/P crescente (maior P primeiro); tempo = 1/maior P
-      cesta.sort((a, b) => (1 / b._P) - (1 / a._P)); // maior P primeiro
-      const maiorP = Math.max(...cesta.map(c => c._P));
-      tempoReportado = round2(1 / maiorP);
-    } else {
-      // Portfólio completo: tempo = MAX(tempo_esperado_grupo)
-      cesta.sort((a, b) => a.grupo - b.grupo);
-      tempoReportado = round2(Math.max(...cesta.map(c => c.tempo_esperado_meses)));
-    }
+    // Sempre prioriza os grupos com as maiores médias de contemplação (maior P primeiro).
+    // Tempo reportado = tempo do portfólio completo (MAX por grupo).
+    cesta.sort((a, b) => b._P - a._P);
+    const tempoReportado = round2(Math.max(...cesta.map(c => c.tempo_esperado_meses)));
     cesta = cesta.map(({ _P, ...rest }) => rest);
 
     const creditoLiquidoTotal    = cesta.reduce((s, c) => s + c.credito_liquido, 0);
@@ -236,7 +227,6 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
       credito_contratado_total: round2(creditoContratadoTotal),
       parcela_total:            round2(parcelaTotal),
       tempo_esperado_meses:     tempoReportado,
-      estrategia,
       cesta,
     });
   } catch (err) {

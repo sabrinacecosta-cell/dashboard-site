@@ -95,7 +95,6 @@ export default function Simulador() {
   // Modo Multiplicador
   const [modoMultiplicador, setModoMultiplicador] = useState(false);
   const [multCredito, setMultCredito]             = useState('');
-  const [multEstrategia, setMultEstrategia]       = useState('completo');
   const [multLoading, setMultLoading]             = useState(false);
   const [multResultado, setMultResultado]         = useState(null);
   const [multErro, setMultErro]                   = useState('');
@@ -148,7 +147,7 @@ export default function Simulador() {
     setMultLoading(true);
     try {
       const { data } = await api.get('/simulador/multiplicador', {
-        params: { modalidade, credito, estrategia: multEstrategia },
+        params: { modalidade, credito },
       });
       const novasLinhas = data.cesta.map(item => {
         const g = grupos.find(gr => Number(gr.numero_grupo) === Number(item.grupo)) || {};
@@ -624,32 +623,6 @@ export default function Simulador() {
             </div>
           </div>
 
-          <div className="sim-mult-campo">
-            <label className="sim-mult-label">Estratégia de contemplação</label>
-            <div className="sim-mult-estrategia-group">
-              <label className="sim-mult-radio">
-                <input
-                  type="radio"
-                  name="mult-estrategia"
-                  value="primeira"
-                  checked={multEstrategia === 'primeira'}
-                  onChange={() => setMultEstrategia('primeira')}
-                />
-                Primeira contemplação
-              </label>
-              <label className="sim-mult-radio">
-                <input
-                  type="radio"
-                  name="mult-estrategia"
-                  value="completo"
-                  checked={multEstrategia === 'completo'}
-                  onChange={() => setMultEstrategia('completo')}
-                />
-                Portfólio completo
-              </label>
-            </div>
-          </div>
-
           <button
             className="sim-mult-btn-montar"
             onClick={montarPortfolio}
@@ -675,11 +648,7 @@ export default function Simulador() {
                 <span className="cr-resumo-valor">{formatarMoeda(multResultado.parcela_total)}</span>
               </div>
               <div className="cr-resumo-item">
-                <span className="cr-resumo-label">
-                  {multResultado.estrategia === 'primeira'
-                    ? 'Tempo p/ 1ª contemplação'
-                    : 'Tempo do portfólio'}
-                </span>
+                <span className="cr-resumo-label">Tempo do portfólio</span>
                 <span className="cr-resumo-valor cr-ouro">
                   {multResultado.tempo_esperado_meses.toFixed(1).replace('.', ',')} meses
                 </span>
