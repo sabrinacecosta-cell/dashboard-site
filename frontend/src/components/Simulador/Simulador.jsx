@@ -658,8 +658,8 @@ export default function Simulador() {
         </div>
       )}
 
-      {/* Grupos ou Cotas */}
-      {!modoMultiplicador && (!grupoSelecionado ? (
+      {/* Grupos ou Cotas — sempre visíveis para permitir adicionar cotas manualmente */}
+      {(!grupoSelecionado ? (
         <div className="sim-grupos-grid-area">
           <p className="sim-titulo-secao">Escolha um grupo</p>
           {loadingGrupos ? (

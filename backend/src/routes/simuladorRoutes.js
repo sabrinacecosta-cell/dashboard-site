@@ -170,19 +170,24 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
     if (!candidatos.length)
       return res.status(404).json({ error: 'Nenhum grupo elegível para a modalidade informada.' });
 
-    // 2/3. Alocar cotas dividindo o crédito entre grupos.
-    // A cada passo adiciona a cota ao grupo que minimiza o tempo resultante
-    // (N+1)/P — o que favorece grupos com maior P e distribui para reduzir o
-    // máximo tempo de contemplação. Acumula até cobrir o crédito (arredonda p/ cima).
+    // 2/3. Alocar cotas concentrando nos grupos com melhor média (maior P).
+    // A cada passo adiciona a cota ao grupo de menor "custo" = (N+1)/P. Abrir
+    // um grupo ainda vazio recebe uma penalidade (CONCENTRACAO_FATOR), o que
+    // mantém as cotas concentradas nos melhores grupos e só abre novos grupos
+    // quando a média do melhor já não compensa — algo que acontece naturalmente
+    // quanto maior for o crédito. Acumula até cobrir o crédito (arredonda p/ cima).
+    const CONCENTRACAO_FATOR = 2; // quão saturado um grupo fica antes de abrir o próximo
+    candidatos.sort((a, b) => b.P - a.P); // melhor média primeiro (desempate)
     let liquidoTotal = 0;
     let guard = 0;
     const GUARD_MAX = 100000;
     while (liquidoTotal < credito && guard < GUARD_MAX) {
       let alvo = candidatos[0];
-      let melhorTempo = Infinity;
+      let melhorCusto = Infinity;
       for (const c of candidatos) {
-        const tempo = (c.qtde + 1) / c.P;
-        if (tempo < melhorTempo) { melhorTempo = tempo; alvo = c; }
+        const penalidade = c.qtde === 0 ? CONCENTRACAO_FATOR : 1;
+        const custo = ((c.qtde + 1) / c.P) * penalidade;
+        if (custo < melhorCusto) { melhorCusto = custo; alvo = c; }
       }
       alvo.qtde += 1;
       liquidoTotal += alvo.liquido_por_cota;
