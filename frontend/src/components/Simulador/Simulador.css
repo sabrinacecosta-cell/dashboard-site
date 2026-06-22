@@ -1416,10 +1416,9 @@
 
 .sim-acoes-secundarias {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 12px;
-  justify-content: space-between;
+  gap: 20px;
+  justify-content: flex-start;
   margin: 10px 0 16px 0;
 }
 

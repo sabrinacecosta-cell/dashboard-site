@@ -890,12 +890,6 @@ export default function Simulador() {
             <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
               Zerar simulação
             </button>
-            <button
-              className="sim-btn-comparar-fin"
-              onClick={() => setComparandoFin(v => !v)}
-            >
-              {comparandoFin ? 'Ocultar comparação' : 'Comparar com financiamento'}
-            </button>
           </div>
 
           {comparandoFin && (
