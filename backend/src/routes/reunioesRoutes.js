@@ -189,27 +189,30 @@ function tituloCompativel(emEventTitle, titulo) {
   return et === t || (t.length >= 6 && et.includes(t)) || (et.length >= 6 && t.includes(et));
 }
 
-// Casa a ata com uma reunião por título + janela de tempo conservadora.
-// A ata chega poucos minutos após o encerramento, então aceita-se do início
-// da reunião até no máximo 30 min após o fim (fim = data_fim ou início+1h30).
-// Quando o assunto traz a data da reunião, prioriza o e-mail do mesmo dia.
+// Casa a ata com uma reunião. Sinal mais confiável: título (entre aspas) +
+// a data da reunião que vem no próprio assunto. Quando o assunto não traz a
+// data, cai para a hora de chegada do e-mail (janela conservadora: do início
+// até 30 min após o fim; fim = data_fim ou início+1h30).
 function casarAta(emails, titulo, dataReuniao, dataFim) {
   const start = new Date(dataReuniao);
   const end   = dataFim ? new Date(dataFim) : new Date(start.getTime() + 90 * 60_000);
-  const inicio = start.getTime() - 5 * 60_000;   // 5 min de folga antes do início
-  const limite = end.getTime() + 30 * 60_000;    // até 30 min após o fim
 
-  let pool = emails.filter(em =>
-    tituloCompativel(em.eventTitle, titulo) && em.date >= inicio && em.date <= limite
-  );
-  if (!pool.length) return null;
+  const porTitulo = emails.filter(em => tituloCompativel(em.eventTitle, titulo));
+  if (!porTitulo.length) return null;
 
-  // Segurança: se o assunto traz a data da reunião, fica só com os do mesmo dia.
-  const mesmoDia = pool.filter(em => em.meetingDate && Math.abs(em.meetingDate - start) <= 36 * 3_600_000);
-  if (mesmoDia.length) pool = mesmoDia;
+  // 1) Mesma data da reunião (do assunto). Tolera fuso com janela de 36h.
+  const mesmoDia = porTitulo
+    .filter(em => em.meetingDate && Math.abs(em.meetingDate - start) <= 36 * 3_600_000)
+    .sort((a, b) => Math.abs(a.date - end) - Math.abs(b.date - end));
+  if (mesmoDia.length) return mesmoDia[0];
 
-  pool.sort((a, b) => Math.abs(a.date - end) - Math.abs(b.date - end));
-  return pool[0];
+  // 2) Sem data no assunto: usa a chegada do e-mail (do início até +30 min).
+  const inicio = start.getTime() - 5 * 60_000;
+  const limite = end.getTime() + 30 * 60_000;
+  const naJanela = porTitulo
+    .filter(em => em.date >= inicio && em.date <= limite)
+    .sort((a, b) => Math.abs(a.date - end) - Math.abs(b.date - end));
+  return naJanela[0] || null;
 }
 
 // ── Importar do Calendar + Gmail ─────────────────────────────
