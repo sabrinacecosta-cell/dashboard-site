@@ -18,6 +18,7 @@ const STATUS_LABELS = {
   fechou: 'Fechou negócio',
   nao_fechou: 'Não fechou',
   retorno: 'Retorno agendado',
+  aguardando_retorno: 'Aguardando retorno',
   operacional: 'Operacional',
 };
 const STATUS_COLORS = {
@@ -25,6 +26,7 @@ const STATUS_COLORS = {
   fechou: '#4caf50',
   nao_fechou: '#f44336',
   retorno: '#2196f3',
+  aguardando_retorno: '#eab308',
   operacional: '#9c27b0',
 };
 
@@ -65,6 +67,7 @@ const CORES = {
   fechou: '#22c55e',
   nao_fechou: '#ef4444',
   retorno: '#3b82f6',
+  aguardando_retorno: '#eab308',
   em_andamento:'#f5a623',
   operacional: '#9c27b0',
   cinza: '#6b7280',
@@ -519,10 +522,12 @@ function SummaryBar({ reunioes: reunioesRaw, proximosRetornos = [] }) {
   const naoFechou   = reunioes.filter(r => r.status === 'nao_fechou').length;
   const emAndamento = reunioes.filter(r => r.status === 'em_andamento').length;
   const operacional = reunioes.filter(r => r.status === 'operacional').length;
+  const aguardandoRetorno = reunioes.filter(r => r.status === 'aguardando_retorno').length;
 
   const pieData = [
     { name: 'Fechou',       value: fechamentos, color: CORES.fechou },
     { name: 'Retorno',      value: retornos,    color: CORES.retorno },
+    { name: 'Aguardando retorno', value: aguardandoRetorno, color: CORES.aguardando_retorno },
     { name: 'Não fechou',   value: naoFechou,   color: CORES.nao_fechou },
     { name: 'Em andamento', value: emAndamento, color: CORES.em_andamento },
     { name: 'Operacional',  value: operacional, color: CORES.operacional },
