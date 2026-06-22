@@ -483,6 +483,7 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
 
     let atualizadas = 0;
     let sem_match = 0;
+    let titulo_bate_fora_janela = 0; // diagnóstico: título casa mas e-mail fora da janela
 
     for (const r of semAta.rows) {
       const refTime = r.data_fim ? new Date(r.data_fim) : new Date(r.data_reuniao);
@@ -491,7 +492,17 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
       // próximo após o fim.
       const matchEmail = casarAta(emails, r.titulo, refTime);
 
-      if (!matchEmail) { sem_match++; continue; }
+      if (!matchEmail) {
+        sem_match++;
+        // Existe e-mail com título compatível, só fora da janela de tempo?
+        const t = normTitulo(r.titulo);
+        const houveTitulo = emails.some(em => {
+          const et = normTitulo(em.eventTitle);
+          return et === t || et.includes(t.slice(0, 20)) || t.includes(et.slice(0, 20));
+        });
+        if (houveTitulo) titulo_bate_fora_janela++;
+        continue;
+      }
 
       await db.query(
         'UPDATE reunioes SET gmail_message_id = $1, ata_original = $2 WHERE id = $3',
@@ -513,8 +524,16 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
       console.log(`[reimportar-atas] ata vinculada | "${r.titulo}"`);
     }
 
-    console.log('[reimportar-atas] === FIM === atualizadas:', atualizadas, 'sem_match:', sem_match);
-    res.json({ atualizadas, sem_match });
+    console.log('[reimportar-atas] === FIM === atualizadas:', atualizadas, 'sem_match:', sem_match,
+      '| emails:', emails.length, '| titulo_bate_fora_janela:', titulo_bate_fora_janela);
+
+    const diag = {
+      emails_encontrados: emails.length,
+      titulo_bate_fora_janela,
+      amostra_assuntos: emails.slice(0, 5).map(e => e.subject),
+      amostra_titulos_reuniao: semAta.rows.slice(0, 5).map(r => r.titulo),
+    };
+    res.json({ atualizadas, sem_match, ...diag });
   } catch (err) {
     console.error('[reimportar-atas] ERRO FATAL:', err.message);
     res.status(500).json({ error: err.message });

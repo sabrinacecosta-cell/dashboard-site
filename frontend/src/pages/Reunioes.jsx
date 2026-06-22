@@ -987,7 +987,20 @@ function Reunioes() {
     setImportMsg('');
     try {
       const r = await api.post('/reunioes/reimportar-atas');
-      setImportMsg(` ${r.data.atualizadas} ata(s) vinculada(s), ${r.data.sem_match} sem correspondência`);
+      const d = r.data;
+      let msg = `${d.atualizadas} ata(s) vinculada(s), ${d.sem_match} sem correspondência · ${d.emails_encontrados} e-mail(s) achado(s) no Gmail`;
+      if (d.emails_encontrados === 0) {
+        msg += ' — o Gmail não retornou nenhum e-mail de ata (verifique a conta conectada e o assunto dos e-mails).';
+      } else if (d.atualizadas === 0 && d.titulo_bate_fora_janela > 0) {
+        msg += ` — ${d.titulo_bate_fora_janela} reunião(ões) têm e-mail com título compatível, mas fora da janela de tempo.`;
+      }
+      if (d.amostra_assuntos?.length) {
+        msg += `\nAssuntos achados: ${d.amostra_assuntos.map(s => `"${s}"`).join(' | ')}`;
+      }
+      if (d.amostra_titulos_reuniao?.length) {
+        msg += `\nTítulos de reuniões sem ata: ${d.amostra_titulos_reuniao.map(s => `"${s}"`).join(' | ')}`;
+      }
+      setImportMsg(msg);
       loadReunioes();
     } catch (e) {
       setImportMsg('Erro: ' + (e.response?.data?.error || 'falha ao reimportar atas'));
@@ -1041,7 +1054,7 @@ function Reunioes() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
           {importMsg && (
-            <span style={{ fontSize: '0.78rem', color: importMsg.startsWith('Erro') ? '#f44336' : 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.78rem', color: importMsg.startsWith('Erro') ? '#f44336' : 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>
               {importMsg}
             </span>
           )}
