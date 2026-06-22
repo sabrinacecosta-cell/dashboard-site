@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { ResumoProposta } from './ResumoProposta';
+import ComparativoFinanciamento from './ComparativoFinanciamento';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
 
@@ -98,6 +99,9 @@ export default function Simulador() {
   const [multLoading, setMultLoading]             = useState(false);
   const [multResultado, setMultResultado]         = useState(null);
   const [multErro, setMultErro]                   = useState('');
+
+  // Comparar com financiamento
+  const [comparandoFin, setComparandoFin]         = useState(false);
 
   useEffect(() => {
     setLoadingGrupos(true);
@@ -274,6 +278,20 @@ export default function Simulador() {
     totalTaxas:             totaisSim.totalTaxas,
     saldoDevedor:           totaisSim.saldoDevedor,
   }), [totaisSim]);
+
+  // Base do consórcio para o comparativo com financiamento (null se nada montado)
+  const consorcioBuilt = useMemo(() => {
+    if (!linhasSimCalc.length) return null;
+    const prazo = Math.max(...linhasSimCalc.map(l => l.prazoRestante || 1));
+    return {
+      creditoContratado: totaisSim.cartaTotal,
+      parcela:           totaisSim.parcelaInicialSim,
+      custoExtra:        totaisSim.totalTaxas,
+      totalPago:         totaisSim.saldoDevedor,
+      prazo,
+      origem:            'simulacao',
+    };
+  }, [linhasSimCalc, totaisSim]);
 
   const gerarExcel = (nomeCliente) => {
     const projeto = modalidade === 'imovel' ? 'Projeto imóvel' : 'Projeto auto';
@@ -872,7 +890,21 @@ export default function Simulador() {
             <button className="sim-btn-zerar" onClick={() => setLinhasSim([])}>
               Zerar simulação
             </button>
+            <button
+              className="sim-btn-comparar-fin"
+              onClick={() => setComparandoFin(v => !v)}
+            >
+              {comparandoFin ? 'Ocultar comparação' : 'Comparar com financiamento'}
+            </button>
           </div>
+
+          {comparandoFin && (
+            <ComparativoFinanciamento
+              modalidade={modalidade}
+              consorcioBuilt={consorcioBuilt}
+              grupos={grupos}
+            />
+          )}
 
           <ResumoProposta simulacao={simulacaoDoTotais} />
 

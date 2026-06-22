@@ -1416,8 +1416,9 @@
 
 .sim-acoes-secundarias {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   justify-content: flex-start;
   margin: 10px 0 16px 0;
 }
@@ -1739,4 +1740,202 @@
 .sim-toggle-mult-btn:hover {
   background: var(--cor-destaque, #F5C000);
   color: #000;
+}
+
+/* Botão "Comparar com financiamento" (abaixo de Zerar simulação) */
+.sim-btn-comparar-fin {
+  background: transparent;
+  border: 1px solid var(--cor-destaque);
+  border-radius: 6px;
+  color: var(--cor-destaque);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sim-btn-comparar-fin:hover {
+  background: var(--cor-destaque);
+  color: #000;
+}
+
+/* Painel do comparativo com financiamento */
+.sim-fin-painel {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-painel);
+  padding: 24px;
+}
+
+.sim-fin-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+.sim-fin-campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-fin-input {
+  width: 160px;
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--texto-principal);
+  font-size: 14px;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.sim-fin-input-sm { width: 90px; }
+
+.sim-fin-input:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+}
+
+.sim-fin-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sim-fin-sistema {
+  display: flex;
+  gap: 6px;
+}
+
+.sim-fin-sist-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  color: var(--texto-secundario);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sim-fin-sist-btn.ativo {
+  background: var(--cor-destaque);
+  border-color: var(--cor-destaque);
+  color: #000;
+}
+
+.sim-fin-origem {
+  font-size: 12px;
+  color: var(--texto-secundario);
+  margin: 4px 0 14px;
+  font-style: italic;
+}
+
+.sim-fin-comparativo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 700px) {
+  .sim-fin-comparativo { grid-template-columns: 1fr; }
+}
+
+.sim-fin-coluna {
+  background: var(--bg-card);
+  border: 1px solid var(--borda);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+}
+
+.sim-fin-consorcio { border-top: 3px solid #5DCAA5; }
+.sim-fin-financiamento { border-top: 3px solid #E24B4A; }
+
+.sim-fin-coluna-titulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-titulo);
+  margin: 0 0 14px;
+  font-weight: 700;
+}
+
+.sim-fin-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--borda);
+}
+
+.sim-fin-linha:last-child { border-bottom: none; }
+
+.sim-fin-linha-label {
+  font-size: 12px;
+  color: var(--texto-secundario);
+}
+
+.sim-fin-linha-valor {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-principal);
+  text-align: right;
+}
+
+.sim-fin-linha-valor.destaque {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sim-fin-economia {
+  margin-top: 18px;
+  background: rgba(93, 202, 165, 0.10);
+  border: 1px solid #5DCAA5;
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.sim-fin-economia-label {
+  font-size: 13px;
+  color: var(--texto-secundario);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sim-fin-economia-valor {
+  font-size: 28px;
+  font-weight: 800;
+  color: #5DCAA5;
+}
+
+.sim-fin-economia-valor small {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sim-fin-economia-sub {
+  font-size: 13px;
+  color: var(--texto-principal);
+}
+
+.sim-fin-nota {
+  margin-top: 16px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--texto-secundario);
+  border-left: 3px solid var(--cor-destaque);
+  padding-left: 12px;
 }
