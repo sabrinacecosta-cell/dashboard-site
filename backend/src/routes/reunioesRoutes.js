@@ -179,25 +179,36 @@ function normTitulo(s) {
   return (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
-// Casa a ata (e-mail do Gemini) com uma reunião pelo título + janela de tempo.
-// O assunto vem como "Anotações: <título da reunião>", então eventTitle é o
-// próprio título. Prefere correspondência EXATA de título; se não houver,
-// cai para correspondência parcial (primeiros 20 caracteres). Entre os
-// candidatos na janela, escolhe o e-mail que chegou mais cedo após o fim —
-// evita casar a reunião recorrente errada (mesmo título em dias diferentes).
-function casarAta(emails, titulo, refTime, janelaHoras = 12) {
+// Verifica se o e-mail (ata do Gemini) corresponde ao título da reunião.
+// O assunto vem como: Anotações: "TÍTULO" em 22 de jun. de 2026 — o texto
+// entre aspas é EXATAMENTE o título da reunião (já extraído em eventTitle).
+function tituloCompativel(emEventTitle, titulo) {
   const t = normTitulo(titulo);
-  const naJanela = emails.filter(em => {
-    const diff = em.date - refTime; // e-mail deve chegar após o fim
-    return diff >= -15 * 60_000 && diff < janelaHoras * 3_600_000;
-  });
-  const exatos = naJanela.filter(em => normTitulo(em.eventTitle) === t);
-  const pool = exatos.length ? exatos : naJanela.filter(em => {
-    const et = normTitulo(em.eventTitle);
-    return et.includes(t.slice(0, 20)) || t.includes(et.slice(0, 20));
-  });
+  const et = normTitulo(emEventTitle);
+  if (!t || !et) return false;
+  return et === t || (t.length >= 6 && et.includes(t)) || (et.length >= 6 && t.includes(et));
+}
+
+// Casa a ata com uma reunião por título + janela de tempo conservadora.
+// A ata chega poucos minutos após o encerramento, então aceita-se do início
+// da reunião até no máximo 30 min após o fim (fim = data_fim ou início+1h30).
+// Quando o assunto traz a data da reunião, prioriza o e-mail do mesmo dia.
+function casarAta(emails, titulo, dataReuniao, dataFim) {
+  const start = new Date(dataReuniao);
+  const end   = dataFim ? new Date(dataFim) : new Date(start.getTime() + 90 * 60_000);
+  const inicio = start.getTime() - 5 * 60_000;   // 5 min de folga antes do início
+  const limite = end.getTime() + 30 * 60_000;    // até 30 min após o fim
+
+  let pool = emails.filter(em =>
+    tituloCompativel(em.eventTitle, titulo) && em.date >= inicio && em.date <= limite
+  );
   if (!pool.length) return null;
-  pool.sort((a, b) => (a.date - refTime) - (b.date - refTime));
+
+  // Segurança: se o assunto traz a data da reunião, fica só com os do mesmo dia.
+  const mesmoDia = pool.filter(em => em.meetingDate && Math.abs(em.meetingDate - start) <= 36 * 3_600_000);
+  if (mesmoDia.length) pool = mesmoDia;
+
+  pool.sort((a, b) => Math.abs(a.date - end) - Math.abs(b.date - end));
   return pool[0];
 }
 
@@ -343,9 +354,8 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
         ? new Date(event.end.dateTime)
         : (event.end?.date ? new Date(event.end.date + 'T00:00:00') : null);
 
-      // A ata chega após o fim da reunião — casa por título + janela de 12h.
-      const refTime = eventEnd || eventStart;
-      const matchEmail = casarAta(emails, event.summary, refTime);
+      // A ata chega minutos após o fim — casa por título + janela conservadora.
+      const matchEmail = casarAta(emails, event.summary, eventStart, eventEnd);
 
       // Já existe no banco: faz backfill da ata se ainda não tiver, senão pula.
       if (existing.rows.length > 0) {
@@ -440,8 +450,7 @@ router.post('/reunioes/limpar-e-reimportar', authMiddleware, adminOnly, async (r
     let sem_match = 0;
 
     for (const r of todas.rows) {
-      const refTime = r.data_fim ? new Date(r.data_fim) : new Date(r.data_reuniao);
-      const matchEmail = casarAta(emails, r.titulo, refTime);
+      const matchEmail = casarAta(emails, r.titulo, r.data_reuniao, r.data_fim);
 
       if (!matchEmail) { sem_match++; continue; }
 
@@ -486,21 +495,12 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
     let titulo_bate_fora_janela = 0; // diagnóstico: título casa mas e-mail fora da janela
 
     for (const r of semAta.rows) {
-      const refTime = r.data_fim ? new Date(r.data_fim) : new Date(r.data_reuniao);
-
-      // Casa por título + janela de 12h, preferindo título exato e e-mail mais
-      // próximo após o fim.
-      const matchEmail = casarAta(emails, r.titulo, refTime);
+      const matchEmail = casarAta(emails, r.titulo, r.data_reuniao, r.data_fim);
 
       if (!matchEmail) {
         sem_match++;
         // Existe e-mail com título compatível, só fora da janela de tempo?
-        const t = normTitulo(r.titulo);
-        const houveTitulo = emails.some(em => {
-          const et = normTitulo(em.eventTitle);
-          return et === t || et.includes(t.slice(0, 20)) || t.includes(et.slice(0, 20));
-        });
-        if (houveTitulo) titulo_bate_fora_janela++;
+        if (emails.some(em => tituloCompativel(em.eventTitle, r.titulo))) titulo_bate_fora_janela++;
         continue;
       }
 

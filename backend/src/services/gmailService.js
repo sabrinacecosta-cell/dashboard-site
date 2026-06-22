@@ -31,9 +31,27 @@ function extractBody(payload) {
   return '';
 }
 
+// O assunto do Gemini vem como:
+//   Anotações: "TÍTULO DA REUNIÃO" em 22 de jun. de 2026
+// O título real está entre aspas (retas ou curvas). Extrai dali; se não
+// houver aspas, cai para o texto após "Anotações:"/"Notas da reunião" etc.
 function extractEventTitle(subject) {
+  const aspas = subject.match(/["“”](.+?)["“”]/);
+  if (aspas) return aspas[1].trim();
   const match = subject.match(/(?:Notas da reuni[aã]o|Meeting notes|Resumo da reuni[aã]o|Anota[cç][oõ]es):\s*(.+)/i);
   return match ? match[1].trim() : subject;
+}
+
+const MESES_PT = { jan: 0, fev: 1, mar: 2, abr: 3, mai: 4, jun: 5,
+                   jul: 6, ago: 7, set: 8, out: 9, nov: 10, dez: 11 };
+
+// Extrai a data da reunião embutida no assunto: "22 de jun. de 2026".
+function extractMeetingDate(subject) {
+  const m = subject.match(/(\d{1,2})\s+de\s+([a-zç]+)\.?\s+de\s+(\d{4})/i);
+  if (!m) return null;
+  const mes = MESES_PT[m[2].toLowerCase().slice(0, 3)];
+  if (mes == null) return null;
+  return new Date(Number(m[3]), mes, Number(m[1]));
 }
 
 // Busca e-mails do Gemini/Meet com atas de reunião dos últimos 90 dias
@@ -98,6 +116,7 @@ async function searchMeetingEmails() {
         date: dateStr ? new Date(dateStr) : new Date(),
         body,
         eventTitle: extractEventTitle(subject),
+        meetingDate: extractMeetingDate(subject),
       });
     } catch (e) {
       console.error('[gmailService] erro ao ler mensagem', msg.id, ':', e.message);
