@@ -288,16 +288,13 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
         continue;
       }
 
-      // Dedup por google_event_id (mantido — garante zero duplicatas)
+      // Dedup por google_event_id (mantido — garante zero duplicatas).
+      // Traz também a ata para permitir backfill de reuniões já importadas
+      // que ainda não tinham a ata vinculada no momento da 1ª importação.
       const existing = await db.query(
-        'SELECT id FROM reunioes WHERE google_event_id = $1',
+        'SELECT id, ata_original FROM reunioes WHERE google_event_id = $1',
         [event.id]
       );
-      if (existing.rows.length > 0) {
-        skipped++;
-        console.log(`[importar] SKIP (já importado) | "${event.summary}" | ${event.start?.dateTime || event.start?.date}`);
-        continue;
-      }
 
       // Evento de dia inteiro usa start.date (sem hora). Monta a meia-noite LOCAL
       // (sem 'Z') para preservar o dia do calendário; eventos com hora usam dateTime.
@@ -319,16 +316,45 @@ router.post('/reunioes/importar', authMiddleware, adminOnly, requireGoogle, asyn
         ? new Date(event.end.dateTime)
         : (event.end?.date ? new Date(event.end.date + 'T00:00:00') : null);
 
-      // A ata chega imediatamente após o fim da reunião — compara com eventEnd
-      // e aceita janela de até 6 horas. Exige correspondência de título também.
+      // A ata chega após o fim da reunião — compara com eventEnd e aceita janela
+      // de até 12 horas. Exige correspondência de título também.
       const refTime = eventEnd || eventStart;
       const matchEmail = emails.find(em => {
         const titleMatch =
           em.eventTitle.toLowerCase().includes(event.summary.toLowerCase().slice(0, 20)) ||
           event.summary.toLowerCase().includes(em.eventTitle.toLowerCase().slice(0, 20));
         const dateDiff = em.date - refTime; // email deve chegar APÓS o fim
-        return titleMatch && dateDiff >= -15 * 60_000 && dateDiff < 6 * 3_600_000;
+        return titleMatch && dateDiff >= -15 * 60_000 && dateDiff < 12 * 3_600_000;
       });
+
+      // Já existe no banco: faz backfill da ata se ainda não tiver, senão pula.
+      if (existing.rows.length > 0) {
+        const ex = existing.rows[0];
+        if (ex.ata_original || !matchEmail) {
+          skipped++;
+          console.log(`[importar] SKIP (já importado${ex.ata_original ? ', com ata' : ', sem ata p/ casar'}) | "${event.summary}"`);
+          continue;
+        }
+        await db.query(
+          'UPDATE reunioes SET gmail_message_id = $1, ata_original = $2, atualizado_em = NOW() WHERE id = $3',
+          [matchEmail.messageId, matchEmail.body, ex.id]
+        );
+        // Cria tarefas extraídas só se a reunião ainda não tiver nenhuma.
+        const temTarefas = await db.query(
+          'SELECT 1 FROM tarefas_reuniao WHERE reuniao_id = $1 LIMIT 1', [ex.id]
+        );
+        if (!temTarefas.rows.length) {
+          for (const desc of extractActionItems(matchEmail.body)) {
+            await db.query(
+              'INSERT INTO tarefas_reuniao (reuniao_id, descricao) VALUES ($1,$2)',
+              [ex.id, desc]
+            );
+          }
+        }
+        imported++;
+        console.log(`[importar] BACKFILL ATA | "${event.summary}"`);
+        continue;
+      }
 
       const ins = await db.query(`
         INSERT INTO reunioes
