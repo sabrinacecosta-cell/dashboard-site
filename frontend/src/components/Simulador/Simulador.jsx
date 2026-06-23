@@ -5,6 +5,7 @@ import { gerarExcelSimulacao } from '../../business/excelExport';
 import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { ResumoProposta } from './ResumoProposta';
 import ComparativoFinanciamento from './ComparativoFinanciamento';
+import { useAuth } from '../../contexts/AuthContext';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
 
@@ -81,6 +82,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 
 export default function Simulador() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [modalidade, setModalidade]               = useState('imovel');
   const [grupos, setGrupos]                       = useState([]);
   const [loadingGrupos, setLoadingGrupos]         = useState(false);
@@ -359,55 +361,71 @@ export default function Simulador() {
     const darkCard   = [30, 30, 30];
     const darkBorder = [46, 46, 46];
 
-    doc.setFillColor(...black);
-    doc.rect(0, 0, W, H, 'F');
-    doc.setFillColor(...gold);
-    doc.lines([[-65, 0], [65, 65], [0, -65]], W, 0, [1, 1], 'F', true);
-    doc.setFillColor(200, 155, 0);
-    doc.lines([[-35, 0], [35, 35], [0, -35]], W, 0, [1, 1], 'F', true);
+    const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
+    const dataHoje   = new Date().toLocaleDateString('pt-BR');
+    const rodapeTxt  = `Wflow Assessoria de Investimentos Ltda  |  Consórcio XP - ${dataHoje}`;
 
-    const modalLabel   = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
-    const gruposNoSim  = [...new Set(linhasSim.map(l => l.grupo))].join(', ');
-    const prefixoGrupo = linhasSim.length > 1 ? 'GRUPOS' : 'GRUPO';
-
-    doc.setFontSize(8);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${prefixoGrupo} ${gruposNoSim} | ${modalLabel}`, M, y + 5);
-    y += nomeCliente ? 10 : 13;
-
-    if (nomeCliente) {
-      doc.setFontSize(10);
-      doc.setTextColor(...white);
-      doc.setFont('helvetica', 'normal');
-      doc.text(
- `Olá, ${nomeCliente}. Segue o planejamento ${modalidade === 'imovel' ? 'imobiliário' : 'de automóvel'} feito para você.`,
-        M, y + 5
-      );
-      y += 11;
-    }
-
-    doc.setFontSize(7.5);
-    doc.setTextColor(...grey);
-    doc.setFont('helvetica', 'normal');
-    doc.text('SIMULAÇÃO PERSONALIZADA | PLANEJAMENTO PATRIMONIAL', M, y);
-    y += 10;
-
-    doc.setFontSize(20);
-    doc.setTextColor(...white);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`CONSÓRCIO ${modalLabel} XP`, M, y);
-    y += 16;
-
-    if (modalidade === 'imovel') {
+    // Fundo escuro + cantos dourados (padrão da marca).
+    const drawBg = () => {
+      doc.setFillColor(...black);
+      doc.rect(0, 0, W, H, 'F');
       doc.setFillColor(...gold);
-      doc.rect(M, y, 3, 8, 'F');
-      doc.setFontSize(9.5);
-      doc.setTextColor(...white);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Consórcio XP como estratégia de aquisição patrimonial', M + 7, y + 5.5);
-      y += 12;
+      doc.lines([[-65, 0], [65, 65], [0, -65]], W, 0, [1, 1], 'F', true);
+      doc.setFillColor(200, 155, 0);
+      doc.lines([[-35, 0], [35, 35], [0, -35]], W, 0, [1, 1], 'F', true);
+    };
+
+    // ── Página 1: Capa ──────────────────────────────────────
+    drawBg();
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...white);
+    doc.setFontSize(54);
+    doc.text('Consórcio', M, 150);
+    doc.text('XP', M, 172);
+    doc.setFontSize(11);
+    doc.setTextColor(...gold);
+    doc.text(`CONSÓRCIO ${modalLabel}`, M, 188);
+
+    // ── Página 2: Bem-vindo ─────────────────────────────────
+    doc.addPage();
+    drawBg();
+    doc.setFillColor(...gold);
+    doc.rect(0, 95, W, 6, 'F');
+    let wy = 122;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...white);
+    doc.setFontSize(30);
+    doc.text('Bem-vindo(a)', M, wy);
+    wy += 14;
+    if (nomeCliente) {
+      doc.setFontSize(15);
+      doc.setTextColor(...gold);
+      doc.splitTextToSize(`${nomeCliente},`, W - 2 * M).forEach(l => { doc.text(l, M, wy); wy += 8; });
     }
+    wy += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(...lightGrey);
+    [
+      'Obrigado por nos escolher para fazer parte desse momento tão importante para você!',
+      'Aqui está o PDF da cotação do seu plano de consórcio, que contém todas as informações sobre o produto que você pretende adquirir. Solicitamos sua confirmação dos detalhes mencionados neste documento com seu assessor(a).',
+      'Fique à vontade de tirar as suas dúvidas conosco sempre que precisar!',
+    ].forEach(p => {
+      doc.splitTextToSize(p, W - 2 * M).forEach(l => { doc.text(l, M, wy); wy += 6; });
+      wy += 5;
+    });
+    wy += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...white);
+    doc.text(user?.nome || '', M, wy); wy += 6;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...grey);
+    doc.text(user?.email || '', M, wy);
+
+    // ── Página 3: Dados da simulação (formato atual, sem cabeçalho) ──
+    doc.addPage();
+    drawBg();
+    y = M + 4;
 
     const cardW = (W - 2 * M - 8) / 2;
     const cardH = 56;
@@ -615,6 +633,64 @@ export default function Simulador() {
     doc.setTextColor(...grey);
     doc.setFont('helvetica', 'normal');
     doc.text(`Oferta válida até ${dataValidade.toLocaleDateString('pt-BR')}`, W - M, H - 6, { align: 'right' });
+
+    // ── Glossário (termos até "Sorteio") ────────────────────
+    const termosGlossario = [
+      ['Consórcio', ['O consórcio é uma excelente opção para quem deseja realizar um sonho, mas não tem o valor total disponível de imediato. Ao entrar em um consórcio, você se compromete a contribuir mensalmente, o que torna seu planejamento financeiro mais acessível, sem a necessidade de comprometer os recursos investidos na aquisição de um bem.']],
+      ['Parcela Reduzida ou Redutor', ['Uma parcela reduzida de consórcio é um valor menor que o habitual, geralmente é apresentado como um percentual de redução (redutor), que o consorciado paga até sua carta de crédito ser contemplada. Após a contemplação, o valor da redução é diluído nas parcelas restantes.']],
+      ['Seguro Prestamista', ['O seguro prestamista tem a função de cobrir o saldo devedor da cota de consórcio em caso de morte, invalidez total ou permanente por acidente ou por doença do consorciado. Não é obrigatório e em caso de contratação, será cobrado a partir da 2ª parcela. A contratação é destinada a pessoas físicas, desde que a idade do consorciado, somado ao prazo da cota, seja menor que 80 anos.']],
+      ['Lance', [
+        'O lance é uma ferramenta importante para quem deseja acelerar a contemplação do seu consórcio. Para isso, é possível ofertar lance livre, lance fixo ou lance embutido.',
+        'Lance Fixo: A administradora estabelece um percentual mínimo para o lance, e todos que atingem ou superam esse valor participam de um sorteio para definir quem será contemplado.',
+        'Lance Livre: O consorciado oferece o valor que deseja, e o maior lance ganha a contemplação.',
+        'Lance Embutido: O consorciado usa parte da carta de crédito como lance, possibilitando conseguir a contemplação com mais facilidade.',
+      ]],
+      ['Assembleia', ['A assembleia geral ordinária se destina à contemplação e à prestação de contas de tudo o que ocorreu no grupo durante o período (valores arrecadados, rendimento de aplicações financeiras, número de consorciados já contemplados e a contemplar, dentre outras informações). Ela é realizada em dia, hora e local previamente estabelecidos pela administradora de consórcio, conforme o calendário fornecido pela empresa aos participantes do grupo.']],
+      ['Sorteio', ['O sorteio representa a essência do consórcio, uma vez que todo consorciado em dia com o pagamento de suas parcelas concorre em absoluta igualdade de condições, assim como o consorciado excluído. A dinâmica dos sorteios fica a critério da administradora e deve ser estabelecida em contrato.']],
+    ];
+
+    const colTermW = 42;
+    const colDescX = M + colTermW + 4;
+    const colDescW = W - colDescX - M;
+    const tituloGlossario = () => {
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...white);
+      doc.setFontSize(26);
+      doc.text('Glossário', M, M + 14);
+      doc.setFontSize(7);
+      doc.setTextColor(...grey);
+      doc.setFont('helvetica', 'normal');
+      doc.text(rodapeTxt, W - M, H - 8, { align: 'right' });
+    };
+
+    doc.addPage();
+    drawBg();
+    tituloGlossario();
+    let gy = M + 26;
+    termosGlossario.forEach(([termo, paras]) => {
+      const termoLinhas = doc.splitTextToSize(termo, colTermW);
+      const descLinhas  = [];
+      paras.forEach((p, i) => {
+        if (i > 0) descLinhas.push('');
+        descLinhas.push(...doc.splitTextToSize(p, colDescW));
+      });
+      const blocoH = Math.max(termoLinhas.length, descLinhas.length) * 4.6 + 7;
+      if (gy + blocoH > H - 18) {
+        doc.addPage();
+        drawBg();
+        tituloGlossario();
+        gy = M + 26;
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...gold);
+      termoLinhas.forEach((l, i) => doc.text(l, M, gy + 4 + i * 4.6));
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...lightGrey);
+      descLinhas.forEach((l, i) => doc.text(l, colDescX, gy + 4 + i * 4.6));
+      gy += blocoH;
+    });
 
     doc.save(`proposta-xp-${modalidade}-${Date.now()}.pdf`);
   };
