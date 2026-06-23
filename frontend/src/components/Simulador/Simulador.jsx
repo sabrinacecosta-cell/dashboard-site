@@ -8,10 +8,13 @@ import ComparativoFinanciamento from './ComparativoFinanciamento';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
 
+// Seguro prestamista: 0,038630% ao mês sobre o saldo devedor.
+const TAXA_SEGURO_PRESTAMISTA = 0.0003863;
+
 
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   const cartaTotal         = linha.credito * linha.qtde;
-  const parcelaInicial     = linha.parcela  * linha.qtde;
+  const parcelaInicial     = linha.parcelaInicialSim;
   const lanceEmb           = cartaTotal * (linha.lanceEmbutidoPercent / 100);
   const recPropriosReais   = cartaTotal * ((linha.recProprios || 0) / 100);
   const lanceTotal         = recPropriosReais + lanceEmb;
@@ -92,6 +95,7 @@ export default function Simulador() {
   const [nomeClienteInputSim, setNomeClienteInputSim] = useState('');
   const [incluirParcelaPosNoPDF, setIncluirParcelaPosNoPDF] = useState(true);
   const [simParcelasX, setSimParcelasX]                   = useState(18);
+  const [incluirSeguro, setIncluirSeguro]                 = useState(false);
 
   // Modo Multiplicador
   const [modoMultiplicador, setModoMultiplicador] = useState(false);
@@ -226,7 +230,7 @@ export default function Simulador() {
 
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const cartaTotal          = l.credito * l.qtde;
-    const parcelaInicialSim   = l.parcela  * l.qtde;
+    const parcelaBase         = l.parcela  * l.qtde;
     const lanceEmb            = cartaTotal * (l.lanceEmbutidoPercent / 100);
     const recPropriosReais    = cartaTotal * ((l.recProprios || 0) / 100);
     const lanceTotal          = recPropriosReais + lanceEmb;
@@ -235,21 +239,33 @@ export default function Simulador() {
     const totalFundoReserva   = cartaTotal * (l.fundoReserva || 0);
     const totalTaxas          = saldoDevedor - cartaTotal;
     const prazoR = l.prazoRestante || 1;
-    const parcelasPagas   = simParcelasX * parcelaInicialSim;
+    const parcelasPagas   = simParcelasX * parcelaBase;
     const prazoAtualizado = Math.max(1, prazoR - simParcelasX);
-    let parcelaPosContemplacao;
+
+    // Saldo devedor restante na contemplação (base do seguro pós) e parcela pós base.
+    let parcelaPosBase, saldoRestantePos;
     if (l.redutor === 50) {
-      parcelaPosContemplacao = Math.max(0, (saldoDevedor - parcelasPagas - lanceTotal) / prazoAtualizado);
+      saldoRestantePos = Math.max(0, saldoDevedor - parcelasPagas - lanceTotal);
+      parcelaPosBase   = saldoRestantePos / prazoAtualizado;
+    } else if (lanceTotal === 0) {
+      saldoRestantePos = Math.max(0, saldoDevedor - parcelasPagas);
+      parcelaPosBase   = parcelaBase;
     } else {
-      if (lanceTotal === 0) {
-        parcelaPosContemplacao = parcelaInicialSim;
-      } else {
-        parcelaPosContemplacao = Math.max(0, (saldoDevedor - lanceTotal) / prazoAtualizado);
-      }
+      saldoRestantePos = Math.max(0, saldoDevedor - lanceTotal);
+      parcelaPosBase   = saldoRestantePos / prazoAtualizado;
     }
-    return { ...l, cartaTotal, parcelaInicialSim, lanceEmb, lanceTotal, creditoContemplado,
-             recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas, parcelaPosContemplacao };
-  }), [linhasSim, simParcelasX]);
+
+    // Seguro prestamista (mensal) = saldo devedor × 0,038630%. A parcela inicial
+    // usa o saldo cheio; a pós, o saldo restante na contemplação.
+    const seguroInicial = saldoDevedor * TAXA_SEGURO_PRESTAMISTA;
+    const seguroPos     = saldoRestantePos * TAXA_SEGURO_PRESTAMISTA;
+    const parcelaInicialSim      = incluirSeguro ? parcelaBase   + seguroInicial : parcelaBase;
+    const parcelaPosContemplacao = incluirSeguro ? parcelaPosBase + seguroPos    : parcelaPosBase;
+
+    return { ...l, cartaTotal, parcelaInicialSim, parcelaBase, lanceEmb, lanceTotal, creditoContemplado,
+             recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas,
+             seguroInicial, seguroPos, parcelaPosContemplacao };
+  }), [linhasSim, simParcelasX, incluirSeguro]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
     cartaTotal:             acc.cartaTotal             + l.cartaTotal,
@@ -842,6 +858,17 @@ export default function Simulador() {
               {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
             </button>
           </div>
+          <label className="sim-checkbox-label" style={{ marginBottom: '12px' }}>
+            <input
+              type="checkbox"
+              checked={incluirSeguro}
+              onChange={e => setIncluirSeguro(e.target.checked)}
+            />
+            Incluir seguro prestamista
+            <span style={{ color: 'var(--texto-secundario)', fontWeight: 400 }}>
+              (0,038630% sobre o saldo devedor)
+            </span>
+          </label>
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
               <thead>
@@ -850,7 +877,7 @@ export default function Simulador() {
                   <th>Qtde</th>
                   <th>Cota</th>
                   <th>Carta Total</th>
-                  <th>Parcela Inicial</th>
+                  <th>Parcela Inicial{incluirSeguro ? ' (c/ seguro)' : ''}</th>
                   <th>Redutor</th>
                   <th>Rec. Próprios</th>
                   <th>Lance Emb. %</th>
