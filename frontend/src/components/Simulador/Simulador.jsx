@@ -98,6 +98,7 @@ export default function Simulador() {
   const [incluirParcelaPosNoPDF, setIncluirParcelaPosNoPDF] = useState(true);
   const [simParcelasX, setSimParcelasX]                   = useState(18);
   const [incluirSeguro, setIncluirSeguro]                 = useState(false);
+  const [showSeguroModal, setShowSeguroModal]             = useState(false);
 
   // Modo Multiplicador
   const [modoMultiplicador, setModoMultiplicador] = useState(false);
@@ -937,15 +938,25 @@ export default function Simulador() {
               {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
             </button>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '12px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: incluirSeguro ? '4px' : '12px' }}>
             <input
               type="checkbox"
               checked={incluirSeguro}
-              onChange={e => setIncluirSeguro(e.target.checked)}
+              onChange={e => { setIncluirSeguro(e.target.checked); if (e.target.checked) setShowSeguroModal(true); }}
               style={{ margin: 0, padding: 0, flexShrink: 0, width: '14px', height: '14px' }}
             />
             Incluir seguro prestamista (0,038630% sobre o saldo devedor)
           </label>
+          {incluirSeguro && (
+            <a
+              href="/condicoes-gerais-seguro-prestamista.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', fontSize: '12px', color: 'var(--cor-destaque)', textDecoration: 'underline', marginBottom: '12px', cursor: 'pointer' }}
+            >
+              Condições gerais do seguro prestamista (PDF)
+            </a>
+          )}
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
               <thead>
@@ -1076,6 +1087,30 @@ export default function Simulador() {
               >
                 {modalAcaoSim === 'excel' ? 'Gerar Excel' : 'Gerar PDF'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Condições gerais do seguro prestamista */}
+      {showSeguroModal && (
+        <div className="sim-modal-overlay" onClick={() => setShowSeguroModal(false)}>
+          <div className="sim-modal" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+            <button className="sim-modal-x" onClick={() => setShowSeguroModal(false)} aria-label="Fechar">×</button>
+            <h3 className="sim-modal-titulo">Segue as condições gerais do seguro prestamista</h3>
+            <p style={{ fontSize: '13px', color: 'var(--texto-secundario)', margin: '0 0 18px', lineHeight: 1.5 }}>
+              O documento com as condições gerais do seguro prestamista está disponível para download.
+            </p>
+            <div className="sim-modal-acoes">
+              <a
+                className="sim-modal-btn-gerar"
+                href="/condicoes-gerais-seguro-prestamista.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none', textAlign: 'center' }}
+              >
+                Baixar PDF
+              </a>
             </div>
           </div>
         </div>
