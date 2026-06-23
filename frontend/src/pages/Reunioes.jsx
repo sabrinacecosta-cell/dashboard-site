@@ -1000,6 +1000,14 @@ function Reunioes() {
       if (d.amostra_titulos_reuniao?.length) {
         msg += `\nTítulos de reuniões sem ata: ${d.amostra_titulos_reuniao.map(s => `"${s}"`).join(' | ')}`;
       }
+      if (d.detalhe?.length) {
+        msg += '\n— Detalhe (dia reunião vs dia do assunto):';
+        for (const x of d.detalhe) {
+          const es = x.emails.map(e => `assunto:${e.dia_assunto || '?'} chegada:${e.chegada}`).join(' ; ');
+          msg += `\n  "${x.reuniao}" reunião:${x.dia_reuniao} → ${es}`;
+        }
+      }
+      if (d.versao) msg += `\n[${d.versao}]`;
       setImportMsg(msg);
       loadReunioes();
     } catch (e) {

@@ -496,6 +496,9 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
     let atualizadas = 0;
     let sem_match = 0;
     let titulo_bate_fora_janela = 0; // diagnóstico: título casa mas e-mail fora da janela
+    const detalhe = [];              // diagnóstico detalhado dos que têm título mas não casaram
+
+    const soDia = d => d ? new Date(d).toISOString().slice(0, 10) : null;
 
     for (const r of semAta.rows) {
       const matchEmail = casarAta(emails, r.titulo, r.data_reuniao, r.data_fim);
@@ -503,7 +506,20 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
       if (!matchEmail) {
         sem_match++;
         // Existe e-mail com título compatível, só fora da janela de tempo?
-        if (emails.some(em => tituloCompativel(em.eventTitle, r.titulo))) titulo_bate_fora_janela++;
+        const compativeis = emails.filter(em => tituloCompativel(em.eventTitle, r.titulo));
+        if (compativeis.length) {
+          titulo_bate_fora_janela++;
+          if (detalhe.length < 5) {
+            detalhe.push({
+              reuniao: r.titulo,
+              dia_reuniao: soDia(r.data_reuniao),
+              emails: compativeis.slice(0, 3).map(em => ({
+                dia_assunto: soDia(em.meetingDate),
+                chegada: soDia(em.date),
+              })),
+            });
+          }
+        }
         continue;
       }
 
@@ -531,8 +547,10 @@ router.post('/reunioes/reimportar-atas', authMiddleware, adminOnly, async (req, 
       '| emails:', emails.length, '| titulo_bate_fora_janela:', titulo_bate_fora_janela);
 
     const diag = {
+      versao: 'v4-detalhe',
       emails_encontrados: emails.length,
       titulo_bate_fora_janela,
+      detalhe,
       amostra_assuntos: emails.slice(0, 5).map(e => e.subject),
       amostra_titulos_reuniao: semAta.rows.slice(0, 5).map(r => r.titulo),
     };
