@@ -567,6 +567,19 @@ export default function Simulador() {
       y += memHSim2 + 5;
     }
 
+    if (incluirSeguro) {
+      const notaSeguroTexto = 'Incluso seguro prestamista nessa simulação. O cálculo é de 0,038630% sobre o saldo devedor.';
+      doc.setFontSize(8);
+      const notaSeguroLinhas = doc.splitTextToSize(notaSeguroTexto, W - 2 * M - 8);
+      const notaSeguroBarH = Math.max(13, 4 + notaSeguroLinhas.length * 4);
+      doc.setFillColor(...gold);
+      doc.rect(M, y, 3, notaSeguroBarH, 'F');
+      doc.setTextColor(...lightGrey);
+      doc.setFont('helvetica', 'normal');
+      notaSeguroLinhas.forEach((linha, i) => doc.text(linha, M + 7, y + 5.5 + i * 4));
+      y += notaSeguroBarH + 5;
+    }
+
     if (linhasSim.some(l => l.redutor === 50)) {
       const notaTexto = 'Após a contemplação ou metade do prazo do grupo (o que vier primeiro), o valor da parcela será recalculado com base no saldo devedor atualizado, descontando o lance pago (se houver) e as parcelas já pagas até aquele momento, dividido pelo prazo restante.';
       doc.setFontSize(7);
