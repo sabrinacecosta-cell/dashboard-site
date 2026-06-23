@@ -9,8 +9,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
 
-// Seguro prestamista: 0,038630% ao mês sobre o saldo devedor.
-const TAXA_SEGURO_PRESTAMISTA = 0.0003863;
+// Seguro prestamista (ao mês sobre o saldo devedor): taxa por modalidade.
+const SEGURO_PRESTAMISTA = {
+  imovel: { taxa: 0.0003863, label: '0,038630%' },
+  auto:   { taxa: 0.00068,   label: '0,06800%' },
+};
 
 
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
@@ -258,17 +261,18 @@ export default function Simulador() {
       parcelaPosBase   = saldoRestantePos / prazoAtualizado;
     }
 
-    // Seguro prestamista (mensal) = saldo devedor × 0,038630%. A parcela inicial
-    // usa o saldo cheio; a pós, o saldo restante na contemplação.
-    const seguroInicial = saldoDevedor * TAXA_SEGURO_PRESTAMISTA;
-    const seguroPos     = saldoRestantePos * TAXA_SEGURO_PRESTAMISTA;
+    // Seguro prestamista (mensal) = saldo devedor × taxa da modalidade. A parcela
+    // inicial usa o saldo cheio; a pós, o saldo restante na contemplação.
+    const taxaSeguro = (SEGURO_PRESTAMISTA[modalidade] || SEGURO_PRESTAMISTA.imovel).taxa;
+    const seguroInicial = saldoDevedor * taxaSeguro;
+    const seguroPos     = saldoRestantePos * taxaSeguro;
     const parcelaInicialSim      = incluirSeguro ? parcelaBase   + seguroInicial : parcelaBase;
     const parcelaPosContemplacao = incluirSeguro ? parcelaPosBase + seguroPos    : parcelaPosBase;
 
     return { ...l, cartaTotal, parcelaInicialSim, parcelaBase, lanceEmb, lanceTotal, creditoContemplado,
              recPropriosReais, saldoDevedor, totalFundoReserva, totalTaxas,
              seguroInicial, seguroPos, parcelaPosContemplacao };
-  }), [linhasSim, simParcelasX, incluirSeguro]);
+  }), [linhasSim, simParcelasX, incluirSeguro, modalidade]);
 
   const totaisSim = useMemo(() => linhasSimCalc.reduce((acc, l) => ({
     cartaTotal:             acc.cartaTotal             + l.cartaTotal,
@@ -568,7 +572,8 @@ export default function Simulador() {
     }
 
     if (incluirSeguro) {
-      const notaSeguroTexto = 'Incluso seguro prestamista nessa simulação. O cálculo é de 0,038630% sobre o saldo devedor.';
+      const taxaSeguroLabel = (SEGURO_PRESTAMISTA[modalidade] || SEGURO_PRESTAMISTA.imovel).label;
+      const notaSeguroTexto = `Incluso seguro prestamista nessa simulação. O cálculo é de ${taxaSeguroLabel} sobre o saldo devedor.`;
       doc.setFontSize(8);
       const notaSeguroLinhas = doc.splitTextToSize(notaSeguroTexto, W - 2 * M - 8);
       const notaSeguroBarH = Math.max(13, 4 + notaSeguroLinhas.length * 4);
@@ -1002,7 +1007,7 @@ export default function Simulador() {
               onChange={e => { setIncluirSeguro(e.target.checked); if (e.target.checked) setShowSeguroModal(true); }}
               style={{ margin: 0, padding: 0, flexShrink: 0, width: '14px', height: '14px' }}
             />
-            Incluir seguro prestamista (0,038630% sobre o saldo devedor)
+            Incluir seguro prestamista ({(SEGURO_PRESTAMISTA[modalidade] || SEGURO_PRESTAMISTA.imovel).label} sobre o saldo devedor)
           </label>
           {incluirSeguro && (
             <a
