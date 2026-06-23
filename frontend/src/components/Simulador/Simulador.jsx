@@ -74,7 +74,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
       <td>{formatarMoeda(lanceTotal)}</td>
       <td className="cr-credito-contemplado">{formatarMoeda(creditoContemplado)}</td>
       <td>
-        <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)}> </button>
+        <button type="button" className="cr-btn-remover" onClick={() => onRemove(linha.id)} title="Remover esta cota">×</button>
       </td>
     </tr>
   );
@@ -937,16 +937,14 @@ export default function Simulador() {
               {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
             </button>
           </div>
-          <label className="sim-checkbox-label" style={{ marginBottom: '12px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', cursor: 'pointer', color: 'var(--text-secondary)', whiteSpace: 'nowrap', marginBottom: '12px' }}>
             <input
               type="checkbox"
               checked={incluirSeguro}
               onChange={e => setIncluirSeguro(e.target.checked)}
+              style={{ margin: 0, padding: 0, flexShrink: 0, width: '14px', height: '14px' }}
             />
-            Incluir seguro prestamista
-            <span style={{ color: 'var(--texto-secundario)', fontWeight: 400 }}>
-              (0,038630% sobre o saldo devedor)
-            </span>
+            Incluir seguro prestamista (0,038630% sobre o saldo devedor)
           </label>
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
