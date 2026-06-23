@@ -692,7 +692,10 @@ export default function Simulador() {
       gy += blocoH;
     });
 
-    doc.save(`proposta-xp-${modalidade}-${Date.now()}.pdf`);
+    const projetoPDF = modalidade === 'imovel' ? 'Projeto imóvel' : 'Projeto auto';
+    const nomeLimpoPDF = nomeCliente ? nomeCliente.replace(/[\\/:*?"<>|]/g, '').trim() : '';
+    const nomeArquivoPDF = nomeLimpoPDF ? `${nomeLimpoPDF} - ${projetoPDF}` : projetoPDF;
+    doc.save(`${nomeArquivoPDF}.pdf`);
   };
 
   return (
