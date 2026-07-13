@@ -780,6 +780,59 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   `);
   console.log('Duplicatas simulador_grupos removidas e constraint única adicionada!');
 
+  // ── Suporte a múltiplas administradoras (CNP + Embracon) ────────────────────
+  // Coluna administradora em simulador_grupos. Todas as linhas existentes são
+  // CNP (default). As rotas CNP passam a filtrar por administradora = 'CNP'
+  // para que grupos de outras administradoras (ex.: Embracon 7036) não vazem
+  // para o Simulador/Multiplicador CNP.
+  await db.query(
+    `ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS administradora VARCHAR(20) NOT NULL DEFAULT 'CNP'`
+  );
+  console.log('Coluna administradora em simulador_grupos OK!');
+
+  // Histórico mensal de lances da Embracon. Diferente do modelo CNP (1 série por
+  // grupo/mês), a Embracon tem 3 modalidades por grupo/mês. lance_percent é NULL
+  // para as modalidades de lance fixo (lance_fixo_50 e segundo_lance_fixo_25).
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS simulador_lances_embracon (
+      id SERIAL PRIMARY KEY,
+      grupo INTEGER NOT NULL,
+      mes DATE NOT NULL,
+      modalidade VARCHAR(30) NOT NULL CHECK (
+        modalidade IN ('lance_livre', 'lance_fixo_50', 'segundo_lance_fixo_25')
+      ),
+      contemplados INTEGER NOT NULL,
+      ofertados INTEGER NOT NULL,
+      lance_percent NUMERIC(6,4),
+      created_at TIMESTAMP DEFAULT now(),
+      UNIQUE(grupo, mes, modalidade)
+    )
+  `);
+  await db.query(`
+    CREATE INDEX IF NOT EXISTS idx_lances_embracon_grupo_modalidade
+      ON simulador_lances_embracon (grupo, modalidade)
+  `);
+  console.log('Tabela "simulador_lances_embracon" OK!');
+
+  // ── Grupo 7036 (Embracon, imóvel) ───────────────────────────────────────────
+  // Registro base para que o grupo apareça em /simulador/grupos?administradora=
+  // EMBRACON. Os campos de taxa/prazo abaixo são PLACEHOLDERS — este feature usa
+  // simulador_grupos apenas para listar grupos da administradora, não para
+  // cálculo de parcela. Substituir pelos parâmetros reais do 7036 quando
+  // disponíveis. O histórico de lances deve ser carregado em
+  // simulador_lances_embracon separadamente.
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, taxa_adm, fundo_reserva, reajuste, mes_reajuste,
+       lance_embutido_max, prazo_restante, prazo_total, administradora,
+       sem_media_contemplacao)
+    VALUES
+      (7036, 'imovel', 0, 0, 'INCC', 'JANEIRO', 0, 0, 0, 'EMBRACON', TRUE)
+    ON CONFLICT (numero_grupo, modalidade)
+      DO UPDATE SET administradora = 'EMBRACON'
+  `);
+  console.log('simulador_grupos 7036 (Embracon) OK!');
+
   console.log('Migração concluída!');
 }
 

@@ -4,7 +4,28 @@ const db = require('../config/database');
 const authMiddleware = require('../middlewares/authMiddleware');
 
 router.get('/grupos', authMiddleware, async (req, res) => {
-  const { modalidade } = req.query;
+  const { modalidade, administradora } = req.query;
+
+  // Administradoras que não seguem o modelo CNP (1 série por grupo/mês) listam
+  // apenas os grupos disponíveis daquela administradora — sem lance_ultimo_mes,
+  // que depende das tabelas de contemplação CNP.
+  if (administradora && administradora !== 'CNP') {
+    try {
+      const result = await db.query(
+        `SELECT sg.numero_grupo, sg.modalidade, sg.administradora
+         FROM simulador_grupos sg
+         WHERE sg.administradora = $1
+           AND sg.id = (SELECT MIN(id) FROM simulador_grupos
+                        WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
+         ORDER BY sg.numero_grupo ASC`,
+        [administradora]
+      );
+      return res.json(result.rows);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (!modalidade || !['imovel', 'auto'].includes(modalidade))
     return res.status(400).json({ error: 'modalidade inválida. Use imovel ou auto.' });
 
@@ -44,6 +65,7 @@ router.get('/grupos', authMiddleware, async (req, res) => {
         ) AS lance_ultimo_mes
       FROM simulador_grupos sg
       WHERE sg.modalidade = $1
+        AND sg.administradora = 'CNP'
         AND sg.id = (SELECT MIN(id) FROM simulador_grupos WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
       ORDER BY sg.numero_grupo ASC`,
       [modalidade]
@@ -105,6 +127,7 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
     const gruposRes = await db.query(
       `SELECT sg.* FROM simulador_grupos sg
        WHERE sg.modalidade = $1
+         AND sg.administradora = 'CNP'
          AND sg.id = (SELECT MIN(id) FROM simulador_grupos
                       WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
        ORDER BY sg.numero_grupo ASC`,
@@ -259,6 +282,49 @@ router.get('/multiplicador', authMiddleware, async (req, res) => {
       parcela_total:            round2(parcelaTotal),
       tempo_esperado_meses:     tempoReportado,
       cesta,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Embracon: histórico mensal de lances por grupo/modalidade ────────────────
+const MODALIDADES_EMBRACON = ['lance_livre', 'lance_fixo_50', 'segundo_lance_fixo_25'];
+
+router.get('/embracon/:grupo/:modalidade', authMiddleware, async (req, res) => {
+  const grupo = parseInt(req.params.grupo, 10);
+  const { modalidade } = req.params;
+
+  if (!Number.isInteger(grupo))
+    return res.status(400).json({ error: 'grupo inválido.' });
+  if (!MODALIDADES_EMBRACON.includes(modalidade))
+    return res.status(400).json({
+      error: `modalidade inválida. Use ${MODALIDADES_EMBRACON.join(', ')}.`,
+    });
+
+  try {
+    const { rows } = await db.query(
+      `SELECT mes, contemplados, ofertados, lance_percent
+       FROM simulador_lances_embracon
+       WHERE grupo = $1 AND modalidade = $2
+       ORDER BY mes ASC`,
+      [grupo, modalidade]
+    );
+
+    // Média de contemplação (%) = soma(contemplados)/soma(ofertados) dos últimos
+    // 6 meses com dado. Calculada em tempo real a partir da tabela — não é campo
+    // estático (mesmo padrão do card de média do Simulador CNP).
+    const ultimos6 = rows.slice(-6);
+    const totContemplados = ultimos6.reduce((s, r) => s + Number(r.contemplados), 0);
+    const totOfertados = ultimos6.reduce((s, r) => s + Number(r.ofertados), 0);
+    const media_contemplacao_percentual =
+      totOfertados > 0 ? round2((totContemplados / totOfertados) * 100) : null;
+
+    return res.json({
+      grupo,
+      modalidade,
+      media_contemplacao_percentual,
+      historico: rows,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
