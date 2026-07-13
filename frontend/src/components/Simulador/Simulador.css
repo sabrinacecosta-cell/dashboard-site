@@ -1966,3 +1966,39 @@
   border-left: 3px solid var(--cor-destaque);
   padding-left: 12px;
 }
+
+/* ── Formulário Embracon (crédito / prazo / qtde) ── */
+.emb-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.emb-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.emb-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texto-secundario);
+}
+
+.emb-select {
+  background: var(--bg-painel);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  color: var(--texto-primario);
+  font-size: 15px;
+  padding: 10px 14px;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.emb-select:focus {
+  outline: none;
+  border-color: var(--cor-destaque);
+}

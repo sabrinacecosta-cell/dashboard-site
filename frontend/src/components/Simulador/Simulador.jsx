@@ -5,6 +5,7 @@ import { gerarExcelSimulacao } from '../../business/excelExport';
 import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../business/calculos';
 import { ResumoProposta } from './ResumoProposta';
 import ComparativoFinanciamento from './ComparativoFinanciamento';
+import EmbraconSimulador from './EmbraconSimulador';
 import { useAuth } from '../../contexts/AuthContext';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
@@ -86,6 +87,7 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 export default function Simulador() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [administradora, setAdministradora]       = useState('CNP'); // 'CNP' ou 'EMBRACON'
   const [modalidade, setModalidade]               = useState('imovel');
   const [grupos, setGrupos]                       = useState([]);
   const [loadingGrupos, setLoadingGrupos]         = useState(false);
@@ -717,8 +719,44 @@ export default function Simulador() {
     doc.save(`${nomeArquivoPDF}.pdf`);
   };
 
+  if (administradora === 'EMBRACON') {
+    return (
+      <div className="sim-container">
+        {/* Toggle Administradora */}
+        <div className="sim-toggle-modalidade">
+          <button
+            className={`sim-toggle-btn ${administradora === 'CNP' ? 'active' : ''}`}
+            onClick={() => setAdministradora('CNP')}
+          > CNP
+          </button>
+          <button
+            className={`sim-toggle-btn ${administradora === 'EMBRACON' ? 'active' : ''}`}
+            onClick={() => setAdministradora('EMBRACON')}
+          > Embracon
+          </button>
+        </div>
+
+        <EmbraconSimulador />
+      </div>
+    );
+  }
+
   return (
     <div className="sim-container">
+
+      {/* Toggle Administradora */}
+      <div className="sim-toggle-modalidade">
+        <button
+          className={`sim-toggle-btn ${administradora === 'CNP' ? 'active' : ''}`}
+          onClick={() => setAdministradora('CNP')}
+        > CNP
+        </button>
+        <button
+          className={`sim-toggle-btn ${administradora === 'EMBRACON' ? 'active' : ''}`}
+          onClick={() => setAdministradora('EMBRACON')}
+        > Embracon
+        </button>
+      </div>
 
       {/* Toggle Modalidade */}
       <div className="sim-toggle-modalidade">
