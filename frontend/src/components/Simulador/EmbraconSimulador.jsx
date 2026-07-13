@@ -2,16 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 
 // ── Termos globais do produto Embracon (iguais para todos os grupos) ─────────
-// Taxa administrativa 19%, fundo de reserva 2%, taxa de adesão 1% diluída nas
+// Taxa administrativa 19%, fundo de reserva 2%, taxa de adesão 1,2% diluída nas
 // 12 primeiras parcelas e lance embutido máximo de 25%.
 const TAXA_ADM = 0.19;
 const FUNDO_RESERVA = 0.02;
-const TAXA_ADESAO = 0.01;
+const TAXA_ADESAO = 0.012;
 const MESES_ADESAO = 12;
 const LANCE_EMB_MAX = 25;
 
 // Passo do crédito dentro da faixa de cada grupo.
-const PASSO_CREDITO = 50000;
+const PASSO_CREDITO = 10000;
 
 // ── Grupos Embracon: cada grupo tem sua faixa de crédito e o seu prazo ───────
 // (taxas/lance acima são comuns a todos).
@@ -42,7 +42,7 @@ function creditosDoGrupo(min, max) {
 
 // Parcela do plano a partir do crédito e do prazo.
 // total = crédito × (1 + adm + fundo); parcela base = total / prazo.
-// A adesão (1% do crédito) é diluída nas 12 primeiras parcelas.
+// A adesão (1,2% do crédito) é diluída nas 12 primeiras parcelas.
 function calcularParcela(credito, prazo) {
   const totalPlano = credito * (1 + TAXA_ADM + FUNDO_RESERVA);
   const parcelaBase = totalPlano / prazo;
@@ -148,7 +148,7 @@ export default function EmbraconSimulador() {
               <span>Prazo restante: {grupoSel.prazo} meses</span>
               <span>Taxa adm: 19%</span>
               <span>Fundo reserva: 2%</span>
-              <span>Taxa de adesão: 1% (12 primeiras parcelas)</span>
+              <span>Taxa de adesão: 1,2% (12 primeiras parcelas)</span>
               <span>Lance embutido máximo: 25%</span>
             </div>
           </div>
