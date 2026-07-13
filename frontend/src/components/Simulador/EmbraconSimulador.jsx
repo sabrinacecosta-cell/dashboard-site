@@ -47,15 +47,18 @@ function creditosDoGrupo(min, max) {
 // Parcela do plano a partir do crédito e do prazo.
 // total = crédito × (1 + adm + fundo); parcela base = total / prazo.
 // A adesão (1,2% do crédito) é diluída nas 12 primeiras parcelas.
-function calcularParcela(credito, prazo) {
+// Redutor de 50%: soma tudo (carta + taxas), aplica 50% e divide pelo prazo —
+// equivale a dividir a parcela por 2 (as 12 primeiras, com adesão, também).
+function calcularParcela(credito, prazo, comRedutor = false) {
+  const fator = comRedutor ? 0.5 : 1;
   const totalPlano = credito * (1 + TAXA_ADM + FUNDO_RESERVA);
   const parcelaBase = totalPlano / prazo;
   const adesaoMensal = (credito * TAXA_ADESAO) / MESES_ADESAO;
   return {
     totalPlano,
-    parcelaBase,
-    parcelaPrimeiras: parcelaBase + adesaoMensal, // 1ª a 12ª
-    parcelaDemais: parcelaBase,                   // 13ª em diante
+    parcelaBase: parcelaBase * fator,
+    parcelaPrimeiras: (parcelaBase + adesaoMensal) * fator, // 1ª a 12ª
+    parcelaDemais: parcelaBase * fator,                     // 13ª em diante
   };
 }
 
@@ -65,22 +68,24 @@ export default function EmbraconSimulador() {
   const [grupoSel, setGrupoSel] = useState(null); // objeto do grupo ou null (grid)
   const [credito, setCredito] = useState(null);
   const [qtde, setQtde] = useState(1);
+  const [comRedutor, setComRedutor] = useState(false);
   const [linhas, setLinhas] = useState([]);
 
   const selecionarGrupo = (g) => {
     setGrupoSel(g);
     setCredito(g.creditoMin);
     setQtde(1);
+    setComRedutor(false);
   };
 
   const previa = useMemo(
-    () => (grupoSel && credito ? calcularParcela(credito, grupoSel.prazo) : null),
-    [grupoSel, credito]
+    () => (grupoSel && credito ? calcularParcela(credito, grupoSel.prazo, comRedutor) : null),
+    [grupoSel, credito, comRedutor]
   );
 
   const adicionar = () => {
     if (!grupoSel || !credito) return;
-    const p = calcularParcela(credito, grupoSel.prazo);
+    const p = calcularParcela(credito, grupoSel.prazo, comRedutor);
     setLinhas(prev => [
       ...prev,
       {
@@ -89,6 +94,7 @@ export default function EmbraconSimulador() {
         credito,
         prazo: grupoSel.prazo,
         qtde: Math.max(1, Number(qtde) || 1),
+        comRedutor,
         lanceEmbPercent: LANCE_EMB_MAX, // inicia no máximo, editável
         ...p,
       },
@@ -157,6 +163,21 @@ export default function EmbraconSimulador() {
               <span>Lance embutido máximo: 25%</span>
               <span>Lance contemplado: {fmtPct(grupoSel.lanceContemplado)}</span>
             </div>
+          </div>
+
+          <div className="sim-redutor-toggle">
+            <button
+              className={`sim-redutor-btn${!comRedutor ? ' active' : ''}`}
+              onClick={() => setComRedutor(false)}
+            >
+              Sem Redutor
+            </button>
+            <button
+              className={`sim-redutor-btn${comRedutor ? ' active' : ''}`}
+              onClick={() => setComRedutor(true)}
+            >
+              Com Redutor 50%
+            </button>
           </div>
 
           <div className="emb-form">
@@ -230,6 +251,7 @@ export default function EmbraconSimulador() {
                 <th>Crédito</th>
                 <th>Prazo</th>
                 <th>Qtde</th>
+                <th>Redutor</th>
                 <th>Carta Total</th>
                 <th>Parcela (1ª–12ª)</th>
                 <th>Parcela (demais)</th>
@@ -249,6 +271,7 @@ export default function EmbraconSimulador() {
                     <td>{formatarMoedaInteiro(l.credito)}</td>
                     <td>{l.prazo} meses</td>
                     <td>{l.qtde}</td>
+                    <td>{l.comRedutor ? '50%' : '0%'}</td>
                     <td>{formatarMoeda(cartaTotal)}</td>
                     <td>{formatarMoeda(l.parcelaPrimeiras * l.qtde)}</td>
                     <td>{formatarMoeda(l.parcelaDemais * l.qtde)}</td>
@@ -277,7 +300,7 @@ export default function EmbraconSimulador() {
               })}
               {linhas.length === 0 && (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '18px' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '18px' }}>
                     Escolha um grupo, o crédito e clique em "Adicionar à simulação".
                   </td>
                 </tr>
@@ -286,7 +309,7 @@ export default function EmbraconSimulador() {
             {linhas.length > 0 && (
               <tfoot>
                 <tr className="cr-totais-row">
-                  <td colSpan={4}><strong>Total</strong></td>
+                  <td colSpan={5}><strong>Total</strong></td>
                   <td>{formatarMoeda(totais.cartaTotal)}</td>
                   <td>{formatarMoeda(totais.parcelaPrimeiras)}</td>
                   <td>{formatarMoeda(totais.parcelaDemais)}</td>
