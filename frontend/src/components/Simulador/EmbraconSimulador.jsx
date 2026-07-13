@@ -15,21 +15,25 @@ const PASSO_CREDITO = 10000;
 
 // ── Grupos Embracon: cada grupo tem sua faixa de crédito e o seu prazo ───────
 // (taxas/lance acima são comuns a todos).
+// lanceContemplado: % do lance que vem contemplando o grupo (informativo).
 const GRUPOS_EMBRACON = [
-  { grupo: 7026, creditoMin: 250000, creditoMax: 500000, prazo: 96 },
-  { grupo: 7027, creditoMin: 110000, creditoMax: 220000, prazo: 100 },
-  { grupo: 7028, creditoMin: 50000,  creditoMax: 100000, prazo: 100 },
-  { grupo: 7030, creditoMin: 150000, creditoMax: 300000, prazo: 102 },
-  { grupo: 7031, creditoMin: 250000, creditoMax: 500000, prazo: 105 },
-  { grupo: 7032, creditoMin: 110000, creditoMax: 220000, prazo: 104 },
-  { grupo: 7033, creditoMin: 50000,  creditoMax: 100000, prazo: 106 },
-  { grupo: 7034, creditoMin: 150000, creditoMax: 300000, prazo: 107 },
-  { grupo: 7035, creditoMin: 150000, creditoMax: 300000, prazo: 108 },
-  { grupo: 7036, creditoMin: 250000, creditoMax: 500000, prazo: 108 },
-  { grupo: 7037, creditoMin: 50000,  creditoMax: 100000, prazo: 106 },
-  { grupo: 7038, creditoMin: 110000, creditoMax: 220000, prazo: 108 },
-  { grupo: 7040, creditoMin: 80000,  creditoMax: 160000, prazo: 109 },
+  { grupo: 7026, creditoMin: 250000, creditoMax: 500000, prazo: 96,  lanceContemplado: 51.6096 },
+  { grupo: 7027, creditoMin: 110000, creditoMax: 220000, prazo: 100, lanceContemplado: 54.2976 },
+  { grupo: 7028, creditoMin: 50000,  creditoMax: 100000, prazo: 100, lanceContemplado: 54.2976 },
+  { grupo: 7030, creditoMin: 150000, creditoMax: 300000, prazo: 102, lanceContemplado: 55.3728 },
+  { grupo: 7031, creditoMin: 250000, creditoMax: 500000, prazo: 105, lanceContemplado: 56.4480 },
+  { grupo: 7032, creditoMin: 110000, creditoMax: 220000, prazo: 104, lanceContemplado: 56.4480 },
+  { grupo: 7033, creditoMin: 50000,  creditoMax: 100000, prazo: 106, lanceContemplado: 57.5232 },
+  { grupo: 7034, creditoMin: 150000, creditoMax: 300000, prazo: 107, lanceContemplado: 57.5232 },
+  { grupo: 7035, creditoMin: 150000, creditoMax: 300000, prazo: 108, lanceContemplado: 58.5984 },
+  { grupo: 7036, creditoMin: 250000, creditoMax: 500000, prazo: 108, lanceContemplado: 58.5984 },
+  { grupo: 7037, creditoMin: 50000,  creditoMax: 100000, prazo: 106, lanceContemplado: 57.5232 },
+  { grupo: 7038, creditoMin: 110000, creditoMax: 220000, prazo: 108, lanceContemplado: 58.0608 },
+  { grupo: 7040, creditoMin: 80000,  creditoMax: 160000, prazo: 109, lanceContemplado: 59.1360 },
 ];
+
+// Formata % com 4 casas (ex.: 58.5984 → "58,5984%").
+const fmtPct = (v) => `${Number(v).toFixed(4).replace('.', ',')}%`;
 
 // Opções de crédito da faixa do grupo, de PASSO_CREDITO em PASSO_CREDITO,
 // sempre incluindo o mínimo e o máximo.
@@ -130,6 +134,7 @@ export default function EmbraconSimulador() {
                   <span>Crédito: {formatarMoedaInteiro(g.creditoMin)} a {formatarMoedaInteiro(g.creditoMax)}</span>
                   <span>Prazo restante: {g.prazo} meses</span>
                   <span>Lance embutido máximo: 25%</span>
+                  <span>Lance contemplado: {fmtPct(g.lanceContemplado)}</span>
                 </div>
               </button>
             ))}
@@ -150,6 +155,7 @@ export default function EmbraconSimulador() {
               <span>Fundo reserva: 2%</span>
               <span>Taxa de adesão: 1,2% (12 primeiras parcelas)</span>
               <span>Lance embutido máximo: 25%</span>
+              <span>Lance contemplado: {fmtPct(grupoSel.lanceContemplado)}</span>
             </div>
           </div>
 
