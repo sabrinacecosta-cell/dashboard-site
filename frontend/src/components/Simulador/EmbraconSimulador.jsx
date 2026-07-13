@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
+import { gerarExcelSimulacao } from '../../business/excelExport';
+import './Simulador.css';
 
 // ── Termos globais do produto Embracon (iguais para todos os grupos) ─────────
-// Taxa administrativa 19%, fundo de reserva 2%, taxa de adesão 1,2% diluída nas
+// Taxa administrativa 20%, fundo de reserva 2%, taxa de adesão 1,2% diluída nas
 // 12 primeiras parcelas e lance embutido máximo de 25%.
-const TAXA_ADM = 0.19;
+const TAXA_ADM = 0.20;
 const FUNDO_RESERVA = 0.02;
 const TAXA_ADESAO = 0.012;
 const MESES_ADESAO = 12;
@@ -70,6 +72,9 @@ export default function EmbraconSimulador() {
   const [qtde, setQtde] = useState(1);
   const [comRedutor, setComRedutor] = useState(false);
   const [linhas, setLinhas] = useState([]);
+  const [simParcelas, setSimParcelas] = useState(18);
+  const [showModalNome, setShowModalNome] = useState(false);
+  const [nomeCliente, setNomeCliente] = useState('');
 
   const selecionarGrupo = (g) => {
     setGrupoSel(g);
@@ -122,6 +127,32 @@ export default function EmbraconSimulador() {
     { cartaTotal: 0, parcelaPrimeiras: 0, parcelaDemais: 0, lanceEmb: 0, creditoContemplado: 0 }
   ), [linhas]);
 
+  // Excel no mesmo formato do CNP. A função recalcula a parcela por
+  // carta × (1 + taxaAdm + fundoReserva) / prazo (÷2 no redutor) — mesma base
+  // da tela; a adesão das 12 primeiras não é representada no template do CNP.
+  const gerarExcel = (nome) => {
+    const nomeLimpo = nome ? nome.replace(/[\\/:*?"<>|]/g, '').trim() : '';
+    const nomeBase = nomeLimpo ? `${nomeLimpo} - Consórcio Embracon` : 'Consórcio Embracon';
+    gerarExcelSimulacao({
+      rows: linhas.map(l => ({
+        grupo:              l.grupo,
+        taxaAdm:            TAXA_ADM,
+        fundoReserva:       FUNDO_RESERVA,
+        prazo:              l.prazo,
+        qtde:               l.qtde,
+        redutor:            l.comRedutor ? 50 : 0,
+        cartaTotal:         l.credito * l.qtde,
+        recProprios:        0,
+        lanceEmbPerc:       l.lanceEmbPercent,
+        creditoContemplado: l.credito * l.qtde * (1 - l.lanceEmbPercent / 100),
+      })),
+      simularParcelas: simParcelas,
+      nomeArquivo: `${nomeBase}.xlsx`,
+      temReductor: linhas.some(l => l.comRedutor),
+      temLance: linhas.some(l => l.lanceEmbPercent > 0),
+    });
+  };
+
   return (
     <>
       {/* Grade de grupos ou card do grupo selecionado */}
@@ -157,7 +188,7 @@ export default function EmbraconSimulador() {
             <div className="sim-cotas-meta">
               <span>Crédito: {formatarMoedaInteiro(grupoSel.creditoMin)} a {formatarMoedaInteiro(grupoSel.creditoMax)}</span>
               <span>Prazo restante: {grupoSel.prazo} meses</span>
-              <span>Taxa adm: 19%</span>
+              <span>Taxa adm: 20%</span>
               <span>Fundo reserva: 2%</span>
               <span>Taxa de adesão: 1,2% (12 primeiras parcelas)</span>
               <span>Lance embutido máximo: 25%</span>
@@ -327,7 +358,68 @@ export default function EmbraconSimulador() {
             Zerar simulação
           </button>
         </div>
+
+        <label className="sim-checkbox-label">
+          Simular{' '}
+          <input
+            type="number"
+            className="cr-input-celula"
+            min={1}
+            value={simParcelas}
+            onChange={e => setSimParcelas(Math.max(1, Number(e.target.value)))}
+            style={{ width: 52, display: 'inline-block', margin: '0 4px' }}
+          />
+          {' '}parcelas até a contemplação
+        </label>
+
+        <div className="sim-acoes">
+          <button
+            className="sim-btn-excel"
+            onClick={() => setShowModalNome(true)}
+            disabled={linhas.length === 0}
+          >
+            Gerar Excel
+          </button>
+        </div>
       </div>
+
+      {/* Modal nome para Excel */}
+      {showModalNome && (
+        <div className="sim-modal-overlay" onClick={() => setShowModalNome(false)}>
+          <div className="sim-modal" onClick={e => e.stopPropagation()}>
+            <h3 className="sim-modal-titulo">Nome do cliente (opcional)</h3>
+            <input
+              type="text"
+              className="sim-modal-input"
+              placeholder="Ex: João Silva"
+              value={nomeCliente}
+              onChange={e => setNomeCliente(e.target.value)}
+              onKeyDown={e => {
+                if (e.key !== 'Enter') return;
+                setShowModalNome(false);
+                gerarExcel(nomeCliente.trim() || null);
+                setNomeCliente('');
+              }}
+              autoFocus
+            />
+            <div className="sim-modal-acoes">
+              <button className="sim-modal-btn-cancelar" onClick={() => setShowModalNome(false)}>
+                Cancelar
+              </button>
+              <button
+                className="sim-modal-btn-gerar"
+                onClick={() => {
+                  setShowModalNome(false);
+                  gerarExcel(nomeCliente.trim() || null);
+                  setNomeCliente('');
+                }}
+              >
+                Gerar Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
