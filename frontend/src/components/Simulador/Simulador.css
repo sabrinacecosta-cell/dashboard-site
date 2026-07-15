@@ -1248,11 +1248,11 @@
 .sim-toggle-btn {
   background: var(--bg-painel);
   border: 1px solid var(--borda);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--texto-secundario);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  padding: 10px 24px;
+  padding: 0.6rem 1.2rem;
   cursor: pointer;
   transition: all 0.18s;
 }

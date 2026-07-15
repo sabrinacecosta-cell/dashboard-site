@@ -12,7 +12,10 @@ router.get('/grupos', authMiddleware, async (req, res) => {
   if (administradora && administradora !== 'CNP') {
     try {
       const result = await db.query(
-        `SELECT sg.numero_grupo, sg.modalidade, sg.administradora
+        `SELECT sg.numero_grupo, sg.modalidade, sg.administradora,
+                sg.taxa_adm, sg.fundo_reserva, sg.lance_embutido_max,
+                sg.prazo_restante, sg.credito_min, sg.credito_max,
+                sg.lance_contemplado_percent, sg.seguro_prestamista_percent
          FROM simulador_grupos sg
          WHERE sg.administradora = $1
            AND sg.id = (SELECT MIN(id) FROM simulador_grupos

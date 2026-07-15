@@ -1,5 +1,5 @@
 // Gera e baixa um arquivo .xlsx com formatação visual padronizada
-export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArquivo, temReductor = false, temLance = false }) {
+export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArquivo, temReductor = false, temLance = false, nomeConsorcio = 'XP' }) {
   const { default: ExcelJS } = await import('exceljs');
 
   const workbook = new ExcelJS.Workbook();
@@ -160,7 +160,7 @@ export async function gerarExcelSimulacao({ rows, simularParcelas = 18, nomeArqu
     const row  = ws.getRow(rr(0));
     row.height = 16;
     const a    = row.getCell(COL.A);
-    a.value    = 'RESUMO DA PROPOSTA - CONSÓRCIO XP';
+    a.value    = `RESUMO DA PROPOSTA - CONSÓRCIO ${nomeConsorcio}`;
     a.font     = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
     applyBegeABC(row);
     const blackFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };

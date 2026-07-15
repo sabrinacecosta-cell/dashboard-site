@@ -814,24 +814,71 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   `);
   console.log('Tabela "simulador_lances_embracon" OK!');
 
-  // ── Grupo 7036 (Embracon, imóvel) ───────────────────────────────────────────
-  // Registro base para que o grupo apareça em /simulador/grupos?administradora=
-  // EMBRACON. Os campos de taxa/prazo abaixo são PLACEHOLDERS — este feature usa
-  // simulador_grupos apenas para listar grupos da administradora, não para
-  // cálculo de parcela. Substituir pelos parâmetros reais do 7036 quando
-  // disponíveis. O histórico de lances deve ser carregado em
-  // simulador_lances_embracon separadamente.
+  // ── Faixa de crédito e seguro prestamista em simulador_grupos ───────────────
+  // credito_min/credito_max: a Embracon vende por faixa de crédito (passo de
+  // 10 mil) em vez de cotas fixas, então o grupo carrega a faixa em vez de
+  // linhas em simulador_cotas. seguro_prestamista_percent fica NULL até a taxa
+  // ser confirmada por grupo.
   await db.query(`
-    INSERT INTO simulador_grupos
-      (numero_grupo, modalidade, taxa_adm, fundo_reserva, reajuste, mes_reajuste,
-       lance_embutido_max, prazo_restante, prazo_total, administradora,
-       sem_media_contemplacao)
-    VALUES
-      (7036, 'imovel', 0, 0, 'INCC', 'JANEIRO', 0, 0, 0, 'EMBRACON', TRUE)
-    ON CONFLICT (numero_grupo, modalidade)
-      DO UPDATE SET administradora = 'EMBRACON'
+    ALTER TABLE simulador_grupos
+      ADD COLUMN IF NOT EXISTS credito_min NUMERIC(12,2),
+      ADD COLUMN IF NOT EXISTS credito_max NUMERIC(12,2),
+      ADD COLUMN IF NOT EXISTS seguro_prestamista_percent DECIMAL(5,4)
   `);
-  console.log('simulador_grupos 7036 (Embracon) OK!');
+  // lance_contemplado_percent: % de lance que vem contemplando o grupo
+  // (informativo). Coluna própria porque lance_maximo_contemplado é DECIMAL(5,2)
+  // e a Embracon informa 4 casas (ex.: 58,5984%).
+  await db.query(
+    `ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS lance_contemplado_percent NUMERIC(7,4)`
+  );
+  console.log('Colunas credito_min/credito_max/seguro_prestamista_percent/lance_contemplado_percent OK!');
+
+  // ── Grupos Embracon (imóvel) ────────────────────────────────────────────────
+  // Fonte de verdade dos 13 grupos, antes hardcoded em EmbraconSimulador.jsx.
+  // taxa_adm 20%, fundo_reserva 2% e lance_embutido_max 25% são termos globais
+  // do produto — iguais para todos os grupos. lance_embutido_max é fração
+  // (0.25 = 25%), como no CNP. A Embracon informa apenas um prazo por grupo,
+  // então prazo_total = prazo_restante. A taxa de adesão (1,2% diluída nas 12
+  // primeiras parcelas) segue no frontend: vale para o produto, não por grupo.
+  // O DO UPDATE é necessário para sobrescrever o 7036, que existia com zeros.
+  const gruposEmbracon = [
+    [7026, 250000, 500000, 96,  51.6096],
+    [7027, 110000, 220000, 100, 54.2976],
+    [7028, 50000,  100000, 100, 54.2976],
+    [7030, 150000, 300000, 102, 55.3728],
+    [7031, 250000, 500000, 105, 56.4480],
+    [7032, 110000, 220000, 104, 56.4480],
+    [7033, 50000,  100000, 106, 57.5232],
+    [7034, 150000, 300000, 107, 57.5232],
+    [7035, 150000, 300000, 108, 58.5984],
+    [7036, 250000, 500000, 108, 58.5984],
+    [7037, 50000,  100000, 106, 57.5232],
+    [7038, 110000, 220000, 108, 58.0608],
+    [7040, 80000,  160000, 109, 59.1360],
+  ];
+  for (const [grupo, credMin, credMax, prazo, lanceCont] of gruposEmbracon) {
+    await db.query(
+      `INSERT INTO simulador_grupos
+         (numero_grupo, modalidade, taxa_adm, fundo_reserva, reajuste, mes_reajuste,
+          lance_embutido_max, prazo_restante, prazo_total, administradora,
+          sem_media_contemplacao, credito_min, credito_max, lance_contemplado_percent)
+       VALUES
+         ($1, 'imovel', 0.20, 0.02, 'INCC', 'JANEIRO', 0.25, $4, $4, 'EMBRACON',
+          TRUE, $2, $3, $5)
+       ON CONFLICT (numero_grupo, modalidade) DO UPDATE SET
+         administradora            = 'EMBRACON',
+         taxa_adm                  = EXCLUDED.taxa_adm,
+         fundo_reserva             = EXCLUDED.fundo_reserva,
+         lance_embutido_max        = EXCLUDED.lance_embutido_max,
+         prazo_restante            = EXCLUDED.prazo_restante,
+         prazo_total               = EXCLUDED.prazo_total,
+         credito_min               = EXCLUDED.credito_min,
+         credito_max               = EXCLUDED.credito_max,
+         lance_contemplado_percent = EXCLUDED.lance_contemplado_percent`,
+      [grupo, credMin, credMax, prazo, lanceCont]
+    );
+  }
+  console.log(`simulador_grupos: ${gruposEmbracon.length} grupos Embracon OK!`);
 
   console.log('Migração concluída!');
 }

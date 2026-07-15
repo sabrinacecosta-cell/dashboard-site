@@ -1,38 +1,41 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../services/api';
 import { formatarMoeda, formatarMoedaInteiro } from '../../business/calculos';
 import { gerarExcelSimulacao } from '../../business/excelExport';
 import './Simulador.css';
 
-// ── Termos globais do produto Embracon (iguais para todos os grupos) ─────────
-// Taxa administrativa 20%, fundo de reserva 2%, taxa de adesão 1,2% diluída nas
-// 12 primeiras parcelas e lance embutido máximo de 25%.
-const TAXA_ADM = 0.20;
-const FUNDO_RESERVA = 0.02;
+// Taxa de adesão: 1,2% do crédito diluída nas 12 primeiras parcelas. Vale para o
+// produto Embracon como um todo, não por grupo — por isso não vem do banco.
 const TAXA_ADESAO = 0.012;
 const MESES_ADESAO = 12;
-const LANCE_EMB_MAX = 25;
 
 // Passo do crédito dentro da faixa de cada grupo.
 const PASSO_CREDITO = 10000;
 
-// ── Grupos Embracon: cada grupo tem sua faixa de crédito e o seu prazo ───────
-// (taxas/lance acima são comuns a todos).
-// lanceContemplado: % do lance que vem contemplando o grupo (informativo).
-const GRUPOS_EMBRACON = [
-  { grupo: 7026, creditoMin: 250000, creditoMax: 500000, prazo: 96,  lanceContemplado: 51.6096 },
-  { grupo: 7027, creditoMin: 110000, creditoMax: 220000, prazo: 100, lanceContemplado: 54.2976 },
-  { grupo: 7028, creditoMin: 50000,  creditoMax: 100000, prazo: 100, lanceContemplado: 54.2976 },
-  { grupo: 7030, creditoMin: 150000, creditoMax: 300000, prazo: 102, lanceContemplado: 55.3728 },
-  { grupo: 7031, creditoMin: 250000, creditoMax: 500000, prazo: 105, lanceContemplado: 56.4480 },
-  { grupo: 7032, creditoMin: 110000, creditoMax: 220000, prazo: 104, lanceContemplado: 56.4480 },
-  { grupo: 7033, creditoMin: 50000,  creditoMax: 100000, prazo: 106, lanceContemplado: 57.5232 },
-  { grupo: 7034, creditoMin: 150000, creditoMax: 300000, prazo: 107, lanceContemplado: 57.5232 },
-  { grupo: 7035, creditoMin: 150000, creditoMax: 300000, prazo: 108, lanceContemplado: 58.5984 },
-  { grupo: 7036, creditoMin: 250000, creditoMax: 500000, prazo: 108, lanceContemplado: 58.5984 },
-  { grupo: 7037, creditoMin: 50000,  creditoMax: 100000, prazo: 106, lanceContemplado: 57.5232 },
-  { grupo: 7038, creditoMin: 110000, creditoMax: 220000, prazo: 108, lanceContemplado: 58.0608 },
-  { grupo: 7040, creditoMin: 80000,  creditoMax: 160000, prazo: 109, lanceContemplado: 59.1360 },
-];
+// Converte a linha de simulador_grupos no formato usado pela tela. Colunas
+// NUMERIC voltam do pg como string, daí o Number() em tudo. taxaAdm e
+// fundoReserva podem ser null — grupo sem parâmetros ainda definidos.
+function mapGrupo(row) {
+  const num = (v) => (v == null ? null : Number(v));
+  return {
+    grupo:            row.numero_grupo,
+    creditoMin:       num(row.credito_min),
+    creditoMax:       num(row.credito_max),
+    prazo:            row.prazo_restante,
+    lanceContemplado: num(row.lance_contemplado_percent),
+    taxaAdm:          num(row.taxa_adm),
+    fundoReserva:     num(row.fundo_reserva),
+    // lance_embutido_max é fração no banco (0.25); a tela trabalha em %.
+    lanceEmbMax:      row.lance_embutido_max == null
+      ? null
+      : Math.round(Number(row.lance_embutido_max) * 100),
+  };
+}
+
+// Um grupo só é simulável com taxa de adm, fundo de reserva, faixa e prazo.
+const temParametros = (g) =>
+  g.taxaAdm != null && g.fundoReserva != null &&
+  g.creditoMin != null && g.creditoMax != null && g.prazo > 0;
 
 // Formata % com 4 casas (ex.: 58.5984 → "58,5984%").
 const fmtPct = (v) => `${Number(v).toFixed(4).replace('.', ',')}%`;
@@ -51,9 +54,9 @@ function creditosDoGrupo(min, max) {
 // A adesão (1,2% do crédito) é diluída nas 12 primeiras parcelas.
 // Redutor de 50%: soma tudo (carta + taxas), aplica 50% e divide pelo prazo —
 // equivale a dividir a parcela por 2 (as 12 primeiras, com adesão, também).
-function calcularParcela(credito, prazo, comRedutor = false) {
+function calcularParcela(credito, prazo, taxaAdm, fundoReserva, comRedutor = false) {
   const fator = comRedutor ? 0.5 : 1;
-  const totalPlano = credito * (1 + TAXA_ADM + FUNDO_RESERVA);
+  const totalPlano = credito * (1 + taxaAdm + fundoReserva);
   const parcelaBase = totalPlano / prazo;
   const adesaoMensal = (credito * TAXA_ADESAO) / MESES_ADESAO;
   return {
@@ -67,6 +70,8 @@ function calcularParcela(credito, prazo, comRedutor = false) {
 let _uid = 0;
 
 export default function EmbraconSimulador() {
+  const [grupos, setGrupos] = useState([]);
+  const [loadingGrupos, setLoadingGrupos] = useState(true);
   const [grupoSel, setGrupoSel] = useState(null); // objeto do grupo ou null (grid)
   const [credito, setCredito] = useState(null);
   const [qtde, setQtde] = useState(1);
@@ -76,6 +81,14 @@ export default function EmbraconSimulador() {
   const [showModalNome, setShowModalNome] = useState(false);
   const [nomeCliente, setNomeCliente] = useState('');
 
+  useEffect(() => {
+    setLoadingGrupos(true);
+    api.get('/simulador/grupos?administradora=EMBRACON')
+      .then(r => setGrupos(r.data.map(mapGrupo)))
+      .catch(() => setGrupos([]))
+      .finally(() => setLoadingGrupos(false));
+  }, []);
+
   const selecionarGrupo = (g) => {
     setGrupoSel(g);
     setCredito(g.creditoMin);
@@ -84,13 +97,16 @@ export default function EmbraconSimulador() {
   };
 
   const previa = useMemo(
-    () => (grupoSel && credito ? calcularParcela(credito, grupoSel.prazo, comRedutor) : null),
+    () => (grupoSel && credito && temParametros(grupoSel)
+      ? calcularParcela(credito, grupoSel.prazo, grupoSel.taxaAdm, grupoSel.fundoReserva, comRedutor)
+      : null),
     [grupoSel, credito, comRedutor]
   );
 
   const adicionar = () => {
-    if (!grupoSel || !credito) return;
-    const p = calcularParcela(credito, grupoSel.prazo, comRedutor);
+    if (!grupoSel || !credito || !temParametros(grupoSel)) return;
+    const p = calcularParcela(credito, grupoSel.prazo, grupoSel.taxaAdm, grupoSel.fundoReserva, comRedutor);
+    const lanceMax = grupoSel.lanceEmbMax ?? 0;
     setLinhas(prev => [
       ...prev,
       {
@@ -98,9 +114,12 @@ export default function EmbraconSimulador() {
         grupo: grupoSel.grupo,
         credito,
         prazo: grupoSel.prazo,
+        taxaAdm: grupoSel.taxaAdm,
+        fundoReserva: grupoSel.fundoReserva,
         qtde: Math.max(1, Number(qtde) || 1),
         comRedutor,
-        lanceEmbPercent: LANCE_EMB_MAX, // inicia no máximo, editável
+        lanceEmbMax: lanceMax,
+        lanceEmbPercent: lanceMax, // inicia no máximo, editável
         ...p,
       },
     ]);
@@ -109,8 +128,11 @@ export default function EmbraconSimulador() {
   const remover = (id) => setLinhas(prev => prev.filter(l => l.id !== id));
 
   const atualizarLance = (id, valor) => {
-    const pct = Math.min(LANCE_EMB_MAX, Math.max(0, Number(valor) || 0));
-    setLinhas(prev => prev.map(l => (l.id === id ? { ...l, lanceEmbPercent: pct } : l)));
+    setLinhas(prev => prev.map(l => (
+      l.id === id
+        ? { ...l, lanceEmbPercent: Math.min(l.lanceEmbMax, Math.max(0, Number(valor) || 0)) }
+        : l
+    )));
   };
 
   const totais = useMemo(() => linhas.reduce(
@@ -136,8 +158,8 @@ export default function EmbraconSimulador() {
     gerarExcelSimulacao({
       rows: linhas.map(l => ({
         grupo:              l.grupo,
-        taxaAdm:            TAXA_ADM,
-        fundoReserva:       FUNDO_RESERVA,
+        taxaAdm:            l.taxaAdm,
+        fundoReserva:       l.fundoReserva,
         prazo:              l.prazo,
         qtde:               l.qtde,
         redutor:            l.comRedutor ? 50 : 0,
@@ -147,6 +169,7 @@ export default function EmbraconSimulador() {
         creditoContemplado: l.credito * l.qtde * (1 - l.lanceEmbPercent / 100),
       })),
       simularParcelas: simParcelas,
+      nomeConsorcio: 'EMBRACON',
       nomeArquivo: `${nomeBase}.xlsx`,
       temReductor: linhas.some(l => l.comRedutor),
       temLance: linhas.some(l => l.lanceEmbPercent > 0),
@@ -159,23 +182,33 @@ export default function EmbraconSimulador() {
       {!grupoSel ? (
         <div className="sim-grupos-grid-area">
           <p className="sim-titulo-secao">Escolha um grupo</p>
-          <div className="sim-grupos-grid">
-            {GRUPOS_EMBRACON.map(g => (
-              <button
-                key={g.grupo}
-                className="sim-card-grupo"
-                onClick={() => selecionarGrupo(g)}
-              >
-                <div className="sim-card-grupo-numero">Grupo {g.grupo}</div>
-                <div className="sim-card-grupo-info">
-                  <span>Crédito: {formatarMoedaInteiro(g.creditoMin)} a {formatarMoedaInteiro(g.creditoMax)}</span>
-                  <span>Prazo restante: {g.prazo} meses</span>
-                  <span>Lance embutido máximo: 25%</span>
-                  <span>Lance contemplado: {fmtPct(g.lanceContemplado)}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+          {loadingGrupos ? (
+            <div className="sim-loading">Carregando grupos...</div>
+          ) : grupos.length === 0 ? (
+            <div className="sim-loading">Nenhum grupo Embracon disponível.</div>
+          ) : (
+            <div className="sim-grupos-grid">
+              {grupos.map(g => (
+                <button
+                  key={g.grupo}
+                  className="sim-card-grupo"
+                  onClick={() => selecionarGrupo(g)}
+                >
+                  <div className="sim-card-grupo-numero">Grupo {g.grupo}</div>
+                  <div className="sim-card-grupo-info">
+                    {g.creditoMin != null && g.creditoMax != null && (
+                      <span>Crédito: {formatarMoedaInteiro(g.creditoMin)} a {formatarMoedaInteiro(g.creditoMax)}</span>
+                    )}
+                    <span>Prazo restante: {g.prazo} meses</span>
+                    {g.lanceEmbMax != null && <span>Lance embutido máximo: {g.lanceEmbMax}%</span>}
+                    {g.lanceContemplado != null && (
+                      <span>Lance contemplado: {fmtPct(g.lanceContemplado)}</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="sim-cotas-area">
@@ -186,16 +219,26 @@ export default function EmbraconSimulador() {
           <div className="sim-cotas-header">
             <h2 className="sim-cotas-titulo">Grupo {grupoSel.grupo} — Embracon Imóvel</h2>
             <div className="sim-cotas-meta">
-              <span>Crédito: {formatarMoedaInteiro(grupoSel.creditoMin)} a {formatarMoedaInteiro(grupoSel.creditoMax)}</span>
+              {grupoSel.creditoMin != null && grupoSel.creditoMax != null && (
+                <span>Crédito: {formatarMoedaInteiro(grupoSel.creditoMin)} a {formatarMoedaInteiro(grupoSel.creditoMax)}</span>
+              )}
               <span>Prazo restante: {grupoSel.prazo} meses</span>
-              <span>Taxa adm: 20%</span>
-              <span>Fundo reserva: 2%</span>
+              {grupoSel.taxaAdm != null && <span>Taxa adm: {fmtPct(grupoSel.taxaAdm * 100)}</span>}
+              {grupoSel.fundoReserva != null && <span>Fundo reserva: {fmtPct(grupoSel.fundoReserva * 100)}</span>}
               <span>Taxa de adesão: 1,2% (12 primeiras parcelas)</span>
-              <span>Lance embutido máximo: 25%</span>
-              <span>Lance contemplado: {fmtPct(grupoSel.lanceContemplado)}</span>
+              {grupoSel.lanceEmbMax != null && <span>Lance embutido máximo: {grupoSel.lanceEmbMax}%</span>}
+              {grupoSel.lanceContemplado != null && (
+                <span>Lance contemplado: {fmtPct(grupoSel.lanceContemplado)}</span>
+              )}
             </div>
           </div>
 
+          <h3 className="sim-monte-titulo">Crédito e parcelas</h3>
+
+          {!temParametros(grupoSel) ? (
+            <div className="sim-loading">Parâmetros pendentes</div>
+          ) : (
+          <>
           <div className="sim-redutor-toggle">
             <button
               className={`sim-redutor-btn${!comRedutor ? ' active' : ''}`}
@@ -259,8 +302,8 @@ export default function EmbraconSimulador() {
                 <span className="cr-resumo-valor">{formatarMoeda(previa.totalPlano)}</span>
               </div>
               <div className="cr-resumo-item">
-                <span className="cr-resumo-label">Crédito contemplado (lance emb. 25%)</span>
-                <span className="cr-resumo-valor cr-verde">{formatarMoeda(credito * (1 - LANCE_EMB_MAX / 100))}</span>
+                <span className="cr-resumo-label">Crédito contemplado (lance emb. {grupoSel.lanceEmbMax}%)</span>
+                <span className="cr-resumo-valor cr-verde">{formatarMoeda(credito * (1 - grupoSel.lanceEmbMax / 100))}</span>
               </div>
             </div>
           )}
@@ -268,6 +311,8 @@ export default function EmbraconSimulador() {
           <div className="sim-acoes" style={{ marginTop: 16 }}>
             <button className="sim-btn-add" onClick={adicionar}>+ Adicionar à simulação</button>
           </div>
+          </>
+          )}
         </div>
       )}
 
@@ -311,7 +356,7 @@ export default function EmbraconSimulador() {
                         type="number"
                         className="cr-input-celula cr-input-pct"
                         min={0}
-                        max={LANCE_EMB_MAX}
+                        max={l.lanceEmbMax}
                         value={l.lanceEmbPercent}
                         onChange={e => atualizarLance(l.id, e.target.value)}
                       />
