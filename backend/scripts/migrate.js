@@ -790,6 +790,20 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
   );
   console.log('Coluna administradora em simulador_grupos OK!');
 
+  // decrementa_prazo: se FALSE, o grupo fica fora do "-1 mês em todos" do fechamento
+  // de mês (rota PUT /admin/grupos/prazo/decrement). Reseta e redefine — autoritativo,
+  // porque o 1055 já foi decrementado por engano uma vez e precisou de revert manual.
+  await db.query(
+    `ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS decrementa_prazo BOOLEAN NOT NULL DEFAULT TRUE`
+  );
+  await db.query(`UPDATE simulador_grupos SET decrementa_prazo = TRUE WHERE administradora = 'CNP'`);
+  // 1055: prazo fixo em 240 — não decrementa no fechamento de mês.
+  await db.query(`
+    UPDATE simulador_grupos SET decrementa_prazo = FALSE
+    WHERE administradora = 'CNP' AND modalidade = 'imovel' AND numero_grupo = 1055
+  `);
+  console.log('Coluna decrementa_prazo em simulador_grupos OK!');
+
   // Histórico mensal de lances da Embracon. Diferente do modelo CNP (1 série por
   // grupo/mês), a Embracon tem 3 modalidades por grupo/mês. lance_percent é NULL
   // para as modalidades de lance fixo (lance_fixo_50 e segundo_lance_fixo_25).

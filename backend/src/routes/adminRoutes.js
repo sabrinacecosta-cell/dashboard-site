@@ -102,10 +102,20 @@ router.put('/admin/comissoes/cliente', authMiddleware, adminOnly, demoReadOnly, 
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT — decrement all prazo_restante
+// PUT — decrement prazo_restante dos grupos CNP (fechamento de mês)
+// Só toca em imóvel/auto da CNP: os grupos Embracon dividem simulador_grupos e
+// têm prazo próprio, reescrito pelo migrate.js. Grupos com decrementa_prazo =
+// FALSE (ex.: 1055) ficam de fora do -1, mas têm parcela recalculada junto.
 router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, demoReadOnly, async (req, res) => {
   try {
-    await db.query('UPDATE simulador_grupos SET prazo_restante = prazo_restante - 1 WHERE prazo_restante > 0');
+    const { rowCount } = await db.query(`
+      UPDATE simulador_grupos
+      SET prazo_restante = prazo_restante - 1
+      WHERE administradora = 'CNP'
+        AND modalidade IN ('imovel', 'auto')
+        AND decrementa_prazo
+        AND prazo_restante > 0
+    `);
     await db.query(`
       UPDATE simulador_cotas sc
       SET parcela = ROUND((sc.cota * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
@@ -113,6 +123,8 @@ router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, demoReadO
       WHERE sc.numero_grupo = sg.numero_grupo
         AND sc.modalidade = sg.modalidade
         AND sc.redutor_parcela = 0
+        AND sg.administradora = 'CNP'
+        AND sg.modalidade IN ('imovel', 'auto')
         AND sg.prazo_restante > 0
     `);
     await db.query(`
@@ -122,9 +134,11 @@ router.put('/admin/grupos/prazo/decrement', authMiddleware, adminOnly, demoReadO
       WHERE sc.numero_grupo = sg.numero_grupo
         AND sc.modalidade = sg.modalidade
         AND sc.redutor_parcela = 0.5
+        AND sg.administradora = 'CNP'
+        AND sg.modalidade IN ('imovel', 'auto')
         AND sg.prazo_restante > 0
     `);
-    res.json({ ok: true });
+    res.json({ ok: true, decrementados: rowCount });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

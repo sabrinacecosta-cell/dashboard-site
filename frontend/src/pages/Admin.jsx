@@ -113,7 +113,7 @@ function SecaoPrazo() {
   };
 
   const decrementar = async () => {
-    if (!confirm('Decrementar prazo restante de todos os grupos em 1 mês?')) return;
+    if (!confirm('Decrementar em 1 mês o prazo restante dos grupos CNP de imóvel e auto?\n\nO grupo 1055 e os grupos Embracon não são afetados.')) return;
     setDecrementando(true);
     try {
       await api.put('/admin/grupos/prazo/decrement');
@@ -125,7 +125,7 @@ function SecaoPrazo() {
     <>
       <div style={{ marginBottom: '12px' }}>
         <button className="btn-admin-action" onClick={decrementar} disabled={decrementando}>
-          {decrementando ? '...' : '−1 mês em todos'}
+          {decrementando ? '...' : '−1 mês nos grupos CNP'}
         </button>
       </div>
       <div className="table-scroll">
