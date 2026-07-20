@@ -307,6 +307,7 @@ function Vendas() {
                 <th>Escritório</th>
                 <th style={{ textAlign: 'right' }}>Valor</th>
                 <th style={{ textAlign: 'center' }}>Período</th>
+                <th>Administradora</th>
                 <th>Modalidade</th>
                 <th>Grupo</th>
                 <th style={{ textAlign: 'right' }}>Cota</th>
@@ -325,6 +326,7 @@ function Vendas() {
                   <td>{item.escritorio || '-'}</td>
                   <td style={{ textAlign: 'right' }}>{formatCurrency(item.valor_do_bem)}</td>
                   <td style={{ textAlign: 'center' }}>{getMesNome(item.mes)}/{item.ano}</td>
+                  <td>{item.administradora || '-'}</td>
                   <td>{item.modalidade || '-'}</td>
                   <td>{item.grupo || '-'}</td>
                   <td style={{ textAlign: 'right' }}>{item.cota || '-'}</td>

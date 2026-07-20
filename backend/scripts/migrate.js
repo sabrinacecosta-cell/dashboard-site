@@ -71,7 +71,8 @@ async function migrate() {
     { nome: 'natureza_sujeito', tipo: 'TEXT' },
     { nome: 'uf', tipo: 'TEXT' },
     { nome: 'tipo_produto', tipo: 'TEXT' },
-    { nome: 'taxa_adm', tipo: 'DECIMAL(5,2)' }
+    { nome: 'taxa_adm', tipo: 'DECIMAL(5,2)' },
+    { nome: 'administradora', tipo: 'TEXT' }
   ];
 
   for (const col of novasColunas) {
@@ -688,6 +689,18 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
 (11,NULL,NULL,NULL,NULL,'MARCIO NEGRÃO',29000000,'Fernanda Sykora','fer_sy@hotmail.com','SELFE BTG',2025,NULL,NULL,NULL,NULL)
   `);
   console.log('Producao Nov/Dez 2025 reinserida com sucesso!');
+
+  // ── Administradora: nov/2025 em diante = "Consórcio XP" ───────────────────────
+  // Idempotente: só preenche quem está vazio, então não sobrescreve marcações
+  // específicas (ex.: cotas Embracon). Roda depois do reinsert de Nov/Dez acima
+  // para reclassificar os registros que voltam sem administradora.
+  await db.query(`
+    UPDATE producao
+       SET administradora = 'Consórcio XP'
+     WHERE ((ano = 2025 AND mes >= 11) OR ano >= 2026)
+       AND (administradora IS NULL OR TRIM(administradora) = '')
+  `);
+  console.log('Administradora "Consórcio XP" aplicada (nov/2025+)!');
 
   // ── Reuniões ─────────────────────────────────────────────
   await db.query(`
