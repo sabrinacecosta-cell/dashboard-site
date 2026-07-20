@@ -122,6 +122,8 @@ function Vendas() {
     value: item.total
   })) || [];
 
+  const totalMes = dadosMes.reduce((acc, item) => acc + (item.value || 0), 0);
+
   const dadosEscritorio = producao?.porEscritorio?.map(item => ({
     name: item.escritorio,
     value: item.total
@@ -260,14 +262,14 @@ function Vendas() {
                     outerRadius={100}
                     paddingAngle={2}
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, value }) => `${name}: ${formatCurrency(value)}`}
                     labelLine={false}
                   >
                     {dadosMes.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="#F5C000" strokeWidth={1.5} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Tooltip formatter={(value) => `${formatCurrency(value)} (${totalMes ? ((value / totalMes) * 100).toFixed(1) : 0}%)`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
