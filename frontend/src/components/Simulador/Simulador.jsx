@@ -830,12 +830,12 @@ export default function Simulador() {
                     )}
                     {['1038','1042','1043','1044','1047','1048','1049','1050','1051','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
                       <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente junho
+                        Campanha vigente julho
                       </span>
                     )}
                     {['2130','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
                       <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente junho
+                        Campanha vigente julho
                       </span>
                     )}
                   </button>
