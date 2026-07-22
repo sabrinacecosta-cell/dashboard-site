@@ -70,7 +70,6 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
           />
         ) : formatarMoeda(linha.credito)}
       </td>
-      <td>{formatarMoeda(cartaTotal)}</td>
       <td>
         {linha.manual ? (
           <input
@@ -78,15 +77,46 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
             className="cr-input-celula"
             min={0}
             placeholder="0"
-            value={linha.parcela ?? ''}
+            value={linha.prazoRestante ?? ''}
             onChange={e => {
               const raw = e.target.value;
-              onUpdate(linha.id, 'parcela', raw === '' ? '' : Math.max(0, Number(raw)));
+              onUpdate(linha.id, 'prazoRestante', raw === '' ? '' : Math.max(0, Math.floor(Number(raw))));
             }}
           />
-        ) : formatarMoeda(parcelaInicial)}
+        ) : `${linha.prazoRestante} m`}
       </td>
-      <td>{linha.redutor === 0 ? '0%' : '50%'}</td>
+      <td>
+        {linha.manual ? (
+          <div className="cr-lance-emb-cell">
+            <input
+              type="number"
+              className="cr-input-celula cr-input-pct"
+              min={0}
+              placeholder="0"
+              value={linha.taxaAdm === '' || linha.taxaAdm == null ? '' : +(Number(linha.taxaAdm) * 100).toFixed(2)}
+              onChange={e => {
+                const raw = e.target.value;
+                onUpdate(linha.id, 'taxaAdm', raw === '' ? '' : Math.max(0, Number(raw)) / 100);
+              }}
+            />
+            <span className="cr-lance-emb-label">%</span>
+          </div>
+        ) : formatarPercentual(linha.taxaAdm)}
+      </td>
+      <td>{formatarMoeda(cartaTotal)}</td>
+      <td>{formatarMoeda(parcelaInicial)}</td>
+      <td>
+        {linha.manual ? (
+          <select
+            className="cr-input-celula"
+            value={linha.redutor}
+            onChange={e => onUpdate(linha.id, 'redutor', Number(e.target.value))}
+          >
+            <option value={0}>0%</option>
+            <option value={50}>50%</option>
+          </select>
+        ) : (linha.redutor === 0 ? '0%' : '50%')}
+      </td>
       <td>
         <div className="cr-lance-emb-cell">
           <input
@@ -277,8 +307,8 @@ export default function Simulador() {
   };
 
   // Linha manual: totalmente livre, independente de grupo/cota. O usuário digita
-  // o crédito e a parcela; carta total, lance e crédito contemplado são
-  // calculados. Serve para simular com valores redondos antes de escolher cotas.
+  // crédito, prazo e taxa, e escolhe o redutor; a parcela é calculada. Serve
+  // para simular com valores redondos antes de escolher as cotas exatas.
   const adicionarLinhaManual = () => {
     setLinhasSim(prev => [...prev, {
       id:                   Date.now() + Math.random(),
@@ -290,9 +320,9 @@ export default function Simulador() {
       redutor:              0,
       lanceEmbutidoPercent: 0,
       lanceEmbutidoMax:     100,
-      taxaAdm:              0,
+      taxaAdm:              '',
       fundoReserva:         0,
-      prazoRestante:        0,
+      prazoRestante:        '',
       reajuste:             '',
       mesReajuste:          '',
       qtde:                 1,
@@ -307,9 +337,14 @@ export default function Simulador() {
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const creditoNum          = Number(l.credito) || 0;
     const cartaTotal          = creditoNum * l.qtde;
-    // Parcela por unidade: digitada (linha manual) ou vinda da cota. Coerção
-    // trata campo vazio como 0.
-    const parcelaUnit         = Number(l.parcela) || 0;
+    // Parcela por unidade: na linha manual é calculada do crédito/taxa/prazo
+    // digitados (÷2 no redutor 50%); nas cotas vem pronta do banco.
+    const prazoNum            = Number(l.prazoRestante) || 0;
+    const parcelaUnit         = l.manual
+      ? (prazoNum > 0
+          ? creditoNum * (1 + (Number(l.taxaAdm) || 0) + (Number(l.fundoReserva) || 0)) / prazoNum / (l.redutor === 50 ? 2 : 1)
+          : 0)
+      : (Number(l.parcela) || 0);
     const parcelaBase         = parcelaUnit * l.qtde;
     const lanceEmb            = cartaTotal * ((Number(l.lanceEmbutidoPercent) || 0) / 100);
     const recPropriosReais    = cartaTotal * ((Number(l.recProprios) || 0) / 100);
@@ -1101,6 +1136,8 @@ export default function Simulador() {
                   <th>Grupo</th>
                   <th>Qtde</th>
                   <th>Cota</th>
+                  <th>Prazo</th>
+                  <th>Taxa adm</th>
                   <th>Carta Total</th>
                   <th>Parcela Inicial{incluirSeguro ? ' (c/ seguro)' : ''}</th>
                   <th>Redutor</th>
@@ -1124,6 +1161,8 @@ export default function Simulador() {
               <tfoot>
                 <tr className="cr-totais-row">
                   <td colSpan={2}><strong>Total</strong></td>
+                  <td></td>
+                  <td></td>
                   <td></td>
                   <td>{formatarMoeda(totaisSim.cartaTotal)}</td>
                   <td>{formatarMoeda(totaisSim.parcelaInicialSim)}</td>
