@@ -1276,6 +1276,40 @@
   gap: 14px;
 }
 
+/* Card com selo Livelo acima (grupo 1038) */
+.sim-card-com-selo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sim-card-com-selo .sim-card-grupo {
+  width: 100%;
+}
+
+/* Selo "Ganhe até 60 mil pontos Livelo" — dourado, sem fundo (transparente),
+   legível nos temas claro e escuro. Tamanho aproximado do card. */
+.sim-selo-livelo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 8px;
+  border: 1px solid var(--cor-destaque);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cor-destaque);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+}
+.sim-selo-livelo strong {
+  font-weight: 800;
+}
+.sim-selo-livelo-aviao {
+  font-size: 13px;
+}
+
 .sim-card-grupo {
   background: var(--bg-painel);
   border: 1px solid var(--borda);

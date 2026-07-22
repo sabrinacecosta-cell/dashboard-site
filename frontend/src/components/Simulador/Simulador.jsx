@@ -17,6 +17,15 @@ const SEGURO_PRESTAMISTA = {
   auto:   { taxa: 0.00068,   label: '0,06800%' },
 };
 
+// Pontos Livelo por faixa de crédito (campanha "Ganhe até 60 mil pontos").
+// A partir de 100 mil = 5.000; cada 100 mil adiciona 5.000; a partir de
+// 1 milhão o teto é 60.000 (não linear no topo, conforme tabela da campanha).
+const pontosLivelo = (credito) => {
+  if (!credito || credito < 100000) return 0;
+  if (credito >= 1000000) return 60000;
+  return Math.min(Math.floor(credito / 100000), 9) * 5000;
+};
+
 
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   const cartaTotal         = (Number(linha.credito) || 0) * linha.qtde;
@@ -482,6 +491,28 @@ export default function Simulador() {
     doc.setTextColor(...grey);
     doc.text(user?.email || '', M, wy);
 
+    // Caixa de pontos Livelo (campanha), calculada sobre a carta de crédito total.
+    const pontos = pontosLivelo(totaisSim.cartaTotal);
+    if (pontos > 0) {
+      wy += 18;
+      const boxH = 28;
+      doc.setFillColor(...darkCard);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(M, wy, W - 2 * M, boxH, 4, 4, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...gold);
+      doc.text('PONTOS LIVELO', M + 7, wy + 9);
+      doc.setFontSize(18);
+      doc.setTextColor(...white);
+      doc.text(`${pontos.toLocaleString('pt-BR')} pontos`, M + 7, wy + 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...lightGrey);
+      doc.text('Pontuação estimada com esta simulação (campanha Livelo).', M + 7, wy + 24);
+    }
+
     // ── Página 3: Dados da simulação (formato atual, sem cabeçalho) ──
     doc.addPage();
     drawBg();
@@ -818,7 +849,7 @@ export default function Simulador() {
                 const lanceMaxCont = g.lance_maximo_contemplado != null
                   ? `${parseFloat(g.lance_maximo_contemplado).toFixed(1).replace('.', ',').replace(/,0$/, '')}%`
                   : null;
-                return (
+                const card = (
                   <button
                     key={g.id}
                     className="sim-card-grupo"
@@ -871,6 +902,18 @@ export default function Simulador() {
                     )}
                   </button>
                 );
+                if (String(g.numero_grupo) === '1038' && modalidade === 'imovel') {
+                  return (
+                    <div key={g.id} className="sim-card-com-selo">
+                      <div className="sim-selo-livelo">
+                        <span className="sim-selo-livelo-aviao" aria-hidden="true">✈</span>
+                        <span>Ganhe até <strong>60&nbsp;mil</strong> pontos <strong>Livelo</strong></span>
+                      </div>
+                      {card}
+                    </div>
+                  );
+                }
+                return card;
               })}
             </div>
           )}
