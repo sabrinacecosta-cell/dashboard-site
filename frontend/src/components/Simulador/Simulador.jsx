@@ -19,7 +19,7 @@ const SEGURO_PRESTAMISTA = {
 
 
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
-  const cartaTotal         = linha.credito * linha.qtde;
+  const cartaTotal         = (Number(linha.credito) || 0) * linha.qtde;
   const parcelaInicial     = linha.parcelaInicialSim;
   const lanceEmb           = cartaTotal * ((Number(linha.lanceEmbutidoPercent) || 0) / 100);
   const recPropriosReais   = cartaTotal * ((Number(linha.recProprios) || 0) / 100);
@@ -46,7 +46,21 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
           onChange={e => onUpdate(linha.id, 'qtde', Math.max(1, Number(e.target.value)))}
         />
       </td>
-      <td>{formatarMoeda(linha.credito)}</td>
+      <td>
+        {linha.manual ? (
+          <input
+            type="number"
+            className="cr-input-celula"
+            min={0}
+            placeholder="0"
+            value={linha.credito ?? ''}
+            onChange={e => {
+              const raw = e.target.value;
+              onUpdate(linha.id, 'credito', raw === '' ? '' : Math.max(0, Number(raw)));
+            }}
+          />
+        ) : formatarMoeda(linha.credito)}
+      </td>
       <td>{formatarMoeda(cartaTotal)}</td>
       <td>{formatarMoeda(parcelaInicial)}</td>
       <td>{linha.redutor === 0 ? '0%' : '50%'}</td>
@@ -238,13 +252,46 @@ export default function Simulador() {
     });
   };
 
+  // Linha manual: usa os parâmetros do grupo selecionado (taxa/prazo/lance), mas
+  // o crédito é digitado livremente. Permite simular com valores redondos antes
+  // de escolher a cota exata. A parcela é derivada do crédito em linhasSimCalc.
+  const adicionarLinhaManual = () => {
+    const g = grupoSelecionado;
+    if (!g) return;
+    const redutorVal = (hasReducao && comRedutor) ? 50 : 0;
+    const lanceEmbutidoMax = Math.round(parseFloat(g.lance_embutido_max) * 100);
+    setLinhasSim(prev => [...prev, {
+      id:                   Date.now() + Math.random(),
+      simKey:               `manual_${Date.now()}_${Math.random()}`,
+      manual:               true,
+      grupo:                String(g.numero_grupo),
+      credito:              '',
+      parcela:              0,
+      redutor:              redutorVal,
+      lanceEmbutidoPercent: lanceEmbutidoMax,
+      lanceEmbutidoMax,
+      taxaAdm:              (redutorVal === 50 && g.taxa_adm_redutor != null) ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm),
+      fundoReserva:         parseFloat(g.fundo_reserva),
+      prazoRestante:        parseInt(g.prazo_restante),
+      reajuste:             g.reajuste,
+      mesReajuste:          g.mes_reajuste,
+      qtde:                 1,
+      recProprios:          0,
+    }]);
+  };
+
   const removerLinhaSim   = (id) => setLinhasSim(prev => prev.filter(l => l.id !== id));
   const atualizarLinhaSim = (id, campo, valor) =>
     setLinhasSim(prev => prev.map(l => l.id === id ? { ...l, [campo]: valor } : l));
 
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
-    const cartaTotal          = l.credito * l.qtde;
-    const parcelaBase         = l.parcela  * l.qtde;
+    const creditoNum          = Number(l.credito) || 0;
+    const cartaTotal          = creditoNum * l.qtde;
+    // Linha manual: parcela derivada do crédito digitado (mesma fórmula do banco).
+    const parcelaUnit         = l.manual
+      ? (creditoNum * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0)) / (l.prazoRestante || 1)) / (l.redutor === 50 ? 2 : 1)
+      : l.parcela;
+    const parcelaBase         = parcelaUnit * l.qtde;
     const lanceEmb            = cartaTotal * ((Number(l.lanceEmbutidoPercent) || 0) / 100);
     const recPropriosReais    = cartaTotal * ((Number(l.recProprios) || 0) / 100);
     const lanceTotal          = recPropriosReais + lanceEmb;
@@ -971,12 +1018,24 @@ export default function Simulador() {
       <div className="sim-monte-container">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <h3 className="sim-monte-titulo" style={{ marginBottom: 0 }}>Monte sua simulação</h3>
-            <button
-              className="sim-toggle-mult-btn"
-              onClick={() => setModoMultiplicador(v => !v)}
-            >
-              {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {!modoMultiplicador && (
+                <button
+                  className="sim-toggle-mult-btn"
+                  onClick={adicionarLinhaManual}
+                  disabled={!grupoSelecionado}
+                  title={grupoSelecionado ? 'Adiciona uma linha com crédito digitável (valor livre)' : 'Selecione um grupo primeiro'}
+                >
+                  + Linha manual
+                </button>
+              )}
+              <button
+                className="sim-toggle-mult-btn"
+                onClick={() => setModoMultiplicador(v => !v)}
+              >
+                {modoMultiplicador ? 'Modo Manual' : 'Modo Multiplicador'}
+              </button>
+            </div>
           </div>
           <div className="cr-tabela-wrapper">
             <table className="cr-tabela-sim">
