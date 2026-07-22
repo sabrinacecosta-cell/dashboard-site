@@ -171,20 +171,15 @@ async function migrate() {
 
   // Imóvel: taxa_adm_redutor (campanha redutor 50%). Reseta e redefine — autoritativo.
   await db.query(`UPDATE simulador_grupos SET taxa_adm_redutor = NULL WHERE modalidade = 'imovel'`);
-  // Imóvel: 22% com redutor
+  // Imóvel: campanha julho — sem redutor 20%, com redutor 19%
   await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.22
-    WHERE modalidade = 'imovel' AND numero_grupo IN (1038, 1042, 1043, 1044, 1051)
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1035, 1038, 1042, 1043, 1044, 1051, 1054)
   `);
   // Imóvel: 18% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.18
     WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050, 1055)
-  `);
-  // Imóvel: 23% com redutor
-  await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
-    WHERE modalidade = 'imovel' AND numero_grupo = 1054
   `);
   // Auto: 2130 e 3002 → 17% com redutor
   await db.query(`
@@ -192,6 +187,18 @@ async function migrate() {
     WHERE modalidade = 'auto' AND numero_grupo IN (2130, 3002)
   `);
   console.log('Coluna taxa_adm_redutor e valores OK!');
+
+  // Imóvel: taxa_adm base (sem redutor) — autoritativo p/ os grupos da campanha julho.
+  // Campanha julho: sem redutor 20% nestes grupos; 1055 sem redutor 15%.
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm = 0.20
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1035, 1038, 1042, 1043, 1044, 1051, 1054)
+  `);
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm = 0.15
+    WHERE modalidade = 'imovel' AND numero_grupo = 1055
+  `);
+  console.log('taxa_adm base (campanha julho) OK!');
 
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
