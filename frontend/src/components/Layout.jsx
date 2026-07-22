@@ -96,7 +96,7 @@ function Layout({ children }) {
     { path: '/grupos', icon: '', label: 'Métricas' },
     { path: '/agenda', icon: '', label: 'Chat - agenda' },
     ...(isDemo || ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
-      ? [{ path: '/reunioes', icon: '', label: 'Reuniões' }]
+      ? [{ path: '/reunioes', icon: '', label: 'Comercial' }]
       : []),
     ...(isDemo || EMAILS_ACOMPANHAMENTO.includes(user?.email)
       ? [{ path: '/acompanhamento', icon: '', label: 'Acompanhamento' }]
