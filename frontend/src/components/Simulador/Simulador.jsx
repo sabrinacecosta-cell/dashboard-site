@@ -743,14 +743,14 @@ export default function Simulador() {
       <AdministradoraToggle value={administradora} onChange={setAdministradora} />
 
       {/* Toggle Modalidade */}
-      <div className="sim-toggle-modalidade">
+      <div className="toggle-group">
         <button
-          className={`sim-toggle-btn ${modalidade === 'imovel' ? 'active' : ''}`}
+          className={`toggle-btn ${modalidade === 'imovel' ? 'active' : ''}`}
           onClick={() => trocarModalidade('imovel')}
         > Imóvel
         </button>
         <button
-          className={`sim-toggle-btn ${modalidade === 'auto' ? 'active' : ''}`}
+          className={`toggle-btn ${modalidade === 'auto' ? 'active' : ''}`}
           onClick={() => trocarModalidade('auto')}
         > Auto
         </button>
