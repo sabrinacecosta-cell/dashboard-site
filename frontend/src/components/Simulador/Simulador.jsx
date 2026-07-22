@@ -6,6 +6,7 @@ import { formatarMoeda, formatarMoedaInteiro, formatarPercentual } from '../../b
 import { ResumoProposta } from './ResumoProposta';
 import ComparativoFinanciamento from './ComparativoFinanciamento';
 import EmbraconSimulador from './EmbraconSimulador';
+import AdministradoraToggle from '../AdministradoraToggle';
 import { useAuth } from '../../contexts/AuthContext';
 import { OBSERVACOES_LEGAIS } from '../../data/grupos';
 import './Simulador.css';
@@ -728,18 +729,7 @@ export default function Simulador() {
     return (
       <div className="sim-container">
         {/* Toggle Administradora */}
-        <div className="sim-toggle-modalidade">
-          <button
-            className={`sim-toggle-btn ${administradora === 'CNP' ? 'active' : ''}`}
-            onClick={() => setAdministradora('CNP')}
-          > CNP
-          </button>
-          <button
-            className={`sim-toggle-btn ${administradora === 'EMBRACON' ? 'active' : ''}`}
-            onClick={() => setAdministradora('EMBRACON')}
-          > Embracon
-          </button>
-        </div>
+        <AdministradoraToggle value={administradora} onChange={setAdministradora} />
 
         <EmbraconSimulador />
       </div>
@@ -750,18 +740,7 @@ export default function Simulador() {
     <div className="sim-container">
 
       {/* Toggle Administradora */}
-      <div className="sim-toggle-modalidade">
-        <button
-          className={`sim-toggle-btn ${administradora === 'CNP' ? 'active' : ''}`}
-          onClick={() => setAdministradora('CNP')}
-        > CNP
-        </button>
-        <button
-          className={`sim-toggle-btn ${administradora === 'EMBRACON' ? 'active' : ''}`}
-          onClick={() => setAdministradora('EMBRACON')}
-        > Embracon
-        </button>
-      </div>
+      <AdministradoraToggle value={administradora} onChange={setAdministradora} />
 
       {/* Toggle Modalidade */}
       <div className="sim-toggle-modalidade">
