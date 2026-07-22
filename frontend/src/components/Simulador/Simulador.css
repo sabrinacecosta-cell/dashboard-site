@@ -1276,19 +1276,24 @@
   gap: 14px;
 }
 
-/* Card com selo Livelo acima (grupo 1038) */
+/* Card com selo Livelo acima (grupo 1038). O card fica no fluxo e alinha com os
+   demais cards da linha; o selo é posicionado de forma absoluta ACIMA do card,
+   sem empurrá-lo para baixo. */
 .sim-card-com-selo {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 .sim-card-com-selo .sim-card-grupo {
   width: 100%;
 }
 
-/* Selo "Ganhe até 60 mil pontos Livelo" — dourado, sem fundo (transparente),
-   legível nos temas claro e escuro. Tamanho aproximado do card. */
+/* Selo "Ganhe até 60 mil pontos Livelo" — dourado, sem fundo amarelo, opaco na
+   cor da página (não vaza sobre o que estiver atrás). Legível em claro/escuro. */
 .sim-selo-livelo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1296,7 +1301,7 @@
   padding: 7px 8px;
   border: 1px solid var(--cor-destaque);
   border-radius: 10px;
-  background: transparent;
+  background: var(--bg-geral);
   color: var(--cor-destaque);
   font-size: 12px;
   font-weight: 700;
