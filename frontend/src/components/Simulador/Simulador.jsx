@@ -133,6 +133,7 @@ export default function Simulador() {
   const [simParcelasX, setSimParcelasX]                   = useState(18);
   const [incluirSeguro, setIncluirSeguro]                 = useState(false);
   const [showSeguroModal, setShowSeguroModal]             = useState(false);
+  const [showLiveloModal, setShowLiveloModal]             = useState(false);
 
   // Modo Multiplicador
   const [modoMultiplicador, setModoMultiplicador] = useState(false);
@@ -905,10 +906,15 @@ export default function Simulador() {
                 if (String(g.numero_grupo) === '1038' && modalidade === 'imovel') {
                   return (
                     <div key={g.id} className="sim-card-com-selo">
-                      <div className="sim-selo-livelo">
+                      <button
+                        type="button"
+                        className="sim-selo-livelo"
+                        onClick={() => setShowLiveloModal(true)}
+                        title="Ver detalhes da campanha Livelo"
+                      >
                         <span className="sim-selo-livelo-aviao" aria-hidden="true">✈</span>
                         <span>Ganhe até <strong>60&nbsp;mil</strong> pontos <strong>Livelo</strong></span>
-                      </div>
+                      </button>
                       {card}
                     </div>
                   );
@@ -1255,6 +1261,19 @@ export default function Simulador() {
                 Baixar PDF
               </a>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showLiveloModal && (
+        <div className="sim-modal-overlay" onClick={() => setShowLiveloModal(false)}>
+          <div className="sim-modal-livelo" onClick={e => e.stopPropagation()}>
+            <button
+              className="sim-modal-x-livelo"
+              onClick={() => setShowLiveloModal(false)}
+              aria-label="Fechar"
+            >×</button>
+            <img src="/livelo-beneficios.jpg" alt="Benefícios — Ganhe até 60 mil pontos Livelo" />
           </div>
         </div>
       )}

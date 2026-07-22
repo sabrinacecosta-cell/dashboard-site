@@ -1307,9 +1307,57 @@
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+}
+.sim-selo-livelo:hover {
+  background: var(--bg-painel);
+  box-shadow: 0 0 0 1px var(--cor-destaque);
 }
 .sim-selo-livelo strong {
   font-weight: 800;
+}
+
+/* Modal (lightbox) da campanha Livelo — abre ao clicar no selo. */
+.sim-modal-livelo {
+  position: relative;
+  max-width: min(94vw, 960px);
+  max-height: 92vh;
+  display: flex;
+}
+.sim-modal-livelo img {
+  width: 100%;
+  height: auto;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
+}
+/* Botão "x" pequeno no canto superior direito da imagem. */
+.sim-modal-x-livelo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+  transition: background 0.18s;
+}
+.sim-modal-x-livelo:hover {
+  background: rgba(0, 0, 0, 0.85);
 }
 .sim-selo-livelo-aviao {
   font-size: 13px;
