@@ -130,7 +130,7 @@ export default function EmbraconSimulador() {
   const atualizarLance = (id, valor) => {
     setLinhas(prev => prev.map(l => (
       l.id === id
-        ? { ...l, lanceEmbPercent: Math.min(l.lanceEmbMax, Math.max(0, Number(valor) || 0)) }
+        ? { ...l, lanceEmbPercent: valor === '' ? '' : Math.min(l.lanceEmbMax, Math.max(0, Number(valor) || 0)) }
         : l
     )));
   };
@@ -138,7 +138,7 @@ export default function EmbraconSimulador() {
   const totais = useMemo(() => linhas.reduce(
     (acc, l) => {
       const cartaTotal = l.credito * l.qtde;
-      const lanceEmb = cartaTotal * (l.lanceEmbPercent / 100);
+      const lanceEmb = cartaTotal * ((Number(l.lanceEmbPercent) || 0) / 100);
       acc.cartaTotal += cartaTotal;
       acc.parcelaPrimeiras += l.parcelaPrimeiras * l.qtde;
       acc.parcelaDemais += l.parcelaDemais * l.qtde;
@@ -165,8 +165,8 @@ export default function EmbraconSimulador() {
         redutor:            l.comRedutor ? 50 : 0,
         cartaTotal:         l.credito * l.qtde,
         recProprios:        0,
-        lanceEmbPerc:       l.lanceEmbPercent,
-        creditoContemplado: l.credito * l.qtde * (1 - l.lanceEmbPercent / 100),
+        lanceEmbPerc:       Number(l.lanceEmbPercent) || 0,
+        creditoContemplado: l.credito * l.qtde * (1 - (Number(l.lanceEmbPercent) || 0) / 100),
       })),
       simularParcelas: simParcelas,
       nomeConsorcio: 'EMBRACON',
@@ -339,7 +339,7 @@ export default function EmbraconSimulador() {
             <tbody>
               {linhas.map(l => {
                 const cartaTotal = l.credito * l.qtde;
-                const lanceEmb = cartaTotal * (l.lanceEmbPercent / 100);
+                const lanceEmb = cartaTotal * ((Number(l.lanceEmbPercent) || 0) / 100);
                 const creditoContemplado = cartaTotal - lanceEmb;
                 return (
                   <tr key={l.id}>
@@ -357,7 +357,7 @@ export default function EmbraconSimulador() {
                         className="cr-input-celula cr-input-pct"
                         min={0}
                         max={l.lanceEmbMax}
-                        value={l.lanceEmbPercent}
+                        value={l.lanceEmbPercent ?? ''}
                         onChange={e => atualizarLance(l.id, e.target.value)}
                       />
                       <span className="cr-lance-emb-label">% · {formatarMoeda(lanceEmb)}</span>

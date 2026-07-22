@@ -20,8 +20,8 @@ const SEGURO_PRESTAMISTA = {
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   const cartaTotal         = linha.credito * linha.qtde;
   const parcelaInicial     = linha.parcelaInicialSim;
-  const lanceEmb           = cartaTotal * (linha.lanceEmbutidoPercent / 100);
-  const recPropriosReais   = cartaTotal * ((linha.recProprios || 0) / 100);
+  const lanceEmb           = cartaTotal * ((Number(linha.lanceEmbutidoPercent) || 0) / 100);
+  const recPropriosReais   = cartaTotal * ((Number(linha.recProprios) || 0) / 100);
   const lanceTotal         = recPropriosReais + lanceEmb;
   const creditoContemplado = Math.max(0, cartaTotal - lanceEmb);
 
@@ -55,9 +55,11 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
             type="number"
             className="cr-input-celula cr-input-pct"
             min={0}
-            max={100}
-            value={linha.recProprios || 0}
-            onChange={e => onUpdate(linha.id, 'recProprios', Math.max(0, Number(e.target.value)))}
+            value={linha.recProprios ?? ''}
+            onChange={e => {
+              const raw = e.target.value;
+              onUpdate(linha.id, 'recProprios', raw === '' ? '' : Math.max(0, Number(raw)));
+            }}
           />
           <span className="cr-lance-emb-label">% · {formatarMoeda(recPropriosReais)}</span>
         </div>
@@ -68,10 +70,13 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
           className="cr-input-celula cr-input-pct"
           min={0}
           max={linha.lanceEmbutidoMax}
-          value={linha.lanceEmbutidoPercent}
-          onChange={e => onUpdate(linha.id, 'lanceEmbutidoPercent',
-            Math.min(linha.lanceEmbutidoMax, Math.max(0, Number(e.target.value)))
-          )}
+          value={linha.lanceEmbutidoPercent ?? ''}
+          onChange={e => {
+            const raw = e.target.value;
+            onUpdate(linha.id, 'lanceEmbutidoPercent',
+              raw === '' ? '' : Math.min(linha.lanceEmbutidoMax, Math.max(0, Number(raw)))
+            );
+          }}
         />
         <span className="cr-lance-emb-label">% · {formatarMoeda(lanceEmb)}</span>
       </td>
@@ -239,8 +244,8 @@ export default function Simulador() {
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const cartaTotal          = l.credito * l.qtde;
     const parcelaBase         = l.parcela  * l.qtde;
-    const lanceEmb            = cartaTotal * (l.lanceEmbutidoPercent / 100);
-    const recPropriosReais    = cartaTotal * ((l.recProprios || 0) / 100);
+    const lanceEmb            = cartaTotal * ((Number(l.lanceEmbutidoPercent) || 0) / 100);
+    const recPropriosReais    = cartaTotal * ((Number(l.recProprios) || 0) / 100);
     const lanceTotal          = recPropriosReais + lanceEmb;
     const creditoContemplado  = Math.max(0, cartaTotal - lanceEmb);
     const saldoDevedor        = cartaTotal * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0));
@@ -334,7 +339,7 @@ export default function Simulador() {
         parcelaInicial:         l.parcelaInicialSim,
         parcelaPosContemplacao: l.parcelaPosContemplacao,
         recProprios:            l.recPropriosReais || 0,
-        lanceEmbPerc:           l.lanceEmbutidoPercent,
+        lanceEmbPerc:           Number(l.lanceEmbutidoPercent) || 0,
         creditoContemplado:     l.creditoContemplado,
       })),
       totais: {
