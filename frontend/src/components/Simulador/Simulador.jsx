@@ -71,7 +71,21 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
         ) : formatarMoeda(linha.credito)}
       </td>
       <td>{formatarMoeda(cartaTotal)}</td>
-      <td>{formatarMoeda(parcelaInicial)}</td>
+      <td>
+        {linha.manual ? (
+          <input
+            type="number"
+            className="cr-input-celula"
+            min={0}
+            placeholder="0"
+            value={linha.parcela ?? ''}
+            onChange={e => {
+              const raw = e.target.value;
+              onUpdate(linha.id, 'parcela', raw === '' ? '' : Math.max(0, Number(raw)));
+            }}
+          />
+        ) : formatarMoeda(parcelaInicial)}
+      </td>
       <td>{linha.redutor === 0 ? '0%' : '50%'}</td>
       <td>
         <div className="cr-lance-emb-cell">
@@ -262,29 +276,25 @@ export default function Simulador() {
     });
   };
 
-  // Linha manual: usa os parâmetros do grupo selecionado (taxa/prazo/lance), mas
-  // o crédito é digitado livremente. Permite simular com valores redondos antes
-  // de escolher a cota exata. A parcela é derivada do crédito em linhasSimCalc.
+  // Linha manual: totalmente livre, independente de grupo/cota. O usuário digita
+  // o crédito e a parcela; carta total, lance e crédito contemplado são
+  // calculados. Serve para simular com valores redondos antes de escolher cotas.
   const adicionarLinhaManual = () => {
-    const g = grupoSelecionado;
-    if (!g) return;
-    const redutorVal = (hasReducao && comRedutor) ? 50 : 0;
-    const lanceEmbutidoMax = Math.round(parseFloat(g.lance_embutido_max) * 100);
     setLinhasSim(prev => [...prev, {
       id:                   Date.now() + Math.random(),
       simKey:               `manual_${Date.now()}_${Math.random()}`,
       manual:               true,
-      grupo:                String(g.numero_grupo),
+      grupo:                'Manual',
       credito:              '',
-      parcela:              0,
-      redutor:              redutorVal,
-      lanceEmbutidoPercent: lanceEmbutidoMax,
-      lanceEmbutidoMax,
-      taxaAdm:              (redutorVal === 50 && g.taxa_adm_redutor != null) ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm),
-      fundoReserva:         parseFloat(g.fundo_reserva),
-      prazoRestante:        parseInt(g.prazo_restante),
-      reajuste:             g.reajuste,
-      mesReajuste:          g.mes_reajuste,
+      parcela:              '',
+      redutor:              0,
+      lanceEmbutidoPercent: 0,
+      lanceEmbutidoMax:     100,
+      taxaAdm:              0,
+      fundoReserva:         0,
+      prazoRestante:        0,
+      reajuste:             '',
+      mesReajuste:          '',
       qtde:                 1,
       recProprios:          0,
     }]);
@@ -297,10 +307,9 @@ export default function Simulador() {
   const linhasSimCalc = useMemo(() => linhasSim.map(l => {
     const creditoNum          = Number(l.credito) || 0;
     const cartaTotal          = creditoNum * l.qtde;
-    // Linha manual: parcela derivada do crédito digitado (mesma fórmula do banco).
-    const parcelaUnit         = l.manual
-      ? (creditoNum * (1 + (l.taxaAdm || 0) + (l.fundoReserva || 0)) / (l.prazoRestante || 1)) / (l.redutor === 50 ? 2 : 1)
-      : l.parcela;
+    // Parcela por unidade: digitada (linha manual) ou vinda da cota. Coerção
+    // trata campo vazio como 0.
+    const parcelaUnit         = Number(l.parcela) || 0;
     const parcelaBase         = parcelaUnit * l.qtde;
     const lanceEmb            = cartaTotal * ((Number(l.lanceEmbutidoPercent) || 0) / 100);
     const recPropriosReais    = cartaTotal * ((Number(l.recProprios) || 0) / 100);
@@ -1072,8 +1081,7 @@ export default function Simulador() {
                 <button
                   className="sim-toggle-mult-btn"
                   onClick={adicionarLinhaManual}
-                  disabled={!grupoSelecionado}
-                  title={grupoSelecionado ? 'Adiciona uma linha com crédito digitável (valor livre)' : 'Selecione um grupo primeiro'}
+                  title="Adiciona uma linha com crédito e parcela digitáveis (valores livres)"
                 >
                   + Linha manual
                 </button>
