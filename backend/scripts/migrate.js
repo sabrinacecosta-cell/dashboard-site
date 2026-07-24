@@ -405,7 +405,7 @@ async function migrate() {
        reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
        sem_media_contemplacao)
     VALUES
-      (2134, 'auto', 'CNP', 0.115, 0.17, 0.03, 'INPC', 'JANEIRO', 0.30, 100, 100, TRUE)
+      (2134, 'auto', 'CNP', 0.115, 0.17, 0.03, 'INPC', 'SETEMBRO', 0.30, 100, 100, TRUE)
     ON CONFLICT (numero_grupo, modalidade) DO NOTHING
   `);
 
