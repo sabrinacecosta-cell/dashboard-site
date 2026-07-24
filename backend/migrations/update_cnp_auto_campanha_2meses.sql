@@ -74,7 +74,7 @@ WHERE sg.numero_grupo = v.numero_grupo
 UPDATE simulador_grupos sg
 SET prazo_restante = v.prazo
 FROM (VALUES
-  (2127, 45),
+  (2127, 46),
   (2130, 64),
   (3002, 78)
 ) AS v(numero_grupo, prazo)
