@@ -181,10 +181,10 @@ async function migrate() {
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.18
     WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050, 1055)
   `);
-  // Auto: 2130 e 3002 → 17% com redutor
+  // Auto: campanha (2127, 2130, 2134, 3002) → 17% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.17
-    WHERE modalidade = 'auto' AND numero_grupo IN (2130, 3002)
+    WHERE modalidade = 'auto' AND numero_grupo IN (2127, 2130, 2134, 3002)
   `);
   console.log('Coluna taxa_adm_redutor e valores OK!');
 
@@ -377,6 +377,63 @@ async function migrate() {
     );
   }
   console.log('Parcelas grupo 2130 (sem redutor) corrigidas!');
+
+  // ── Auto — campanha vigente: taxa base, grupo 2134 e redutor do 2127 ─────────
+  // Roda antes do recálculo de parcelas para que este preencha as parcelas.
+  // prazo_restante NÃO é tocado aqui (persiste do banco / das migrations de prazo).
+
+  // Taxa base (sem redutor) autoritativa dos grupos da campanha auto.
+  await db.query(`
+    UPDATE simulador_grupos sg
+    SET taxa_adm = v.taxa_adm
+    FROM (VALUES
+      (2127, 0.150),
+      (2130, 0.150),
+      (2134, 0.115),
+      (3002, 0.120)
+    ) AS v(numero_grupo, taxa_adm)
+    WHERE sg.numero_grupo = v.numero_grupo
+      AND sg.administradora = 'CNP'
+      AND sg.modalidade = 'auto'
+  `);
+
+  // Grupo 2134 (novo): cabeçalho. prazo_restante = prazo_total = 100 (grupo novo).
+  // ON CONFLICT DO NOTHING preserva o prazo já ajustado por migrations de prazo.
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao)
+    VALUES
+      (2134, 'auto', 'CNP', 0.115, 0.17, 0.03, 'INPC', 'JANEIRO', 0.30, 100, 100, TRUE)
+    ON CONFLICT (numero_grupo, modalidade) DO NOTHING
+  `);
+
+  // Grupo 2134: cotas de 50 a 80 mil (de 10 em 10), sem redutor e com redutor 50%.
+  // parcela = 0 provisória; recalculada no bloco de recálculo abaixo.
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    VALUES
+      (2134,'auto', 50000, 50000, 0, 0),
+      (2134,'auto', 60000, 60000, 0, 0),
+      (2134,'auto', 70000, 70000, 0, 0),
+      (2134,'auto', 80000, 80000, 0, 0),
+      (2134,'auto', 50000, 50000, 0, 0.5),
+      (2134,'auto', 60000, 60000, 0, 0.5),
+      (2134,'auto', 70000, 70000, 0, 0.5),
+      (2134,'auto', 80000, 80000, 0, 0.5)
+    ON CONFLICT DO NOTHING
+  `);
+
+  // Grupo 2127: opção "com redutor 50%" espelhando as cotas sem redutor.
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT numero_grupo, modalidade, bem_referencia, cota, 0, 0.5
+    FROM simulador_cotas
+    WHERE numero_grupo = 2127 AND modalidade = 'auto' AND redutor_parcela = 0
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('Auto campanha (taxas, grupo 2134, redutor 2127) OK!');
 
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
