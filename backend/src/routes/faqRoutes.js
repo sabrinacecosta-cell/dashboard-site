@@ -60,27 +60,40 @@ router.get('/entradas', authMiddleware, async (req, res) => {
   }
 });
 
-// FTS escopado pela administradora. Tenta websearch_to_tsquery e, se não houver
-// match, refaz com plainto_tsquery. Retorna as linhas ranqueadas (top 5).
+// FTS escopado pela administradora, tolerante a acento e caixa (f_unaccent nos dois
+// lados; to_tsvector já normaliza caixa; stemmer 'portuguese' cobre variações).
+// O ts_headline usa o texto ORIGINAL (com acento) para preservar a leitura do trecho.
+//
+// Estratégias em ordem de precisão → recall; retorna a 1ª que achar algo:
+//   1) websearch_to_tsquery — AND, respeita aspas/operadores
+//   2) plainto_tsquery — AND simples
+//   3) OR de todos os termos — mesma tsquery do (2) com & trocado por |, para que
+//      uma frase natural (ex.: verbo de ligação sem acento virando termo obrigatório)
+//      não zere a busca. Como só roda quando o AND não achou nada e o rank ordena os
+//      melhores no topo (LIMIT 5), a precisão continua priorizada.
 async function buscarTrechos(administradora, pergunta) {
-  // f_unaccent na pergunta espelha o unaccent da coluna tsv → o casamento (tsv @@ q)
-  // e o rank ignoram acento (e o to_tsvector já ignora maiúscula/minúscula).
-  // O ts_headline usa o texto ORIGINAL (com acento) para preservar a leitura do
-  // trecho; o negrito casa contra a query unaccentada.
-  const sql = (fn) => `
+  // qExpr entra numa subconsulta de 1 linha (qq.q) para aceitar tanto funções
+  // quanto expressões com cast (o OR abaixo) na mesma forma.
+  const select = (qExpr) => `
     SELECT id, categoria, subcategoria, topico, texto,
-           ts_rank_cd(tsv, q) AS rank,
-           ts_headline('portuguese', texto, q,
+           ts_rank_cd(tsv, qq.q) AS rank,
+           ts_headline('portuguese', texto, qq.q,
              'StartSel=**,StopSel=**,MaxFragments=2,MaxWords=50,MinWords=15') AS destaque
-      FROM faq_entradas, ${fn}('portuguese', f_unaccent($1)) q
-     WHERE administradora = $2 AND tsv @@ q
+      FROM faq_entradas, (SELECT ${qExpr} AS q) qq
+     WHERE administradora = $2 AND tsv @@ qq.q
      ORDER BY rank DESC LIMIT 5`;
 
-  let { rows } = await db.query(sql('websearch_to_tsquery'), [pergunta, administradora]);
-  if (rows.length === 0) {
-    ({ rows } = await db.query(sql('plainto_tsquery'), [pergunta, administradora]));
+  const estrategias = [
+    `websearch_to_tsquery('portuguese', f_unaccent($1))`,
+    `plainto_tsquery('portuguese', f_unaccent($1))`,
+    `replace(plainto_tsquery('portuguese', f_unaccent($1))::text, '&', '|')::tsquery`,
+  ];
+
+  for (const qExpr of estrategias) {
+    const { rows } = await db.query(select(qExpr), [pergunta, administradora]);
+    if (rows.length > 0) return rows;
   }
-  return rows;
+  return [];
 }
 
 // ── POST /faq/perguntar (todos) ─────────────────────────────────────────────
