@@ -28,7 +28,8 @@ function Layout({ children }) {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
-  const [faqOpen, setFaqOpen] = useState(false);
+  // null | 'faq' (público) | 'log' | 'gerenciar' (admin, abertos pelo menu do usuário)
+  const [faqView, setFaqView] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -142,6 +143,13 @@ function Layout({ children }) {
                 {!isDemo && ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
                   <>
                     <hr className="dropdown-divider" />
+                    <button className="dropdown-btn" onClick={() => { setDropdownOpen(false); setFaqView('log'); }}>
+                      💬 FAQ · Perguntas feitas
+                    </button>
+                    <button className="dropdown-btn" onClick={() => { setDropdownOpen(false); setFaqView('gerenciar'); }}>
+                      ✎ FAQ · Gerenciar entradas
+                    </button>
+                    <hr className="dropdown-divider" />
                     <button className="dropdown-btn" onClick={() => setResetModal(true)}>
                       🔑 Resetar senha
                     </button>
@@ -180,12 +188,12 @@ function Layout({ children }) {
           <div className="header-actions">
             <button
               className="btn-theme-toggle"
-              onClick={() => setFaqOpen(true)}
+              onClick={() => setFaqView('faq')}
               title="FAQ — Regras das administradoras"
               aria-label="Abrir FAQ"
+              style={{ color: 'var(--primary)', border: '1px solid var(--primary)' }}
             >
-              <span>💬</span>
-              <span className="theme-label">FAQ</span>
+              <span className="theme-label" style={{ color: 'var(--primary)' }}>FAQ</span>
             </button>
             <button
               className="btn-theme-toggle"
@@ -205,8 +213,8 @@ function Layout({ children }) {
         </main>
       </div>
 
-      {/* Modal FAQ de regras das administradoras (todos os usuários) */}
-      {faqOpen && <FaqModal user={user} onClose={() => setFaqOpen(false)} />}
+      {/* Modal FAQ de regras das administradoras (todos os usuários; views admin pelo menu) */}
+      {faqView && <FaqModal user={user} view={faqView} onClose={() => setFaqView(null)} />}
 
       {/* Popup de agenda/retornos para admins (não aparece no demo) */}
       {!isDemo && ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (
