@@ -6,6 +6,14 @@ require('dotenv').config();
 const db = require('../src/config/database');
 
 async function seedFaq() {
+  // Busca tolerante a acento (ver migrate.js): unaccent + wrapper IMMUTABLE.
+  await db.query(`CREATE EXTENSION IF NOT EXISTS unaccent`);
+  await db.query(`
+    CREATE OR REPLACE FUNCTION f_unaccent(text)
+    RETURNS text
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+    AS $$ SELECT public.unaccent('public.unaccent', $1) $$
+  `);
   await db.query(`
     CREATE TABLE IF NOT EXISTS faq_entradas (
       id SERIAL PRIMARY KEY,
@@ -17,8 +25,22 @@ async function seedFaq() {
       ordem INTEGER DEFAULT 0,
       criado_em TIMESTAMPTZ DEFAULT now(),
       criado_por TEXT,
-      tsv tsvector GENERATED ALWAYS AS (to_tsvector('portuguese', topico || ' ' || texto)) STORED
+      tsv tsvector GENERATED ALWAYS AS (to_tsvector('portuguese', f_unaccent(topico || ' ' || texto))) STORED
     )
+  `);
+  await db.query(`
+    DO $$
+    DECLARE expr text;
+    BEGIN
+      SELECT generation_expression INTO expr
+        FROM information_schema.columns
+       WHERE table_name = 'faq_entradas' AND column_name = 'tsv';
+      IF expr IS NULL OR position('f_unaccent' IN expr) = 0 THEN
+        ALTER TABLE faq_entradas DROP COLUMN IF EXISTS tsv;
+        ALTER TABLE faq_entradas ADD COLUMN tsv tsvector
+          GENERATED ALWAYS AS (to_tsvector('portuguese', f_unaccent(topico || ' ' || texto))) STORED;
+      END IF;
+    END $$;
   `);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_faq_entradas_tsv ON faq_entradas USING GIN (tsv)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_faq_entradas_adm ON faq_entradas (administradora)`);

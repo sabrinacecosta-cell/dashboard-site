@@ -63,12 +63,16 @@ router.get('/entradas', authMiddleware, async (req, res) => {
 // FTS escopado pela administradora. Tenta websearch_to_tsquery e, se não houver
 // match, refaz com plainto_tsquery. Retorna as linhas ranqueadas (top 5).
 async function buscarTrechos(administradora, pergunta) {
+  // f_unaccent na pergunta espelha o unaccent da coluna tsv → o casamento (tsv @@ q)
+  // e o rank ignoram acento (e o to_tsvector já ignora maiúscula/minúscula).
+  // O ts_headline usa o texto ORIGINAL (com acento) para preservar a leitura do
+  // trecho; o negrito casa contra a query unaccentada.
   const sql = (fn) => `
     SELECT id, categoria, subcategoria, topico, texto,
            ts_rank_cd(tsv, q) AS rank,
            ts_headline('portuguese', texto, q,
              'StartSel=**,StopSel=**,MaxFragments=2,MaxWords=50,MinWords=15') AS destaque
-      FROM faq_entradas, ${fn}('portuguese', $1) q
+      FROM faq_entradas, ${fn}('portuguese', f_unaccent($1)) q
      WHERE administradora = $2 AND tsv @@ q
      ORDER BY rank DESC LIMIT 5`;
 
