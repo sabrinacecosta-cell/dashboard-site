@@ -80,12 +80,13 @@ function FaqModal({ user, view = 'faq', onClose }) {
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div style={{ position: 'relative', background: 'var(--bg-secondary)', borderRadius: '14px', padding: '1.5rem', width: '100%', maxWidth: '760px', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', border: '1px solid var(--border)' }}>
-        {/* Botão fechar pequeno, no canto direito */}
-        <button onClick={onClose} aria-label="Fechar" style={{ position: 'absolute', top: '14px', right: '14px', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>×</button>
-        {/* Título em uma única linha */}
-        <h2 style={{ margin: '0 1.5rem 1.25rem 0', fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {TITULOS[efetivo] || TITULOS.faq}
-        </h2>
+        {/* Título ocupa a linha; × pequeno no fim da linha, canto direito */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>
+            {TITULOS[efetivo] || TITULOS.faq}
+          </h2>
+          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1, padding: '2px 6px', flexShrink: 0 }}>×</button>
+        </div>
 
         {efetivo === 'faq' && (
           <FaqPrincipal
@@ -196,8 +197,8 @@ function PerguntarENavegar({ administradora, podeUsar }) {
 
   return (
     <>
-      {/* Campo de pergunta — largura total do quadro */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', width: '100%' }}>
+      {/* Campo de pergunta — input ocupa a linha inteira; Buscar abaixo à direita */}
+      <div style={{ marginBottom: '1rem' }}>
         <input
           type="text"
           value={pergunta}
@@ -205,11 +206,13 @@ function PerguntarENavegar({ administradora, podeUsar }) {
           onKeyDown={(e) => e.key === 'Enter' && buscar()}
           placeholder="Ex.: quais garantias são aceitas no imobiliário?"
           disabled={carregando}
-          style={{ ...inputStyle, flex: '1 1 auto', width: 'auto', minWidth: 0 }}
+          style={{ ...inputStyle, width: '100%', display: 'block', marginBottom: '8px' }}
         />
-        <button onClick={buscar} disabled={carregando || !pergunta.trim()} style={{ ...btnPrimary, flexShrink: 0, opacity: (carregando || !pergunta.trim()) ? 0.5 : 1 }}>
-          {carregando ? '…' : 'Buscar'}
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={buscar} disabled={carregando || !pergunta.trim()} style={{ ...btnPrimary, opacity: (carregando || !pergunta.trim()) ? 0.5 : 1 }}>
+            {carregando ? '…' : 'Buscar'}
+          </button>
+        </div>
       </div>
 
       {erro && <p style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{erro}</p>}
