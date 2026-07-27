@@ -1,0 +1,464 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '../services/api';
+
+const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
+
+// Renderiza um trecho com **...** em negrito (destaque do ts_headline).
+function Destaque({ texto }) {
+  if (!texto) return null;
+  const partes = String(texto).split('**');
+  return (
+    <>
+      {partes.map((p, i) =>
+        i % 2 === 1 ? <strong key={i} style={{ color: 'var(--text-primary)' }}>{p}</strong> : <span key={i}>{p}</span>
+      )}
+    </>
+  );
+}
+
+// Rótulo "categoria › subcategoria › tópico" (omite subcategoria quando nula).
+function rotuloFonte(t) {
+  return [t.categoria, t.subcategoria, t.topico].filter(Boolean).join(' › ');
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '0.5rem 0.75rem',
+  borderRadius: '8px',
+  border: '1px solid var(--border)',
+  background: 'var(--bg-primary)',
+  color: 'var(--text-primary)',
+  fontSize: '0.9rem',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+};
+
+const btnPrimary = {
+  padding: '0.5rem 1.1rem',
+  borderRadius: '8px',
+  border: 'none',
+  background: 'var(--primary)',
+  color: '#1d1d1f',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontSize: '0.9rem',
+  whiteSpace: 'nowrap',
+};
+
+function FaqModal({ user, onClose }) {
+  const isAdmin = ADMIN_EMAILS.includes(user?.email);
+
+  const [administradoras, setAdministradoras] = useState([]);
+  const [administradora, setAdministradora] = useState('');
+  const [aba, setAba] = useState('perguntar'); // perguntar | navegar | gerenciar | log
+
+  useEffect(() => {
+    api.get('/faq/administradoras')
+      .then(r => {
+        setAdministradoras(r.data);
+        if (r.data.length === 1) setAdministradora(r.data[0]);
+      })
+      .catch(() => setAdministradoras([]));
+  }, []);
+
+  // Fecha com ESC
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const podeUsar = !!administradora;
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1200, padding: '3vh 1rem', overflowY: 'auto' }}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: 'var(--bg-secondary)', borderRadius: '14px', padding: '1.5rem', width: '100%', maxWidth: '720px', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', border: '1px solid var(--border)' }}>
+        {/* Cabeçalho */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.15rem' }}>FAQ — Regras das administradoras</h2>
+          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Seletor de administradora (obrigatório) */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Administradora
+          </label>
+          <select
+            value={administradora}
+            onChange={(e) => setAdministradora(e.target.value)}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            <option value="">Selecione uma administradora…</option>
+            {administradoras.map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Abas */}
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <TabBtn ativo={aba === 'perguntar'} onClick={() => setAba('perguntar')}>Perguntar</TabBtn>
+          <TabBtn ativo={aba === 'navegar'} onClick={() => setAba('navegar')}>Navegar</TabBtn>
+          {isAdmin && <TabBtn ativo={aba === 'gerenciar'} onClick={() => setAba('gerenciar')}>Gerenciar</TabBtn>}
+          {isAdmin && <TabBtn ativo={aba === 'log'} onClick={() => setAba('log')}>Log</TabBtn>}
+        </div>
+
+        {!podeUsar && (aba === 'perguntar' || aba === 'navegar') && (
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0', textAlign: 'center' }}>
+            Selecione uma administradora acima para começar.
+          </p>
+        )}
+
+        {aba === 'perguntar' && <AbaPerguntar administradora={administradora} podeUsar={podeUsar} />}
+        {aba === 'navegar' && <AbaNavegar administradora={administradora} podeUsar={podeUsar} />}
+        {aba === 'gerenciar' && isAdmin && <AbaGerenciar administradoras={administradoras} administradoraSel={administradora} userEmail={user?.email} />}
+        {aba === 'log' && isAdmin && <AbaLog />}
+      </div>
+    </div>
+  );
+}
+
+function TabBtn({ ativo, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '0.4rem 0.9rem',
+        borderRadius: '8px',
+        border: '1px solid ' + (ativo ? 'var(--primary)' : 'var(--border)'),
+        background: ativo ? 'var(--primary)' : 'transparent',
+        color: ativo ? '#1d1d1f' : 'var(--text-secondary)',
+        fontWeight: ativo ? 600 : 500,
+        cursor: 'pointer',
+        fontSize: '0.85rem',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Aba Perguntar ───────────────────────────────────────────────────────────
+function AbaPerguntar({ administradora, podeUsar }) {
+  const [pergunta, setPergunta] = useState('');
+  const [carregando, setCarregando] = useState(false);
+  const [resultado, setResultado] = useState(null); // { resposta, trechos }
+  const [erro, setErro] = useState('');
+
+  // Limpa o resultado ao trocar de administradora (nunca cruza administradoras).
+  useEffect(() => { setResultado(null); setErro(''); }, [administradora]);
+
+  async function buscar() {
+    const texto = pergunta.trim();
+    if (!texto || !podeUsar || carregando) return;
+    setCarregando(true);
+    setErro('');
+    setResultado(null);
+    try {
+      const { data } = await api.post('/faq/perguntar', { administradora, pergunta: texto });
+      setResultado(data);
+    } catch (err) {
+      setErro(err.response?.data?.error || 'Erro ao processar a pergunta');
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  if (!podeUsar) return null;
+
+  const nada = resultado && (!resultado.trechos || resultado.trechos.length === 0);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+        <input
+          type="text"
+          value={pergunta}
+          onChange={(e) => setPergunta(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && buscar()}
+          placeholder="Ex.: quais garantias são aceitas no imobiliário?"
+          disabled={carregando}
+          style={inputStyle}
+          autoFocus
+        />
+        <button onClick={buscar} disabled={carregando || !pergunta.trim()} style={{ ...btnPrimary, opacity: (carregando || !pergunta.trim()) ? 0.5 : 1 }}>
+          {carregando ? '…' : 'Buscar'}
+        </button>
+      </div>
+
+      {erro && <p style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{erro}</p>}
+
+      {carregando && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Buscando nas regras cadastradas…</p>}
+
+      {resultado && !carregando && (
+        <div>
+          {/* Resposta em linguagem natural */}
+          <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: nada ? 0 : '1rem', fontSize: '0.92rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+            {resultado.resposta}
+          </div>
+
+          {/* Trechos-fonte */}
+          {!nada && (
+            <div>
+              <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', margin: '0 0 0.6rem' }}>
+                Fontes na cartilha
+              </p>
+              {resultado.trechos.map((t, i) => (
+                <div key={i} style={{ padding: '0.75rem 0.9rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: '0.6rem' }}>
+                  <p style={{ margin: '0 0 0.4rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>
+                    {rotuloFonte(t)}
+                  </p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
+                    <Destaque texto={t.destaque || t.texto} />
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Aba Navegar ─────────────────────────────────────────────────────────────
+function AbaNavegar({ administradora, podeUsar }) {
+  const [entradas, setEntradas] = useState([]);
+  const [carregando, setCarregando] = useState(false);
+  const [aberto, setAberto] = useState({}); // key do tópico -> bool
+
+  useEffect(() => {
+    if (!podeUsar) { setEntradas([]); return; }
+    setCarregando(true);
+    api.get('/faq/entradas', { params: { administradora } })
+      .then(r => setEntradas(r.data))
+      .catch(() => setEntradas([]))
+      .finally(() => setCarregando(false));
+  }, [administradora, podeUsar]);
+
+  if (!podeUsar) return null;
+  if (carregando) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Carregando…</p>;
+  if (entradas.length === 0) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma entrada cadastrada.</p>;
+
+  // Agrupa por categoria → subcategoria
+  const grupos = {};
+  for (const e of entradas) {
+    const cat = e.categoria;
+    const sub = e.subcategoria || '';
+    grupos[cat] = grupos[cat] || {};
+    grupos[cat][sub] = grupos[cat][sub] || [];
+    grupos[cat][sub].push(e);
+  }
+
+  return (
+    <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+      {Object.entries(grupos).map(([cat, subs]) => (
+        <div key={cat} style={{ marginBottom: '1rem' }}>
+          <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{cat}</h3>
+          {Object.entries(subs).map(([sub, itens]) => (
+            <div key={sub} style={{ marginBottom: sub ? '0.75rem' : '0.4rem', paddingLeft: sub ? '0.5rem' : 0 }}>
+              {sub && <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{sub}</p>}
+              {itens.map((e) => {
+                const key = e.id;
+                const isOpen = !!aberto[key];
+                return (
+                  <div key={key} style={{ borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '0.4rem', overflow: 'hidden' }}>
+                    <button
+                      onClick={() => setAberto(a => ({ ...a, [key]: !a[key] }))}
+                      style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.8rem', background: 'var(--bg-primary)', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.87rem', fontWeight: 500, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                      <span>{e.topico}</span>
+                      <span style={{ color: 'var(--text-secondary)', flexShrink: 0 }}>{isOpen ? '−' : '+'}</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{ padding: '0.75rem 0.8rem', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)', borderTop: '1px solid var(--border)' }}>
+                        {e.texto}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Aba Gerenciar (admin) ────────────────────────────────────────────────────
+const FORM_VAZIO = { administradora: '', categoria: '', subcategoria: '', topico: '', texto: '', ordem: 0 };
+
+function AbaGerenciar({ administradoras, administradoraSel, userEmail }) {
+  const [entradas, setEntradas] = useState([]);
+  const [filtroAdm, setFiltroAdm] = useState(administradoraSel || '');
+  const [carregando, setCarregando] = useState(false);
+  const [form, setForm] = useState({ ...FORM_VAZIO, administradora: administradoraSel || '' });
+  const [editandoId, setEditandoId] = useState(null);
+  const [msg, setMsg] = useState('');
+
+  const carregar = useCallback((adm) => {
+    if (!adm) { setEntradas([]); return; }
+    setCarregando(true);
+    api.get('/faq/entradas', { params: { administradora: adm } })
+      .then(r => setEntradas(r.data))
+      .catch(() => setEntradas([]))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  useEffect(() => { carregar(filtroAdm); }, [filtroAdm, carregar]);
+
+  function resetForm() {
+    setForm({ ...FORM_VAZIO, administradora: filtroAdm || '' });
+    setEditandoId(null);
+  }
+
+  async function salvar() {
+    setMsg('');
+    try {
+      if (editandoId) {
+        await api.put(`/faq/entradas/${editandoId}`, form);
+      } else {
+        await api.post('/faq/entradas', form);
+      }
+      setMsg('Salvo!');
+      resetForm();
+      carregar(filtroAdm || form.administradora);
+      if (!filtroAdm) setFiltroAdm(form.administradora);
+    } catch (err) {
+      setMsg(err.response?.data?.error || 'Erro ao salvar');
+    }
+  }
+
+  async function excluir(id) {
+    if (!confirm('Excluir esta entrada?')) return;
+    try {
+      await api.delete(`/faq/entradas/${id}`);
+      carregar(filtroAdm);
+      if (editandoId === id) resetForm();
+    } catch {
+      setMsg('Erro ao excluir');
+    }
+  }
+
+  function editar(e) {
+    setForm({
+      administradora: e.administradora,
+      categoria: e.categoria,
+      subcategoria: e.subcategoria || '',
+      topico: e.topico,
+      texto: e.texto,
+      ordem: e.ordem ?? 0,
+    });
+    setEditandoId(e.id);
+  }
+
+  const admListaDatalist = [...new Set([...administradoras, form.administradora].filter(Boolean))];
+
+  return (
+    <div>
+      {/* Formulário */}
+      <div style={{ padding: '1rem', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-primary)', marginBottom: '1rem' }}>
+        <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', fontWeight: 600 }}>{editandoId ? 'Editar entrada' : 'Nova entrada'}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.6rem' }}>
+          <input list="faq-adms" placeholder="Administradora" value={form.administradora} onChange={e => setForm(f => ({ ...f, administradora: e.target.value }))} style={inputStyle} />
+          <datalist id="faq-adms">{admListaDatalist.map(a => <option key={a} value={a} />)}</datalist>
+          <input placeholder="Ordem" type="number" value={form.ordem} onChange={e => setForm(f => ({ ...f, ordem: e.target.value }))} style={inputStyle} />
+          <input placeholder="Categoria" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} style={inputStyle} />
+          <input placeholder="Subcategoria (opcional)" value={form.subcategoria} onChange={e => setForm(f => ({ ...f, subcategoria: e.target.value }))} style={inputStyle} />
+        </div>
+        <input placeholder="Tópico" value={form.topico} onChange={e => setForm(f => ({ ...f, topico: e.target.value }))} style={{ ...inputStyle, marginBottom: '0.6rem' }} />
+        <textarea placeholder="Texto da regra" value={form.texto} onChange={e => setForm(f => ({ ...f, texto: e.target.value }))} rows={4} style={{ ...inputStyle, marginBottom: '0.6rem', resize: 'vertical' }} />
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button onClick={salvar} style={btnPrimary}>{editandoId ? 'Atualizar' : 'Adicionar'}</button>
+          {editandoId && <button onClick={resetForm} style={{ ...inputStyle, width: 'auto', cursor: 'pointer', color: 'var(--text-secondary)' }}>Cancelar</button>}
+          {msg && <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{msg}</span>}
+        </div>
+      </div>
+
+      {/* Lista existente */}
+      <div style={{ marginBottom: '0.6rem' }}>
+        <select value={filtroAdm} onChange={e => setFiltroAdm(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+          <option value="">Ver entradas de…</option>
+          {administradoras.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
+
+      {carregando ? (
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Carregando…</p>
+      ) : (
+        <div style={{ maxHeight: '40vh', overflowY: 'auto' }}>
+          {entradas.map(e => (
+            <div key={e.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', padding: '0.5rem 0.7rem', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '0.4rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>{rotuloFonte(e)}</p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.texto}</p>
+              </div>
+              <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                <button onClick={() => editar(e)} title="Editar" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.2rem 0.5rem' }}>✎</button>
+                <button onClick={() => excluir(e.id)} title="Excluir" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '6px', cursor: 'pointer', color: '#ff6b6b', padding: '0.2rem 0.5rem' }}>🗑</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Aba Log (admin) ──────────────────────────────────────────────────────────
+function AbaLog() {
+  const [rows, setRows] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    api.get('/faq/log', { params: { limit: 100 } })
+      .then(r => setRows(r.data))
+      .catch(() => setRows([]))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  const fmt = (d) => {
+    if (!d) return '-';
+    const dt = new Date(d);
+    return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+
+  if (carregando) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Carregando…</p>;
+  if (rows.length === 0) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma pergunta registrada.</p>;
+
+  return (
+    <div style={{ maxHeight: '55vh', overflowY: 'auto', overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+        <thead>
+          <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
+            <th style={{ padding: '0.4rem' }}>Data</th>
+            <th style={{ padding: '0.4rem' }}>Usuário</th>
+            <th style={{ padding: '0.4rem' }}>Adm.</th>
+            <th style={{ padding: '0.4rem' }}>Pergunta</th>
+            <th style={{ padding: '0.4rem' }}>Resposta</th>
+            <th style={{ padding: '0.4rem', textAlign: 'center' }}>Achou?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.id} style={{ borderTop: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+              <td style={{ padding: '0.4rem', whiteSpace: 'nowrap' }}>{fmt(r.criado_em)}</td>
+              <td style={{ padding: '0.4rem' }}>{r.email_usuario}</td>
+              <td style={{ padding: '0.4rem' }}>{r.administradora}</td>
+              <td style={{ padding: '0.4rem', maxWidth: '160px' }}>{r.pergunta}</td>
+              <td style={{ padding: '0.4rem', maxWidth: '220px', color: 'var(--text-secondary)' }}>{r.resposta}</td>
+              <td style={{ padding: '0.4rem', textAlign: 'center' }}>{r.encontrou_resposta ? '✓' : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default FaqModal;

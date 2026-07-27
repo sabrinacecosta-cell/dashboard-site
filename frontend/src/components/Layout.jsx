@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PopupAgenda from './PopupAgenda';
+import FaqModal from './FaqModal';
 
 function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -26,6 +27,8 @@ function Layout({ children }) {
   }, [theme]);
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+
+  const [faqOpen, setFaqOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -177,6 +180,15 @@ function Layout({ children }) {
           <div className="header-actions">
             <button
               className="btn-theme-toggle"
+              onClick={() => setFaqOpen(true)}
+              title="FAQ — Regras das administradoras"
+              aria-label="Abrir FAQ"
+            >
+              <span>💬</span>
+              <span className="theme-label">FAQ</span>
+            </button>
+            <button
+              className="btn-theme-toggle"
               onClick={toggleTheme}
               title="Alternar tema"
               aria-label="Alternar tema"
@@ -192,6 +204,9 @@ function Layout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Modal FAQ de regras das administradoras (todos os usuários) */}
+      {faqOpen && <FaqModal user={user} onClose={() => setFaqOpen(false)} />}
 
       {/* Popup de agenda/retornos para admins (não aparece no demo) */}
       {!isDemo && ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email) && (

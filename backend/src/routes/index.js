@@ -8,6 +8,7 @@ const comissoesRoutes = require('./comissoesRoutes');
 const acompanhamentoRoutes = require('./acompanhamentoRoutes');
 const agendaRoutes = require('./agendaRoutes');
 const reunioesRoutes = require('./reunioesRoutes');
+const faqRoutes = require('./faqRoutes');
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.use('/', comissoesRoutes);
 router.use('/', acompanhamentoRoutes);
 router.use('/', agendaRoutes);
 router.use('/', reunioesRoutes);
+router.use('/faq', faqRoutes);
 
 // Health check
 router.get('/health', (req, res) => {
