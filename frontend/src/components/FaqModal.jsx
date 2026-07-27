@@ -82,7 +82,7 @@ function FaqModal({ user, view = 'faq', onClose }) {
       <div style={{ position: 'relative', background: 'var(--bg-secondary)', borderRadius: '14px', padding: '1.5rem', width: '100%', maxWidth: '760px', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', border: '1px solid var(--border)' }}>
         {/* Título à esquerda; × pequeno no fim da linha, canto direito */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.25rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', minWidth: 0, wordBreak: 'break-word' }}>
             {TITULOS[efetivo] || TITULOS.faq}
           </h2>
           <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1, padding: '2px 6px', flexShrink: 0 }}>×</button>
