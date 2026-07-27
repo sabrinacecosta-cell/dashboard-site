@@ -79,13 +79,11 @@ function FaqModal({ user, view = 'faq', onClose }) {
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1200, padding: '3vh 1rem', overflowY: 'auto' }}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: 'var(--bg-secondary)', borderRadius: '14px', padding: '1.5rem', width: '100%', maxWidth: '760px', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', border: '1px solid var(--border)' }}>
-        {/* Botão fechar acima do título, no canto direito */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.25rem' }}>
-          <button onClick={onClose} aria-label="Fechar" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer', lineHeight: 1, padding: 0 }}>×</button>
-        </div>
+      <div style={{ position: 'relative', background: 'var(--bg-secondary)', borderRadius: '14px', padding: '1.5rem', width: '100%', maxWidth: '760px', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', border: '1px solid var(--border)' }}>
+        {/* Botão fechar pequeno, no canto direito */}
+        <button onClick={onClose} aria-label="Fechar" style={{ position: 'absolute', top: '14px', right: '14px', background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '1.1rem', cursor: 'pointer', lineHeight: 1, padding: '2px 6px' }}>×</button>
         {/* Título em uma única linha */}
-        <h2 style={{ margin: '0 0 1.25rem', fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <h2 style={{ margin: '0 1.5rem 1.25rem 0', fontSize: '1.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {TITULOS[efetivo] || TITULOS.faq}
         </h2>
 
@@ -123,6 +121,7 @@ function FaqPrincipal({ administradoras, administradora, setAdministradora }) {
               aria-selected={administradora === a}
               className={`toggle-btn ${administradora === a ? 'active' : ''}`}
               onClick={() => setAdministradora(a)}
+              style={administradora === a ? { background: '#d1d1d6', borderColor: '#d1d1d6', color: '#1d1d1f' } : undefined}
             >
               {a}
             </button>
@@ -157,9 +156,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
     api.get('/faq/entradas', { params: { administradora } })
       .then(r => {
         setEntradas(r.data);
-        const todos = {};
-        r.data.forEach(e => { todos[e.id] = true; });
-        setAberto(todos);
+        setAberto({}); // tópicos começam fechados
       })
       .catch(() => setEntradas([]))
       .finally(() => setCarregandoNav(false));
@@ -200,7 +197,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
   return (
     <>
       {/* Campo de pergunta — largura total do quadro */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', width: '100%' }}>
         <input
           type="text"
           value={pergunta}
@@ -208,9 +205,9 @@ function PerguntarENavegar({ administradora, podeUsar }) {
           onKeyDown={(e) => e.key === 'Enter' && buscar()}
           placeholder="Ex.: quais garantias são aceitas no imobiliário?"
           disabled={carregando}
-          style={{ ...inputStyle, flex: 1 }}
+          style={{ ...inputStyle, flex: '1 1 auto', width: 'auto', minWidth: 0 }}
         />
-        <button onClick={buscar} disabled={carregando || !pergunta.trim()} style={{ ...btnPrimary, opacity: (carregando || !pergunta.trim()) ? 0.5 : 1 }}>
+        <button onClick={buscar} disabled={carregando || !pergunta.trim()} style={{ ...btnPrimary, flexShrink: 0, opacity: (carregando || !pergunta.trim()) ? 0.5 : 1 }}>
           {carregando ? '…' : 'Buscar'}
         </button>
       </div>
@@ -251,7 +248,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
         <div style={{ maxHeight: '52vh', overflowY: 'auto' }}>
           {Object.entries(grupos).map(([cat, subs]) => (
             <div key={cat} style={{ marginBottom: '1rem' }}>
-              <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{cat}</h3>
+              <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>{cat}</h3>
               {Object.entries(subs).map(([sub, itens]) => (
                 <div key={sub} style={{ marginBottom: sub ? '0.75rem' : '0.4rem', paddingLeft: sub ? '0.5rem' : 0 }}>
                   {sub && <p style={{ margin: '0 0 0.4rem', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{sub}</p>}
