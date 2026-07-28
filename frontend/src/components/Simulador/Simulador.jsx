@@ -366,8 +366,11 @@ export default function Simulador() {
       saldoRestantePos = Math.max(0, saldoDevedor - parcelasPagas);
       parcelaPosBase   = parcelaBase;
     } else {
+      // Sem redutor: abate só o lance do saldo devedor e dilui no prazo restante
+      // CHEIO (não encurtado pelas parcelas pagas) — assim a pós é sempre menor
+      // que a inicial, na proporção do lance abatido.
       saldoRestantePos = Math.max(0, saldoDevedor - lanceTotal);
-      parcelaPosBase   = saldoRestantePos / prazoAtualizado;
+      parcelaPosBase   = saldoRestantePos / prazoR;
     }
 
     // Seguro prestamista (mensal) = saldo devedor × taxa da modalidade. A parcela
