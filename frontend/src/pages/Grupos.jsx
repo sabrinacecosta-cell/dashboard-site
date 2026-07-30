@@ -207,7 +207,7 @@ function Grupos() {
                   <tr>
                     <th style={{ textAlign: 'center' }}>Grupo</th>
                     <th style={{ textAlign: 'center' }}>Prazo restante</th>
-                    <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 6 meses)</th>
+                    <th style={{ textAlign: 'center' }}>Média Contemplação (últimos 12 meses)</th>
                     <th style={{ textAlign: 'center' }}>Lance % (último mês)</th>
                   </tr>
                 </thead>
@@ -221,7 +221,7 @@ function Grupos() {
                     >
                       <td style={{ textAlign: 'center' }} className="text-primary">Grupo {r.grupo}</td>
                       <td style={{ textAlign: 'center' }}>{r.prazo_restante != null ? `${r.prazo_restante}m` : '-'}</td>
-                      <td style={{ textAlign: 'center' }}>{formatPct(r.media_contemplacao_6m)}</td>
+                      <td style={{ textAlign: 'center' }}>{formatPct(r.media_contemplacao)}</td>
                       <td style={{ textAlign: 'center' }} className="text-primary">{r.ultimo_lance_percent}%</td>
                     </tr>
                   ))}
