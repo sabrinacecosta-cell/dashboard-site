@@ -74,7 +74,8 @@ const ContemplacaoModel = {
       medias AS (
         SELECT
           grupo,
-          MAX(media_contemplacao) as media_contemplacao
+          MAX(media_contemplacao) as media_contemplacao,
+          MAX(media_contemplacao_6m) as media_contemplacao_6m
         FROM contemplacao
         GROUP BY grupo
       )
@@ -82,6 +83,7 @@ const ContemplacaoModel = {
         m.grupo,
         sg.prazo_restante,
         m.media_contemplacao,
+        m.media_contemplacao_6m,
         u.ultimo_lance_percent
       FROM medias m
       JOIN ultimo_mes u ON m.grupo = u.grupo

@@ -75,6 +75,7 @@ const ContemplacaoAutoModel = {
         u.grupo,
         sg.prazo_restante,
         sg.media_contemplacao,
+        sg.media_contemplacao AS media_contemplacao_6m,
         u.ultimo_lance_percent
       FROM ultimo_mes u
       LEFT JOIN simulador_grupos sg ON sg.numero_grupo = u.grupo AND sg.modalidade = 'auto'
