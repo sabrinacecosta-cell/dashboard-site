@@ -232,7 +232,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
               {resultado.trechos.map((t, i) => (
                 <div key={i} style={{ padding: '0.75rem 0.9rem', borderRadius: '8px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: '0.6rem' }}>
                   <p style={{ margin: '0 0 0.4rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)' }}>{rotuloFonte(t)}</p>
-                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--text-secondary)' }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--text-secondary)', whiteSpace: 'pre-line' }}>
                     <Destaque texto={t.destaque || t.texto} />
                   </p>
                 </div>
@@ -267,7 +267,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
                           <span style={{ color: 'var(--text-secondary)', flexShrink: 0 }}>{isOpen ? '−' : '+'}</span>
                         </button>
                         {isOpen && (
-                          <div style={{ padding: '0.75rem 0.8rem', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)', borderTop: '1px solid var(--border)' }}>
+                          <div style={{ padding: '0.75rem 0.8rem', fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)', borderTop: '1px solid var(--border)', whiteSpace: 'pre-line' }}>
                             {e.texto}
                           </div>
                         )}
