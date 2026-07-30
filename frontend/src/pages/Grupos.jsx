@@ -194,7 +194,7 @@ function Grupos() {
           fontSize: '0.82rem',
           lineHeight: '1.6',
         }}>
-          Estes cálculos mostram a efetividade do lance máximo, calculada pela relação entre a quantidade de cotas que ofertaram lance máximo VS contempladas em cada mês. A análise considera tanto o desempenho mês a mês quanto as médias dos últimos 6 e 11 meses, permitindo ao assessor entender a probabilidade de contemplação e planejar a estratégia com maior previsibilidade.
+          Estes cálculos mostram a efetividade do lance máximo, calculada pela relação entre a quantidade de cotas que ofertaram lance máximo VS contempladas em cada mês. A análise considera tanto o desempenho mês a mês quanto as médias dos últimos 6 e 12 meses, permitindo ao assessor entender a probabilidade de contemplação e planejar a estratégia com maior previsibilidade.
         </div>
 
         {/* Resumo Geral */}
