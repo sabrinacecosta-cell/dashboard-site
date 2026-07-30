@@ -435,6 +435,17 @@ async function migrate() {
   `);
   console.log('Auto campanha (taxas, grupo 2134, redutor 2127) OK!');
 
+  // Grupo 1035 (imóvel): opção "com redutor 50%" espelhando as cotas sem redutor.
+  // parcela = 0 provisória; recalculada no bloco abaixo (usa taxa_adm_redutor = 0.19).
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT numero_grupo, modalidade, bem_referencia, cota, 0, 0.5
+    FROM simulador_cotas
+    WHERE numero_grupo = 1035 AND modalidade = 'imovel' AND redutor_parcela = 0
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('Imóvel redutor 50% grupo 1035 OK!');
+
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
     UPDATE simulador_cotas sc
