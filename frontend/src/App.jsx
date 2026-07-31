@@ -55,7 +55,7 @@ function PublicRoute({ children }) {
   }
 
   if (signed) {
-    return <Navigate to="/vendas" />;
+    return <Navigate to="/simulador" />;
   }
 
   return children;
@@ -139,8 +139,8 @@ function App() {
               </PrivateRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/vendas" />} />
-          <Route path="*" element={<Navigate to="/vendas" />} />
+          <Route path="/" element={<Navigate to="/simulador" />} />
+          <Route path="*" element={<Navigate to="/simulador" />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
