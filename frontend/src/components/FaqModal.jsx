@@ -242,6 +242,9 @@ function PerguntarENavegar({ administradora, podeUsar }) {
       {/* Resultado da pergunta */}
       {resultado && !carregando && (
         <div style={{ marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', margin: '0 0 0.6rem' }}>
+            Resposta assistente IA
+          </p>
           <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: '1rem', fontSize: '0.92rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
             {resultado.resposta}
           </div>
