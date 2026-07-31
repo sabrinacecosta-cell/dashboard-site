@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PopupAgenda from './PopupAgenda';
 import FaqModal from './FaqModal';
+import NavIcon from './NavIcons';
 
 function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     return localStorage.getItem('sidebarOpen') !== 'false';
   });
@@ -91,44 +93,107 @@ function Layout({ children }) {
   };
 
   const EMAILS_ACOMPANHAMENTO = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outlook.com'];
+  const EMAILS_ADMIN = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
   const isDemo = user?.is_demo === true;
 
-  const menuItems = [
-    { path: '/vendas', icon: '', label: 'Vendas' },
-    { path: '/comissoes', icon: '', label: 'Comissões' },
-    { path: '/simulador', icon: '', label: 'Simulador' },
-    { path: '/grupos', icon: '', label: 'Métricas' },
-    { path: '/agenda', icon: '', label: 'Chat - agenda' },
-    ...(isDemo || ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
-      ? [{ path: '/reunioes', icon: '', label: 'Comercial' }]
+  // Ícones diretos no rail (ordem atual: Simulador, depois Métricas).
+  const railItems = [
+    { path: '/simulador', icon: 'simulador', label: 'Simulador' },
+    { path: '/grupos', icon: 'metricas', label: 'Métricas' },
+  ];
+
+  // Itens do flyout "Gestão" — mesma lógica de permissão de antes, só reorganizada.
+  const gestaoItems = [
+    { path: '/vendas', icon: 'vendas', label: 'Vendas' },
+    { path: '/comissoes', icon: 'comissoes', label: 'Comissões' },
+    { path: '/agenda', icon: 'agenda', label: 'Chat - agenda' },
+    ...(isDemo || EMAILS_ADMIN.includes(user?.email)
+      ? [{ path: '/reunioes', icon: 'comercial', label: 'Comercial' }]
       : []),
     ...(isDemo || EMAILS_ACOMPANHAMENTO.includes(user?.email)
-      ? [{ path: '/acompanhamento', icon: '', label: 'Acompanhamento' }]
+      ? [{ path: '/acompanhamento', icon: 'acompanhamento', label: 'Acompanhamento' }]
       : []),
-    ...(isDemo || ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'].includes(user?.email)
-      ? [{ path: '/admin', icon: '', label: 'Administração' }]
+    ...(isDemo || EMAILS_ADMIN.includes(user?.email)
+      ? [{ path: '/admin', icon: 'admin', label: 'Administração' }]
       : []),
   ];
 
+  // Gestão só aparece se houver ao menos um item permitido para o usuário.
+  const showGestao = gestaoItems.length > 0;
+  const gestaoActive = gestaoItems.some(i => location.pathname.startsWith(i.path));
+
+  const [gestaoOpen, setGestaoOpen] = useState(false);
+  const gestaoRef = useRef(null);
+
+  // Fecha o flyout ao clicar fora ou pressionar Esc.
+  useEffect(() => {
+    if (!gestaoOpen) return;
+    const onClickOutside = (e) => {
+      if (gestaoRef.current && !gestaoRef.current.contains(e.target)) setGestaoOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setGestaoOpen(false); };
+    document.addEventListener('mousedown', onClickOutside);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [gestaoOpen]);
+
   return (
     <div className="layout">
-      {/* Sidebar */}
-      <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
+      {/* Sidebar — rail estreito só de ícones */}
+      <aside className={`sidebar sidebar-rail${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-logo">
-          <span className="logo-text">Dashboard</span>
+          <span className="logo-mark" aria-label="Dashboard">D</span>
         </div>
-        
+
         <nav className="sidebar-nav">
-          {menuItems.map((item) => (
+          {railItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              data-label={item.label}
+              className={({ isActive }) => `nav-rail-item${isActive ? ' active' : ''}`}
+              aria-label={item.label}
             >
-              {item.icon && <span className="nav-icon">{item.icon}</span>}
-              <span className="nav-label">{item.label}</span>
+              <NavIcon name={item.icon} />
             </NavLink>
           ))}
+
+          {showGestao && (
+            <div className="rail-gestao" ref={gestaoRef}>
+              <button
+                type="button"
+                data-label="Gestão"
+                className={`nav-rail-item${gestaoActive ? ' active' : ''}${gestaoOpen ? ' flyout-open' : ''}`}
+                aria-label="Gestão"
+                aria-haspopup="true"
+                aria-expanded={gestaoOpen}
+                onClick={() => setGestaoOpen(o => !o)}
+              >
+                <NavIcon name="gestao" />
+              </button>
+
+              {gestaoOpen && (
+                <div className="rail-flyout" role="menu">
+                  <span className="rail-flyout-title">Gestão</span>
+                  {gestaoItems.map((item) => (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      role="menuitem"
+                      className={({ isActive }) => `rail-flyout-item${isActive ? ' active' : ''}`}
+                      onClick={() => setGestaoOpen(false)}
+                    >
+                      <span className="rail-flyout-icon"><NavIcon name={item.icon} size={18} /></span>
+                      <span className="rail-flyout-label">{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">
