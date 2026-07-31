@@ -420,35 +420,81 @@ function AbaLog() {
     return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
+  const exportarExcel = async () => {
+    const XLSX = await import('xlsx');
+    const dados = rows.map(r => ({
+      'Data': fmt(r.criado_em),
+      'Usuário': r.email_usuario || '',
+      'Administradora': r.administradora || '',
+      'Pergunta': r.pergunta || '',
+      'Resposta': r.resposta || '',
+      'Encontrou resposta': r.encontrou_resposta ? 'Sim' : 'Não',
+    }));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    ws['!cols'] = [
+      { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 50 }, { wch: 70 }, { wch: 18 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Perguntas FAQ');
+    const hoje = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `faq-perguntas-${hoje}.xlsx`);
+  };
+
   if (carregando) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Carregando…</p>;
   if (rows.length === 0) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma pergunta registrada.</p>;
 
+  const thBase = { padding: '0.5rem', verticalAlign: 'bottom', fontWeight: 600 };
+  const tdBase = { padding: '0.5rem', verticalAlign: 'top', overflowWrap: 'anywhere', wordBreak: 'break-word' };
+
   return (
-    <div style={{ maxHeight: '62vh', overflowY: 'auto', overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-        <thead>
-          <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
-            <th style={{ padding: '0.4rem' }}>Data</th>
-            <th style={{ padding: '0.4rem' }}>Usuário</th>
-            <th style={{ padding: '0.4rem' }}>Adm.</th>
-            <th style={{ padding: '0.4rem' }}>Pergunta</th>
-            <th style={{ padding: '0.4rem' }}>Resposta</th>
-            <th style={{ padding: '0.4rem', textAlign: 'center' }}>Achou?</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(r => (
-            <tr key={r.id} style={{ borderTop: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-              <td style={{ padding: '0.4rem', whiteSpace: 'nowrap' }}>{fmt(r.criado_em)}</td>
-              <td style={{ padding: '0.4rem' }}>{r.email_usuario}</td>
-              <td style={{ padding: '0.4rem' }}>{r.administradora}</td>
-              <td style={{ padding: '0.4rem', maxWidth: '160px' }}>{r.pergunta}</td>
-              <td style={{ padding: '0.4rem', maxWidth: '220px', color: 'var(--text-secondary)' }}>{r.resposta}</td>
-              <td style={{ padding: '0.4rem', textAlign: 'center' }}>{r.encontrou_resposta ? '✓' : '—'}</td>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.6rem' }}>
+        <button
+          onClick={exportarExcel}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '0.4rem 0.8rem', borderRadius: '8px',
+            border: '1px solid var(--border)', background: 'var(--bg-card-hover)',
+            color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer',
+          }}
+        >
+          ⬇ Exportar Excel
+        </button>
+      </div>
+      <div style={{ maxHeight: '58vh', overflowY: 'auto', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', tableLayout: 'fixed' }}>
+          <colgroup>
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '29%' }} />
+            <col style={{ width: '30%' }} />
+            <col style={{ width: '6%' }} />
+          </colgroup>
+          <thead>
+            <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
+              <th style={thBase}>Data</th>
+              <th style={thBase}>Usuário</th>
+              <th style={thBase}>Adm.</th>
+              <th style={thBase}>Pergunta</th>
+              <th style={thBase}>Resposta</th>
+              <th style={{ ...thBase, textAlign: 'center' }}>Achou?</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.id} style={{ borderTop: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                <td style={tdBase}>{fmt(r.criado_em)}</td>
+                <td style={tdBase}>{r.email_usuario}</td>
+                <td style={tdBase}>{r.administradora}</td>
+                <td style={tdBase}>{r.pergunta}</td>
+                <td style={{ ...tdBase, color: 'var(--text-secondary)' }}>{r.resposta}</td>
+                <td style={{ ...tdBase, textAlign: 'center' }}>{r.encontrou_resposta ? '✓' : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
