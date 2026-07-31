@@ -110,14 +110,15 @@ router.post('/perguntar', authMiddleware, async (req, res) => {
 
     // Nenhum trecho: grava log e responde "não consta", sem chamar o Anthropic.
     if (trechos.length === 0) {
-      await db.query(
+      const { rows } = await db.query(
         `INSERT INTO faq_perguntas_log
            (pergunta, resposta, administradora, email_usuario,
             encontrou_resposta, entradas_recuperadas, trechos_fonte)
-         VALUES ($1, $2, $3, $4, false, 0, $5)`,
+         VALUES ($1, $2, $3, $4, false, 0, $5)
+         RETURNING id`,
         [pergunta, SEM_BASE, administradora, emailUsuario, JSON.stringify([])]
       );
-      return res.json({ resposta: SEM_BASE, trechos: [] });
+      return res.json({ id: rows[0].id, resposta: SEM_BASE, trechos: [] });
     }
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -152,18 +153,42 @@ router.post('/perguntar', authMiddleware, async (req, res) => {
       destaque: t.destaque,
     }));
 
-    await db.query(
+    const { rows } = await db.query(
       `INSERT INTO faq_perguntas_log
          (pergunta, resposta, administradora, email_usuario,
           encontrou_resposta, entradas_recuperadas, trechos_fonte)
-       VALUES ($1, $2, $3, $4, true, $5, $6)`,
+       VALUES ($1, $2, $3, $4, true, $5, $6)
+       RETURNING id`,
       [pergunta, resposta, administradora, emailUsuario, trechos.length, JSON.stringify(trechosFonte)]
     );
 
-    return res.json({ resposta, trechos: trechosFonte });
+    return res.json({ id: rows[0].id, resposta, trechos: trechosFonte });
   } catch (error) {
     console.error('Erro ao processar pergunta do FAQ:', error);
     return res.status(500).json({ error: 'Erro ao processar a pergunta' });
+  }
+});
+
+// ── POST /faq/feedback (todos) — "A dúvida foi sanada?" (opcional) ───────────
+router.post('/feedback', authMiddleware, async (req, res) => {
+  const id = parseInt(req.body.id, 10);
+  const { sanada } = req.body;
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'id inválido' });
+  if (typeof sanada !== 'boolean') return res.status(400).json({ error: 'sanada deve ser booleano' });
+
+  try {
+    // Só permite responder o feedback da própria pergunta.
+    const { rowCount } = await db.query(
+      `UPDATE faq_perguntas_log
+          SET duvida_sanada = $1
+        WHERE id = $2 AND email_usuario = $3`,
+      [sanada, id, req.userEmail]
+    );
+    if (rowCount === 0) return res.status(404).json({ error: 'Pergunta não encontrada' });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao registrar feedback do FAQ:', error);
+    return res.status(500).json({ error: 'Erro ao registrar feedback' });
   }
 });
 
@@ -246,7 +271,7 @@ router.get('/log', authMiddleware, adminOnly, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT id, pergunta, resposta, administradora, email_usuario,
-              encontrou_resposta, entradas_recuperadas, trechos_fonte, criado_em
+              encontrou_resposta, duvida_sanada, entradas_recuperadas, trechos_fonte, criado_em
          FROM faq_perguntas_log
         ORDER BY criado_em DESC
         LIMIT $1 OFFSET $2`,

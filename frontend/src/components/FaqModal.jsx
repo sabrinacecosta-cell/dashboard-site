@@ -141,6 +141,8 @@ function PerguntarENavegar({ administradora, podeUsar }) {
   const [carregando, setCarregando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [erro, setErro] = useState('');
+  // Feedback opcional "A dúvida foi sanada?": null | 'enviando' | 'sim' | 'nao'
+  const [feedback, setFeedback] = useState(null);
 
   const [entradas, setEntradas] = useState([]);
   const [carregandoNav, setCarregandoNav] = useState(false);
@@ -152,6 +154,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
     setResultado(null);
     setErro('');
     setPergunta('');
+    setFeedback(null);
     if (!podeUsar) { setEntradas([]); return; }
     setCarregandoNav(true);
     api.get('/faq/entradas', { params: { administradora } })
@@ -169,6 +172,7 @@ function PerguntarENavegar({ administradora, podeUsar }) {
     setCarregando(true);
     setErro('');
     setResultado(null);
+    setFeedback(null);
     try {
       const { data } = await api.post('/faq/perguntar', { administradora, pergunta: texto });
       setResultado(data);
@@ -179,11 +183,28 @@ function PerguntarENavegar({ administradora, podeUsar }) {
     }
   }
 
+  async function enviarFeedback(sanada) {
+    if (!resultado?.id || feedback === 'enviando' || feedback === 'sim' || feedback === 'nao') return;
+    setFeedback('enviando');
+    try {
+      await api.post('/faq/feedback', { id: resultado.id, sanada });
+      setFeedback(sanada ? 'sim' : 'nao');
+    } catch {
+      setFeedback(null); // permite tentar novamente
+    }
+  }
+
   if (!podeUsar) {
     return <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', padding: '1rem 0' }}>Selecione uma administradora para começar.</p>;
   }
 
   const nada = resultado && (!resultado.trechos || resultado.trechos.length === 0);
+
+  const fbBtn = {
+    padding: '0.3rem 0.95rem', borderRadius: '8px',
+    border: '1px solid var(--border)', background: 'var(--bg-card-hover)',
+    color: 'var(--text-primary)', fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer',
+  };
 
   // Agrupa por categoria → subcategoria
   const grupos = {};
@@ -221,9 +242,26 @@ function PerguntarENavegar({ administradora, podeUsar }) {
       {/* Resultado da pergunta */}
       {resultado && !carregando && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: nada ? 0 : '1rem', fontSize: '0.92rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
+          <div style={{ padding: '1rem', borderRadius: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', marginBottom: '1rem', fontSize: '0.92rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>
             {resultado.resposta}
           </div>
+
+          {/* Feedback opcional — entre a resposta da IA e os trechos-fonte */}
+          {resultado.id && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', marginBottom: nada ? 0 : '1rem' }}>
+              {feedback === 'sim' || feedback === 'nao' ? (
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>✓ Obrigado pelo retorno!</span>
+              ) : (
+                <>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>A dúvida foi sanada?</span>
+                  <button onClick={() => enviarFeedback(true)} disabled={feedback === 'enviando'} style={fbBtn}>Sim</button>
+                  <button onClick={() => enviarFeedback(false)} disabled={feedback === 'enviando'} style={fbBtn}>Não</button>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>(opcional)</span>
+                </>
+              )}
+            </div>
+          )}
+
           {!nada && (
             <div>
               <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-secondary)', margin: '0 0 0.6rem' }}>
@@ -429,10 +467,11 @@ function AbaLog() {
       'Pergunta': r.pergunta || '',
       'Resposta': r.resposta || '',
       'Encontrou resposta': r.encontrou_resposta ? 'Sim' : 'Não',
+      'Dúvida sanada': r.duvida_sanada === true ? 'Sim' : r.duvida_sanada === false ? 'Não' : '',
     }));
     const ws = XLSX.utils.json_to_sheet(dados);
     ws['!cols'] = [
-      { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 50 }, { wch: 70 }, { wch: 18 },
+      { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 50 }, { wch: 70 }, { wch: 18 }, { wch: 14 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Perguntas FAQ');
@@ -464,12 +503,13 @@ function AbaLog() {
       <div style={{ maxHeight: '58vh', overflowY: 'auto', overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', tableLayout: 'fixed' }}>
           <colgroup>
-            <col style={{ width: '11%' }} />
-            <col style={{ width: '17%' }} />
-            <col style={{ width: '7%' }} />
-            <col style={{ width: '29%' }} />
-            <col style={{ width: '30%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '15%' }} />
             <col style={{ width: '6%' }} />
+            <col style={{ width: '27%' }} />
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '7%' }} />
+            <col style={{ width: '7%' }} />
           </colgroup>
           <thead>
             <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
@@ -479,6 +519,7 @@ function AbaLog() {
               <th style={thBase}>Pergunta</th>
               <th style={thBase}>Resposta</th>
               <th style={{ ...thBase, textAlign: 'center' }}>Achou?</th>
+              <th style={{ ...thBase, textAlign: 'center' }}>Sanada?</th>
             </tr>
           </thead>
           <tbody>
@@ -490,6 +531,9 @@ function AbaLog() {
                 <td style={tdBase}>{r.pergunta}</td>
                 <td style={{ ...tdBase, color: 'var(--text-secondary)' }}>{r.resposta}</td>
                 <td style={{ ...tdBase, textAlign: 'center' }}>{r.encontrou_resposta ? '✓' : '—'}</td>
+                <td style={{ ...tdBase, textAlign: 'center' }}>
+                  {r.duvida_sanada === true ? 'Sim' : r.duvida_sanada === false ? 'Não' : '—'}
+                </td>
               </tr>
             ))}
           </tbody>

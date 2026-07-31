@@ -1039,6 +1039,8 @@ INSERT INTO producao (mes, modalidade, grupo, cota, parcela, cliente, valor_do_b
       criado_em TIMESTAMPTZ DEFAULT now()
     )
   `);
+  // Feedback opcional do usuário ("A dúvida foi sanada?"): null = não respondido.
+  await db.query(`ALTER TABLE faq_perguntas_log ADD COLUMN IF NOT EXISTS duvida_sanada BOOLEAN`);
   console.log('Tabela "faq_perguntas_log" OK!');
 
   // Seed das 13 entradas CNP — idempotente (só insere se a administradora CNP
