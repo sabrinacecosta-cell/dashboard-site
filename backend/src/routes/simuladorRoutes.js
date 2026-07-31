@@ -55,6 +55,16 @@ router.get('/grupos', authMiddleware, async (req, res) => {
         END + 100
     END DESC`;
 
+  // A média de contemplação do card deve bater com a aba de Métricas (Resumo por Grupo,
+  // "últimos 12 meses"). Para imóvel, Métricas usa MAX(media_contemplacao) vivo da tabela
+  // de contemplação — não o valor curado em simulador_grupos. Para auto, Métricas usa o
+  // próprio simulador_grupos, então mantemos a coluna. sem_media_contemplacao acompanha:
+  // no imóvel, é verdadeiro só quando não há média viva. (Colunas repetidas após sg.* —
+  // o node-pg mantém o último valor de cada nome.)
+  const mediaVivaExpr = `(SELECT MAX(media_contemplacao) FROM ${ctable} WHERE grupo = sg.numero_grupo)`;
+  const mediaExpr    = modalidade === 'auto' ? 'sg.media_contemplacao'     : mediaVivaExpr;
+  const semMediaExpr = modalidade === 'auto' ? 'sg.sem_media_contemplacao' : `(${mediaVivaExpr} IS NULL)`;
+
   try {
     const result = await db.query(
       `SELECT
@@ -65,7 +75,9 @@ router.get('/grupos', authMiddleware, async (req, res) => {
           WHERE grupo = sg.numero_grupo
           ORDER BY ${orderExpr}
           LIMIT 1
-        ) AS lance_ultimo_mes
+        ) AS lance_ultimo_mes,
+        ${mediaExpr} AS media_contemplacao,
+        ${semMediaExpr} AS sem_media_contemplacao
       FROM simulador_grupos sg
       WHERE sg.modalidade = $1
         AND sg.administradora = 'CNP'
