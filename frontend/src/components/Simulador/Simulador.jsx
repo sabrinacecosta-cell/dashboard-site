@@ -160,8 +160,8 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 export default function Simulador() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [administradora, setAdministradora]       = useState('CNP'); // 'CNP' ou 'EMBRACON'
-  const [modalidade, setModalidade]               = useState('imovel');
+  const [administradora, setAdministradora]       = useState(() => localStorage.getItem('sim_administradora') || 'CNP'); // 'CNP' ou 'EMBRACON'
+  const [modalidade, setModalidade]               = useState(() => localStorage.getItem('sim_modalidade') || 'imovel');
   const [grupos, setGrupos]                       = useState([]);
   const [loadingGrupos, setLoadingGrupos]         = useState(false);
   const [grupoSelecionado, setGrupoSelecionado]   = useState(null);
@@ -169,7 +169,10 @@ export default function Simulador() {
   const [loadingCotas, setLoadingCotas]           = useState(false);
   const [comRedutor, setComRedutor]               = useState(false);
   const [qtdesCotas, setQtdesCotas]               = useState({});
-  const [linhasSim, setLinhasSim]                 = useState([]);
+  const [linhasSim, setLinhasSim]                 = useState(() => {
+    // Preserva as cotas do "Monte sua simulação" ao trocar de aba (unmount/remount).
+    try { return JSON.parse(localStorage.getItem('sim_linhasSim')) || []; } catch { return []; }
+  });
   const [showModalNomeSim, setShowModalNomeSim]   = useState(false);
   const [modalAcaoSim, setModalAcaoSim]           = useState('pdf'); // 'pdf' | 'excel'
   const [nomeClienteInputSim, setNomeClienteInputSim] = useState('');
@@ -188,6 +191,15 @@ export default function Simulador() {
 
   // Comparar com financiamento
   const [comparandoFin, setComparandoFin]         = useState(false);
+
+  // Persiste o estado do simulador para sobreviver à troca de abas (o componente
+  // desmonta ao navegar). As linhas são autossuficientes, então bastam elas +
+  // o contexto (modalidade/administradora) para voltar exatamente como estava.
+  useEffect(() => {
+    try { localStorage.setItem('sim_linhasSim', JSON.stringify(linhasSim)); } catch { /* quota/serialização */ }
+  }, [linhasSim]);
+  useEffect(() => { localStorage.setItem('sim_modalidade', modalidade); }, [modalidade]);
+  useEffect(() => { localStorage.setItem('sim_administradora', administradora); }, [administradora]);
 
   useEffect(() => {
     setLoadingGrupos(true);
