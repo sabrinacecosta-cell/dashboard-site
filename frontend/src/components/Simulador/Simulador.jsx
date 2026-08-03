@@ -939,7 +939,7 @@ export default function Simulador() {
                       <span>Lance último mês: {parseFloat(g.lance_ultimo_mes).toFixed(2).replace('.', ',')}%</span>
                     )}
                     {g.numero_grupo === 1053 && (
-                      <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
+                      <div style={{ color: 'var(--texto-secundario)', fontSize: '12px', marginTop: 4 }}>Vagas esgotadas</div>
                     )}
                     {['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
                       <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>

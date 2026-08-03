@@ -127,8 +127,14 @@ code, pre, .mono {
   padding: 10px 0;
   border-radius: 999px;
   z-index: 100;
-  transition: transform 0.3s ease, background-color 0.3s ease;
+  transition: transform 0.3s ease, background-color 0.3s ease, width 0.22s ease, border-radius 0.22s ease;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Expande ao passar o mouse (sobrepõe o conteúdo, sem empurrar o layout) */
+.sidebar-rail:hover {
+  width: 232px;
+  border-radius: 24px;
 }
 
 .sidebar.sidebar-hidden {
@@ -141,7 +147,31 @@ code, pre, .mono {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  overflow: hidden;
   border-bottom: 0.5px solid var(--border);
+}
+
+/* "Dashboard" ao lado do "D" — some no rail, aparece na expansão */
+.sidebar-logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.22s ease;
+}
+
+.sidebar-rail:hover .sidebar-logo {
+  justify-content: flex-start;
+  padding-left: 17px;
+}
+
+.sidebar-rail:hover .sidebar-logo-text {
+  opacity: 1;
+  max-width: 160px;
 }
 
 .logo-mark {
@@ -175,14 +205,61 @@ code, pre, .mono {
   border-radius: 14px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  overflow: hidden;
   color: var(--text-muted);
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, width 0.22s ease;
+}
+
+/* Célula fixa do ícone (mantém o ícone alinhado nos dois estados) */
+.nav-rail-ico {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rótulo inline do item — some no rail, aparece na expansão */
+.nav-rail-label {
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.15s ease, max-width 0.22s ease;
+}
+
+.sidebar-rail:hover .sidebar-nav {
+  align-items: stretch;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.sidebar-rail:hover .nav-rail-item {
+  width: 100%;
+}
+
+.sidebar-rail:hover .rail-gestao {
+  width: 100%;
+}
+
+.sidebar-rail:hover .nav-rail-label {
+  opacity: 1;
+  max-width: 150px;
+  margin-right: 4px;
+}
+
+/* Com os rótulos inline visíveis, o tooltip flutuante fica redundante */
+.sidebar-rail:hover .nav-rail-item::after {
+  display: none;
 }
 
 .nav-rail-item:hover {
@@ -307,6 +384,21 @@ code, pre, .mono {
   display: flex;
   justify-content: center;
   border-top: 0.5px solid var(--border);
+}
+
+/* Na expansão, o avatar acompanha o alinhamento dos ícones (não pula p/ o centro) */
+.sidebar-rail:hover .sidebar-footer {
+  justify-content: flex-start;
+  padding-left: 14px;
+}
+
+.sidebar-rail:hover .user-name {
+  display: inline;
+  margin-left: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .sidebar-user-dropdown {

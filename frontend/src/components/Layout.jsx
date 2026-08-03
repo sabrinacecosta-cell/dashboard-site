@@ -146,6 +146,7 @@ function Layout({ children }) {
       <aside className={`sidebar sidebar-rail${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-logo">
           <span className="logo-mark" aria-label="Dashboard">D</span>
+          <span className="sidebar-logo-text">Dashboard</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -157,7 +158,8 @@ function Layout({ children }) {
               className={({ isActive }) => `nav-rail-item${isActive ? ' active' : ''}`}
               aria-label={item.label}
             >
-              <NavIcon name={item.icon} />
+              <span className="nav-rail-ico"><NavIcon name={item.icon} /></span>
+              <span className="nav-rail-label">{item.label}</span>
             </NavLink>
           ))}
 
@@ -172,7 +174,8 @@ function Layout({ children }) {
                 aria-expanded={gestaoOpen}
                 onClick={() => setGestaoOpen(o => !o)}
               >
-                <NavIcon name="gestao" />
+                <span className="nav-rail-ico"><NavIcon name="gestao" /></span>
+                <span className="nav-rail-label">Gestão</span>
               </button>
 
               {gestaoOpen && (
