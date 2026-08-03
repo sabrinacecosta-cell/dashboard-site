@@ -930,7 +930,7 @@ export default function Simulador() {
                           ? `Média contemplação: ${mediaVal}/mês`
                           : ''}
                     </div>
-                    {lanceMaxCont && (
+                    {lanceMaxCont && !emCampanha && (
                       <div className="sim-card-grupo-lance-max-cont">
                         Lance máximo contemplado: {lanceMaxCont}
                       </div>

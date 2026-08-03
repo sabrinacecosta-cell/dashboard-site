@@ -1413,14 +1413,6 @@
   color: var(--texto-hint);
 }
 
-/* Nos cards em campanha (fundo cinza), o "Lance máximo contemplado" segue o mesmo
-   estilo discreto do texto de "sem média" — pequeno e em cinza — para não destoar. */
-.sim-card-grupo--campanha .sim-card-grupo-lance-max-cont {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--texto-hint);
-}
-
 /* ── Área de Cotas ── */
 .sim-cotas-area {
   max-width: 800px;
