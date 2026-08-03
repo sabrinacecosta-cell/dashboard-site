@@ -145,8 +145,10 @@ function Layout({ children }) {
       {/* Sidebar — rail estreito só de ícones */}
       <aside className={`sidebar sidebar-rail${sidebarOpen ? '' : ' sidebar-hidden'}`}>
         <div className="sidebar-logo">
-          <span className="logo-mark" aria-label="Dashboard">D</span>
-          <span className="sidebar-logo-text">Dashboard</span>
+          <span className="sidebar-logo-text" aria-label="Dashboard">
+            <span className="sidebar-logo-initial">D</span>
+            <span className="sidebar-logo-rest">ashboard</span>
+          </span>
         </div>
 
         <nav className="sidebar-nav">
