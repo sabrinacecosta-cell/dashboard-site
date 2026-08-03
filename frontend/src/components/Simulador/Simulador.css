@@ -5,6 +5,7 @@
   --bg-geral: #0A0A0A;
   --bg-painel: #1A1A1A;
   --bg-card: #1E1E1E;
+  --bg-campanha: #2c2c2e;
   --cor-destaque: #F5C000;
   --texto-principal: #FFFFFF;
   --texto-secundario: #CCCCCC;
@@ -20,6 +21,7 @@
   --bg-geral: #f5f5f7;
   --bg-painel: #ffffff;
   --bg-card: #f0f0f5;
+  --bg-campanha: #ececf0;
   --texto-principal: #1d1d1f;
   --texto-secundario: #6e6e73;
   --texto-hint: #aeaeb2;
@@ -1379,6 +1381,12 @@
 .sim-card-grupo:hover {
   border-color: var(--cor-destaque);
   background: var(--bg-card);
+}
+
+/* Grupos em campanha vigente: fundo cinza mais claro para diferenciar dos demais */
+.sim-card-grupo--campanha,
+.sim-card-grupo--campanha:hover {
+  background: var(--bg-campanha);
 }
 
 .sim-card-grupo-numero {

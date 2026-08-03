@@ -897,10 +897,13 @@ export default function Simulador() {
                 const lanceMaxCont = g.lance_maximo_contemplado != null
                   ? `${parseFloat(g.lance_maximo_contemplado).toFixed(1).replace('.', ',').replace(/,0$/, '')}%`
                   : null;
+                const emCampanha =
+                  (modalidade === 'imovel' && ['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo))) ||
+                  (modalidade === 'auto' && ['2127','2130','2134','3002'].includes(String(g.numero_grupo)));
                 const card = (
                   <button
                     key={g.id}
-                    className="sim-card-grupo"
+                    className={`sim-card-grupo${emCampanha ? ' sim-card-grupo--campanha' : ''}`}
                     onClick={() => setGrupoSelecionado(g)}
                   >
                     <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
@@ -939,13 +942,13 @@ export default function Simulador() {
                       <div style={{ color: 'red', fontWeight: 'bold', marginTop: 4 }}>Vagas esgotadas</div>
                     )}
                     {['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
-                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente julho
+                      <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
+                        Campanha vigente agosto
                       </span>
                     )}
                     {['2127','2130','2134','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
-                      <span style={{ color: '#2d6a2d', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente julho
+                      <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
+                        Campanha vigente agosto
                       </span>
                     )}
                   </button>

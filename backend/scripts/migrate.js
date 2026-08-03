@@ -446,6 +446,50 @@ async function migrate() {
   `);
   console.log('Imóvel redutor 50% grupo 1035 OK!');
 
+  // Grupo 1042 (imóvel): tabela de cotas autoritativa (16 créditos informados pela
+  // área comercial, ago/2026). Reseta e redefine — apaga o que houver e reinsere,
+  // com opção sem redutor e com redutor 50% (campanha vigente). bem_referencia = cota.
+  // parcela = 0 provisória; recalculada no bloco abaixo (usa taxa_adm_redutor = 0.19).
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1042 AND modalidade = 'imovel'`);
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    VALUES
+      (1042,'imovel', 211120.28, 211120.28, 0, 0),
+      (1042,'imovel', 225194.97, 225194.97, 0, 0),
+      (1042,'imovel', 239269.65, 239269.65, 0, 0),
+      (1042,'imovel', 253344.34, 253344.34, 0, 0),
+      (1042,'imovel', 267419.03, 267419.03, 0, 0),
+      (1042,'imovel', 281493.71, 281493.71, 0, 0),
+      (1042,'imovel', 295568.40, 295568.40, 0, 0),
+      (1042,'imovel', 309643.09, 309643.09, 0, 0),
+      (1042,'imovel', 323717.77, 323717.77, 0, 0),
+      (1042,'imovel', 337792.45, 337792.45, 0, 0),
+      (1042,'imovel', 351867.13, 351867.13, 0, 0),
+      (1042,'imovel', 365941.83, 365941.83, 0, 0),
+      (1042,'imovel', 380016.52, 380016.52, 0, 0),
+      (1042,'imovel', 394091.20, 394091.20, 0, 0),
+      (1042,'imovel', 408165.88, 408165.88, 0, 0),
+      (1042,'imovel', 422240.57, 422240.57, 0, 0),
+      (1042,'imovel', 211120.28, 211120.28, 0, 0.5),
+      (1042,'imovel', 225194.97, 225194.97, 0, 0.5),
+      (1042,'imovel', 239269.65, 239269.65, 0, 0.5),
+      (1042,'imovel', 253344.34, 253344.34, 0, 0.5),
+      (1042,'imovel', 267419.03, 267419.03, 0, 0.5),
+      (1042,'imovel', 281493.71, 281493.71, 0, 0.5),
+      (1042,'imovel', 295568.40, 295568.40, 0, 0.5),
+      (1042,'imovel', 309643.09, 309643.09, 0, 0.5),
+      (1042,'imovel', 323717.77, 323717.77, 0, 0.5),
+      (1042,'imovel', 337792.45, 337792.45, 0, 0.5),
+      (1042,'imovel', 351867.13, 351867.13, 0, 0.5),
+      (1042,'imovel', 365941.83, 365941.83, 0, 0.5),
+      (1042,'imovel', 380016.52, 380016.52, 0, 0.5),
+      (1042,'imovel', 394091.20, 394091.20, 0, 0.5),
+      (1042,'imovel', 408165.88, 408165.88, 0, 0.5),
+      (1042,'imovel', 422240.57, 422240.57, 0, 0.5)
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('Cotas grupo 1042 (16 créditos ago/2026) OK!');
+
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
     UPDATE simulador_cotas sc
