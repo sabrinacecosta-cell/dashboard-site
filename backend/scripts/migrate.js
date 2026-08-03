@@ -198,6 +198,11 @@ async function migrate() {
     UPDATE simulador_grupos SET taxa_adm = 0.15
     WHERE modalidade = 'imovel' AND numero_grupo = 1055
   `);
+  // Imóvel: grupo 1040 — taxa administrativa corrigida para 17% (autoritativo).
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm = 0.17
+    WHERE modalidade = 'imovel' AND numero_grupo = 1040
+  `);
   console.log('taxa_adm base (campanha julho) OK!');
 
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_grupos_modalidade ON simulador_grupos(modalidade)`);
