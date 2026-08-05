@@ -148,6 +148,62 @@ async function migrate() {
   }
   console.log('Patches de media_contemplacao e lance_maximo_contemplado aplicados!');
 
+  // ── Média principal de contemplação (imóvel) = ÚLTIMOS 12 MESES ──────────────
+  // O resumo de Métricas e o card do Simulador exibem "média de 12 meses". Este
+  // bloco calcula soma(contemplados)/soma(qnt_lances) dos 12 meses mais recentes
+  // por grupo (fonte: tabela contemplacao, importada à parte) e substitui o valor
+  // curado/all-time do patchesImovel acima. Autossuficiente: recalcula a cada boot
+  // e acompanha novos meses importados. Grava em simulador_grupos (Multiplicador)
+  // e na própria contemplacao (resumo/card usam MAX(media_contemplacao) dela).
+  // AUTO NÃO entra: a média de auto é curada — a contemplacao_auto não guarda os
+  // ofertados de forma comparável e um SUM/SUM bruto dá valores errados.
+  {
+    const ORD_MES = `CASE
+        WHEN mes NOT LIKE '%/%' THEN
+          CASE LOWER(mes)
+            WHEN 'abril' THEN 1 WHEN 'maio' THEN 2 WHEN 'junho' THEN 3
+            WHEN 'julho' THEN 4 WHEN 'agosto' THEN 5 WHEN 'setembro' THEN 6
+            WHEN 'outubro' THEN 7 WHEN 'novembro' THEN 8 WHEN 'dezembro' THEN 9
+            WHEN 'janeiro' THEN 10 WHEN 'fevereiro' THEN 11 WHEN 'março' THEN 12
+            ELSE 99 END
+        ELSE
+          (CAST(SPLIT_PART(mes,'/',2) AS INTEGER) - 2024) * 12 +
+          CASE LOWER(SPLIT_PART(mes,'/',1))
+            WHEN 'janeiro' THEN 1 WHEN 'fevereiro' THEN 2 WHEN 'março' THEN 3
+            WHEN 'abril' THEN 4 WHEN 'maio' THEN 5 WHEN 'junho' THEN 6
+            WHEN 'julho' THEN 7 WHEN 'agosto' THEN 8 WHEN 'setembro' THEN 9
+            WHEN 'outubro' THEN 10 WHEN 'novembro' THEN 11 WHEN 'dezembro' THEN 12
+            ELSE 0 END + 100
+        END`;
+    const MEDIA12 = `
+      WITH ranked AS (
+        SELECT grupo, contemplados, qnt_lances,
+               ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES} DESC) rn
+        FROM contemplacao
+      ),
+      agg AS (
+        SELECT grupo, SUM(contemplados)::numeric sc, SUM(qnt_lances)::numeric sq
+        FROM ranked WHERE rn <= 12 GROUP BY grupo
+      )
+      SELECT grupo, ROUND(sc / sq, 6) media12 FROM agg WHERE sq > 0`;
+    await db.query(`
+      UPDATE simulador_grupos sg SET media_contemplacao = m.media12
+      FROM (${MEDIA12}) m
+      WHERE sg.numero_grupo = m.grupo AND sg.modalidade = 'imovel' AND sg.administradora = 'CNP'`);
+    // A média fica numa única linha por grupo (a mais recente) — o resumo usa MAX.
+    await db.query(`UPDATE contemplacao SET media_contemplacao = NULL`);
+    await db.query(`
+      WITH latest AS (
+        SELECT id, grupo FROM (
+          SELECT id, grupo, ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES} DESC) rn
+          FROM contemplacao
+        ) x WHERE rn = 1
+      ), m AS (${MEDIA12})
+      UPDATE contemplacao c SET media_contemplacao = m.media12
+      FROM latest l, m WHERE c.id = l.id AND l.grupo = m.grupo`);
+    console.log('Média de contemplação 12m (imóvel) recalculada!');
+  }
+
   // Popular lance_maximo_contemplado para grupos auto
   const patchesAuto = [
     [2125, 31.25],
