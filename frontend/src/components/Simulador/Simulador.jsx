@@ -160,7 +160,12 @@ function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
 export default function Simulador() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [administradora, setAdministradora]       = useState(() => localStorage.getItem('sim_administradora') || 'CNP'); // 'CNP' ou 'EMBRACON'
+  // Embracon fora do ar: ignora valor salvo de EMBRACON e cai em CNP (ao religar,
+  // remova este saneamento e volte a aceitar o valor salvo).
+  const [administradora, setAdministradora]       = useState(() => {
+    const salvo = localStorage.getItem('sim_administradora');
+    return salvo === 'EMBRACON' ? 'CNP' : (salvo || 'CNP');
+  });
   const [modalidade, setModalidade]               = useState(() => localStorage.getItem('sim_modalidade') || 'imovel');
   const [grupos, setGrupos]                       = useState([]);
   const [loadingGrupos, setLoadingGrupos]         = useState(false);
