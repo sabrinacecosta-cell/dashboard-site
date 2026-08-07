@@ -466,9 +466,27 @@ async function migrate() {
     console.log('Histórico grupo 2127 (auto) já existe, pulando.');
   }
 
+  // Histórico grupo 2128 (auto).
+  const { rows: rows2128 } = await db.query(
+    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2128'
+  );
+  if (parseInt(rows2128[0].count) === 0) {
+    await db.query(`
+      INSERT INTO contemplacao_auto
+        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+      VALUES
+        (2128,'Maio/2026',   64.50, 23,  7, '0.304', NULL, NULL),
+        (2128,'Junho/2026',  71.80, 54,  0, '0.000', NULL, NULL),
+        (2128,'Julho/2026',  50.00, 24, 24, '1.000', NULL, NULL)
+    `);
+    console.log('Histórico grupo 2128 (auto) inserido!');
+  } else {
+    console.log('Histórico grupo 2128 (auto) já existe, pulando.');
+  }
+
   // Recálculo autossuficiente da média (até 12 meses) e do lance do último mês.
   {
-    const AUTO_CURADOS = [2127];
+    const AUTO_CURADOS = [2127, 2128];
     const ORD_MES_AUTO = `CASE
         WHEN mes NOT LIKE '%/%' THEN
           CASE LOWER(mes)
