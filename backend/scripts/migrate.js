@@ -544,6 +544,7 @@ async function migrate() {
     SET taxa_adm = v.taxa_adm
     FROM (VALUES
       (2127, 0.150),
+      (2128, 0.180),
       (2130, 0.150),
       (2134, 0.115),
       (3002, 0.120)
