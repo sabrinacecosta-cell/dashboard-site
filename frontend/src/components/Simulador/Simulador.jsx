@@ -911,6 +911,10 @@ export default function Simulador() {
                 const mediaVal = g.media_contemplacao != null
                   ? `${(parseFloat(g.media_contemplacao) * 100).toFixed(2).replace('.', ',')}%`
                   : null;
+                // Grupos de imóvel 1044+ exibem "Contemplação longo prazo" (sem
+                // valor) no lugar da média/mês.
+                const contempLongoPrazo =
+                  modalidade === 'imovel' && Number(g.numero_grupo) >= 1044;
                 const emCampanha =
                   (modalidade === 'imovel' && ['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo))) ||
                   (modalidade === 'auto' && ['2127','2130','2134','3002'].includes(String(g.numero_grupo)));
@@ -926,23 +930,25 @@ export default function Simulador() {
                       <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
                       <span style={{ color: '#ffffff' }}>Lance último mês: {g.lance_ultimo_mes}%</span>
                     </div>
-                    <div className={`sim-card-grupo-media${g.sem_media_contemplacao ? ' sem-media' : ''}`}>
-                      {g.sem_media_contemplacao
-                        ? (
-                          <span>
-                            Este grupo ainda não tem uma média de contemplação, observar mais detalhes na{' '}
-                            <span
-                              role="button"
-                              style={{ textDecoration: 'underline', cursor: 'pointer' }}
-                              onClick={e => { e.stopPropagation(); navigate('/grupos'); }}
-                            >
-                              aba de Métricas
+                    <div className={`sim-card-grupo-media${(g.sem_media_contemplacao && !contempLongoPrazo) ? ' sem-media' : ''}`}>
+                      {contempLongoPrazo
+                        ? 'Contemplação longo prazo'
+                        : g.sem_media_contemplacao
+                          ? (
+                            <span>
+                              Este grupo ainda não tem uma média de contemplação, observar mais detalhes na{' '}
+                              <span
+                                role="button"
+                                style={{ textDecoration: 'underline', cursor: 'pointer' }}
+                                onClick={e => { e.stopPropagation(); navigate('/grupos'); }}
+                              >
+                                aba de Métricas
+                              </span>
                             </span>
-                          </span>
-                        )
-                        : mediaVal
-                          ? `Média contemplação: ${mediaVal}/mês`
-                          : ''}
+                          )
+                          : mediaVal
+                            ? `Média contemplação: ${mediaVal}/mês`
+                            : ''}
                     </div>
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'var(--texto-secundario)', fontSize: '12px', marginTop: 4 }}>Vagas esgotadas</div>
