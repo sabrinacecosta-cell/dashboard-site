@@ -439,6 +439,98 @@ async function migrate() {
   }
   console.log('Parcelas grupo 2130 (sem redutor) corrigidas!');
 
+  // ── Métricas AUTO curados (2127, …): média = ÚLTIMOS 12 MESES ────────────────
+  // Diferente do restante do auto (média curada/all-time), estes grupos da campanha
+  // usam a MESMA lógica do imóvel: média = soma(contemplados)/soma(ofertados) dos
+  // até-12 meses mais recentes de contemplacao_auto, recalculada a cada boot e
+  // acompanhando novos meses. Aqui `qnt_lances` é o total de cotas OFERTADAS no mês.
+  // Escopo restrito à lista AUTO_CURADOS para não tocar 2129/2133 (onde SUM/SUM
+  // bruto dá valores errados). Histórico inserido só se o grupo ainda não tiver
+  // linhas; para adicionar meses novos, edite o VALUES do grupo (a média se ajusta).
+
+  // Histórico grupo 2127 (auto).
+  const { rows: rows2127 } = await db.query(
+    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2127'
+  );
+  if (parseInt(rows2127[0].count) === 0) {
+    await db.query(`
+      INSERT INTO contemplacao_auto
+        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+      VALUES
+        (2127,'Maio/2026',   58.75,  63,  9, '0.143', NULL, NULL),
+        (2127,'Junho/2026',  57.50, 168,  6, '0.036', NULL, NULL),
+        (2127,'Julho/2026',  56.25, 173, 17, '0.098', NULL, NULL)
+    `);
+    console.log('Histórico grupo 2127 (auto) inserido!');
+  } else {
+    console.log('Histórico grupo 2127 (auto) já existe, pulando.');
+  }
+
+  // Recálculo autossuficiente da média (até 12 meses) e do lance do último mês.
+  {
+    const AUTO_CURADOS = [2127];
+    const ORD_MES_AUTO = `CASE
+        WHEN mes NOT LIKE '%/%' THEN
+          CASE LOWER(mes)
+            WHEN 'abril' THEN 1 WHEN 'maio' THEN 2 WHEN 'junho' THEN 3
+            WHEN 'julho' THEN 4 WHEN 'agosto' THEN 5 WHEN 'setembro' THEN 6
+            WHEN 'outubro' THEN 7 WHEN 'novembro' THEN 8 WHEN 'dezembro' THEN 9
+            WHEN 'janeiro' THEN 10 WHEN 'fevereiro' THEN 11 WHEN 'março' THEN 12
+            ELSE 99 END
+        ELSE
+          (CAST(SPLIT_PART(mes,'/',2) AS INTEGER) - 2024) * 12 +
+          CASE LOWER(SPLIT_PART(mes,'/',1))
+            WHEN 'janeiro' THEN 1 WHEN 'fevereiro' THEN 2 WHEN 'março' THEN 3
+            WHEN 'abril' THEN 4 WHEN 'maio' THEN 5 WHEN 'junho' THEN 6
+            WHEN 'julho' THEN 7 WHEN 'agosto' THEN 8 WHEN 'setembro' THEN 9
+            WHEN 'outubro' THEN 10 WHEN 'novembro' THEN 11 WHEN 'dezembro' THEN 12
+            ELSE 0 END + 100
+        END`;
+    const MEDIA12_AUTO = `
+      WITH ranked AS (
+        SELECT grupo, contemplados, qnt_lances,
+               ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES_AUTO} DESC) rn
+        FROM contemplacao_auto WHERE grupo = ANY($1::int[])
+      ),
+      agg AS (
+        SELECT grupo, SUM(contemplados)::numeric sc, SUM(qnt_lances)::numeric sq
+        FROM ranked WHERE rn <= 12 GROUP BY grupo
+      )
+      SELECT grupo, ROUND(sc / sq, 6) media12 FROM agg WHERE sq > 0`;
+    // Resumo de Métricas + card do Simulador leem simulador_grupos.media_contemplacao.
+    await db.query(`
+      UPDATE simulador_grupos sg SET media_contemplacao = m.media12, sem_media_contemplacao = FALSE
+      FROM (${MEDIA12_AUTO}) m
+      WHERE sg.numero_grupo = m.grupo AND sg.modalidade = 'auto'`, [AUTO_CURADOS]);
+    // Lance do último mês = lance_percent do mês mais recente.
+    await db.query(`
+      UPDATE simulador_grupos sg SET lance_ultimo_mes = x.lance_percent
+      FROM (
+        SELECT grupo, lance_percent FROM (
+          SELECT grupo, lance_percent,
+                 ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES_AUTO} DESC) rn
+          FROM contemplacao_auto WHERE grupo = ANY($1::int[])
+        ) y WHERE rn = 1
+      ) x
+      WHERE sg.numero_grupo = x.grupo AND sg.modalidade = 'auto'`, [AUTO_CURADOS]);
+    // No detalhe, o front pega a 1ª linha com media_contemplacao != null: fica só
+    // na linha do mês mais recente (mesma convenção do imóvel na tabela contemplacao).
+    await db.query(
+      `UPDATE contemplacao_auto SET media_contemplacao = NULL WHERE grupo = ANY($1::int[])`,
+      [AUTO_CURADOS]
+    );
+    await db.query(`
+      WITH latest AS (
+        SELECT id, grupo FROM (
+          SELECT id, grupo, ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES_AUTO} DESC) rn
+          FROM contemplacao_auto WHERE grupo = ANY($1::int[])
+        ) x WHERE rn = 1
+      ), m AS (${MEDIA12_AUTO})
+      UPDATE contemplacao_auto c SET media_contemplacao = ROUND(m.media12, 4)::text
+      FROM latest l, m WHERE c.id = l.id AND l.grupo = m.grupo`, [AUTO_CURADOS]);
+    console.log('Média de contemplação 12m (auto curados) recalculada!');
+  }
+
   // ── Auto — campanha vigente: taxa base, grupo 2134 e redutor do 2127 ─────────
   // Roda antes do recálculo de parcelas para que este preencha as parcelas.
   // prazo_restante NÃO é tocado aqui (persiste do banco / das migrations de prazo).
