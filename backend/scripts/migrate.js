@@ -445,44 +445,29 @@ async function migrate() {
   // até-12 meses mais recentes de contemplacao_auto, recalculada a cada boot e
   // acompanhando novos meses. Aqui `qnt_lances` é o total de cotas OFERTADAS no mês.
   // Escopo restrito à lista AUTO_CURADOS para não tocar 2129/2133 (onde SUM/SUM
-  // bruto dá valores errados). Histórico inserido só se o grupo ainda não tiver
-  // linhas; para adicionar meses novos, edite o VALUES do grupo (a média se ajusta).
-
-  // Histórico grupo 2127 (auto).
-  const { rows: rows2127 } = await db.query(
-    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2127'
-  );
-  if (parseInt(rows2127[0].count) === 0) {
-    await db.query(`
-      INSERT INTO contemplacao_auto
-        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
-      VALUES
-        (2127,'Maio/2026',   58.75,  63,  9, '0.143', NULL, NULL),
-        (2127,'Junho/2026',  57.50, 168,  6, '0.036', NULL, NULL),
-        (2127,'Julho/2026',  56.25, 173, 17, '0.098', NULL, NULL)
-    `);
-    console.log('Histórico grupo 2127 (auto) inserido!');
-  } else {
-    console.log('Histórico grupo 2127 (auto) já existe, pulando.');
-  }
-
-  // Histórico grupo 2128 (auto).
-  const { rows: rows2128 } = await db.query(
-    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2128'
-  );
-  if (parseInt(rows2128[0].count) === 0) {
-    await db.query(`
-      INSERT INTO contemplacao_auto
-        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
-      VALUES
-        (2128,'Maio/2026',   64.50, 23,  7, '0.304', NULL, NULL),
-        (2128,'Junho/2026',  71.80, 54,  0, '0.000', NULL, NULL),
-        (2128,'Julho/2026',  50.00, 24, 24, '1.000', NULL, NULL)
-    `);
-    console.log('Histórico grupo 2128 (auto) inserido!');
-  } else {
-    console.log('Histórico grupo 2128 (auto) já existe, pulando.');
-  }
+  // bruto dá valores errados).
+  //
+  // Estes grupos JÁ têm histórico importado (junho/2025..). Os meses abaixo são
+  // acréscimos: inseridos por mês só se ainda não existirem (anti-join por
+  // grupo+mes), então rodar de novo é idempotente e não duplica nem apaga nada.
+  // Para adicionar um mês novo, é só acrescentar sua linha ao VALUES do grupo.
+  const mesesNovosAuto = `
+    INSERT INTO contemplacao_auto
+      (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+    SELECT v.grupo, v.mes, v.lance_percent, v.qnt_lances, v.contemplados, v.contemplacao_mensal, NULL, NULL
+    FROM (VALUES
+      (2127,'Maio/2026',   58.75::decimal,  63,  9, '0.143'),
+      (2127,'Junho/2026',  57.50::decimal, 168,  6, '0.036'),
+      (2127,'Julho/2026',  56.25::decimal, 173, 17, '0.098'),
+      (2128,'Maio/2026',   64.50::decimal,  23,  7, '0.304'),
+      (2128,'Junho/2026',  71.80::decimal,  54,  0, '0.000'),
+      (2128,'Julho/2026',  50.00::decimal,  24, 24, '1.000')
+    ) AS v(grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal)
+    WHERE NOT EXISTS (
+      SELECT 1 FROM contemplacao_auto c WHERE c.grupo = v.grupo AND c.mes = v.mes
+    )`;
+  const resMesesNovos = await db.query(mesesNovosAuto);
+  console.log(`Meses novos auto (2127/2128) inseridos: ${resMesesNovos.rowCount}`);
 
   // Recálculo autossuficiente da média (até 12 meses) e do lance do último mês.
   {
