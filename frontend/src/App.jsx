@@ -12,6 +12,7 @@ import Admin from './pages/Admin';
 import Agenda from './pages/Agenda';
 import Reunioes from './pages/Reunioes';
 import RedefinirSenha from './pages/RedefinirSenha';
+import UpdatePrompt from './components/UpdatePrompt';
 
 const ADMIN_EMAILS = ['sabrina@jtdkinvest.com', 'joel@jtdkinvest.com', 'joel@wflowinvest.com'];
 
@@ -64,6 +65,7 @@ function PublicRoute({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <UpdatePrompt />
       <AuthProvider>
         <Routes>
           <Route

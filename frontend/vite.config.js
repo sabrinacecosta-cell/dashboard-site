@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
         name: 'Dashboard Consórcio',
@@ -29,8 +29,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,ico,png,svg}'],
         navigateFallback: null,
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        // Sem skipWaiting/clientsClaim: no modo 'prompt' o novo SW fica em espera
+        // até o usuário clicar em "Atualizar" (updateServiceWorker(true) aplica e
+        // recarrega). Assim o aviso só aparece quando há build novo do frontend.
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\/api\/.*/i,
