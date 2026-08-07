@@ -21,7 +21,7 @@ const GRUPOS_AUTO = [
   { numero_grupo: 2125, taxa_adm: 0.17, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'SETEMBRO', lance_embutido_max: 0.50, prazo_restante: 26, prazo_total: 80, media_contemplacao: 0.102783, lance_maximo_contemplado: 31.25 },
   { numero_grupo: 2126, taxa_adm: 0.17, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'JULHO',    lance_embutido_max: 0.50, prazo_restante: 36, prazo_total: 80, media_contemplacao: 0.164935, lance_maximo_contemplado: 43.75 },
   { numero_grupo: 2127, taxa_adm: 0.18, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'SETEMBRO', lance_embutido_max: 0.50, prazo_restante: 45, prazo_total: 80, media_contemplacao: 0.120766, lance_maximo_contemplado: 61.25 },
-  { numero_grupo: 2128, taxa_adm: 0.18, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'AGOSTO',   lance_embutido_max: 0.30, prazo_restante: 61, prazo_total: 80, media_contemplacao: 0.432900, lance_maximo_contemplado: 61 },
+  { numero_grupo: 2128, taxa_adm: 0.18, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'AGOSTO',   lance_embutido_max: 0.30, prazo_restante: 56, prazo_total: 80, media_contemplacao: 0.432900, lance_maximo_contemplado: 61 },
   { numero_grupo: 2132, taxa_adm: 0.18, fundo_reserva: 0.03, reajuste: 'INPC', mes_reajuste: 'SETEMBRO', lance_embutido_max: 0.30, prazo_restante: 74, prazo_total: 80, media_contemplacao: 0.781250, lance_maximo_contemplado: null },
   { numero_grupo: 2133, taxa_adm: 0.17, fundo_reserva: 0.03, reajuste: 'FIXO', mes_reajuste: 'JANEIRO',  lance_embutido_max: 0.30, prazo_restante: 77, prazo_total: 80, media_contemplacao: 0.500000, lance_maximo_contemplado: null },
 ];
