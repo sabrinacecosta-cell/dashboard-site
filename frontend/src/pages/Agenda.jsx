@@ -20,7 +20,7 @@ function welcomeText(isAdmin) {
 }
 
 // ── Message content renderer ─────────────────────────────────
-function MessageContent({ msg, onOptionClick, bookingStep }) {
+function MessageContent({ msg, onOptionClick, onWeekSlotPick, bookingStep }) {
   const { type } = msg;
 
   if (type === 'text') {
@@ -87,6 +87,66 @@ function MessageContent({ msg, onOptionClick, bookingStep }) {
             </div>
           );
         })}
+      </div>
+    );
+  }
+
+  if (type === 'week_availability') {
+    const { dias } = msg;
+    if (!dias || dias.length === 0) {
+      return <span>Não há horários disponíveis nesta semana.</span>;
+    }
+    const chipStyle = {
+      padding: '0.32rem 0.6rem',
+      borderRadius: '6px',
+      border: '1px solid var(--border)',
+      background: 'rgba(0,0,0,0.15)',
+      color: 'var(--text-primary)',
+      cursor: 'pointer',
+      fontSize: '0.8rem',
+      fontFamily: 'var(--font-sans)',
+      lineHeight: 1.2,
+      whiteSpace: 'nowrap',
+    };
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <span style={{ fontWeight: 600 }}>Disponibilidade da semana:</span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{
+            display: 'flex', gap: '0.75rem',
+            padding: '0.5rem 0.6rem',
+            fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600,
+            borderBottom: '1px solid var(--border)',
+          }}>
+            <span style={{ width: '54px', flexShrink: 0 }}>Dia</span>
+            <span>Horários disponíveis</span>
+          </div>
+          {dias.map(dia => (
+            <div key={dia.date} style={{
+              display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
+              padding: '0.6rem',
+              borderBottom: '1px solid var(--border)',
+            }}>
+              <div style={{ width: '54px', flexShrink: 0, fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.35 }}>
+                {dia.dayShort},<br />{dia.dayMonth}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {dia.slots.map(slot => (
+                  <button
+                    key={slot.start}
+                    onClick={() => onWeekSlotPick(dia.date, slot)}
+                    style={chipStyle}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+          Clique em um horário para agendar diretamente.
+        </span>
       </div>
     );
   }
@@ -347,6 +407,29 @@ function AgendaChat({ isAdmin, user }) {
     }
   }
 
+  async function fetchSemanaDisponibilidade(semanas = 1) {
+    try {
+      const r = await api.get(`/agenda/semana-disponibilidade?semanas=${semanas}`);
+      const dias = r.data || [];
+      if (dias.length === 0) {
+        addMsg('assistant', { type: 'text', content: 'Não há horários disponíveis nesta semana.' });
+        return;
+      }
+      addMsg('assistant', { type: 'week_availability', dias });
+    } catch {
+      addMsg('assistant', { type: 'text', content: 'Não foi possível carregar a disponibilidade da semana. Tente novamente.' });
+    }
+  }
+
+  // Clique num chip da tabela da semana → agenda aquele horário direto
+  function pickWeekSlot(date, slot) {
+    const [y, m, d] = date.split('-').map(Number);
+    const dLabel = new Date(y, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    addMsg('user', { type: 'text', content: `${dLabel} às ${slot.label}` });
+    setBooking({ step: 'name', date, slotStart: slot.start, slotLabel: slot.label, name: '', email: user?.email || '', assunto: '', availableDates: [], availableSlots: [] });
+    addMsg('assistant', { type: 'text', content: 'Qual é o seu nome completo?' });
+  }
+
   async function startBooking(autoDate = null, semanas = 1, filterRange = null) {
     try {
       const r = await api.get(`/agenda/datas?semanas=${semanas}`);
@@ -520,8 +603,9 @@ function AgendaChat({ isAdmin, user }) {
     const wantsCompromissos = isAdmin && (t.includes('compromisso') || t.includes('agenda') || (t.includes('reunião') && t.includes('tenho')));
     const wantsBook = t.includes('agendar') || t.includes('marcar') || (t.includes('reunião') && !t.includes('tenho'));
     const wantsAvail = t.includes('disponibilidade') || t.includes('disponív') || t.includes('horário') || t.includes('horario') || t.includes('horários');
-    const wantsSemana = isAdmin && t.includes('semana') && !wantsBook && !isNextWeek;
     const wantsMore = t.includes('mais') && (t.includes('data') || t.includes('semana') || t.includes('opção') || t.includes('opcao'));
+    const wantsSemanaDisp = t.includes('semana') && (wantsAvail || wantsBook) && !isNextWeek && !wantsMore;
+    const wantsSemana = isAdmin && t.includes('semana') && !wantsBook && !wantsAvail && !isNextWeek;
 
     if (wantsCompromissos && dateRef) {
       await fetchDay(dateRef);
@@ -529,6 +613,8 @@ function AgendaChat({ isAdmin, user }) {
       await fetchToday();
     } else if (isNextWeek) {
       await startBooking(null, 2, nextWeekRange());
+    } else if (wantsSemanaDisp) {
+      await fetchSemanaDisponibilidade(1);
     } else if (wantsSemana) {
       await fetchSemana();
     } else if (wantsMore) {
@@ -666,6 +752,7 @@ function AgendaChat({ isAdmin, user }) {
               <MessageContent
                 msg={msg}
                 onOptionClick={(value, label) => handleOptionClick(msg.type, value, label)}
+                onWeekSlotPick={pickWeekSlot}
                 bookingStep={step}
               />
             </div>
@@ -702,7 +789,7 @@ function AgendaChat({ isAdmin, user }) {
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'nowrap' }}>
           <button style={qBtnStyle} onClick={() => quickAction(() => showSlotsForDate(parseDateRef('hoje')))}>Hoje</button>
           <button style={qBtnStyle} onClick={() => quickAction(() => showSlotsForDate(parseDateRef('amanhã')))}>Amanhã</button>
-          <button style={qBtnStyle} onClick={() => quickAction(() => startBooking(null, 1))}>Esta semana</button>
+          <button style={qBtnStyle} onClick={() => quickAction(() => fetchSemanaDisponibilidade(1))}>Esta semana</button>
         </div>
       </div>
 

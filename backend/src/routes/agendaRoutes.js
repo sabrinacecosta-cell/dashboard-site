@@ -247,6 +247,50 @@ router.get('/agenda/datas', authMiddleware, async (req, res) => {
   }
 });
 
+// Week availability: each weekday with its available slots (for the table view)
+router.get('/agenda/semana-disponibilidade', authMiddleware, async (req, res) => {
+  if (!isConnected()) return res.status(503).json({ error: 'Google Calendar não conectado' });
+
+  try {
+    const semanas = Math.min(parseInt(req.query.semanas) || 1, 4);
+    const limitDays = semanas * 7;
+
+    const dias = [];
+    let day = new Date();
+    const cutoff = new Date(day.getTime() + limitDays * 24 * 60 * 60 * 1000);
+
+    while (day < cutoff) {
+      const dateStr = day.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        .split('/').reverse().join('-');
+
+      const dow = dayOfWeek(dateStr);
+      if (dow !== 0 && dow !== 6) {
+        const slots = await buildSlotsForDate(dateStr);
+        if (slots.length > 0) {
+          const short = brazilDT(dateStr, 12)
+            .toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'America/Sao_Paulo' })
+            .replace('.', '');
+          const dm = brazilDT(dateStr, 12)
+            .toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
+          dias.push({
+            date: dateStr,
+            dayShort: short,
+            dayMonth: dm,
+            slots: slots.map(s => ({ start: s.start, label: s.label })),
+          });
+        }
+      }
+
+      day = new Date(day.getTime() + 24 * 60 * 60 * 1000);
+    }
+
+    res.json(dias);
+  } catch (err) {
+    console.error('agenda/semana-disponibilidade:', err.message);
+    res.status(500).json({ error: 'Erro ao buscar disponibilidade da semana' });
+  }
+});
+
 // Slots for a specific date
 router.get('/agenda/slots/:date', authMiddleware, async (req, res) => {
   if (!isConnected()) return res.status(503).json({ error: 'Google Calendar não conectado' });
