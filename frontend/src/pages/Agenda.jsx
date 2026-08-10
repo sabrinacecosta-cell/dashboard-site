@@ -97,11 +97,16 @@ function MessageContent({ msg, onOptionClick, onWeekSlotPick, bookingStep }) {
       return <span>Não há horários disponíveis nesta semana.</span>;
     }
     const chipStyle = {
+      width: 'auto',
+      flex: '0 0 auto',
+      margin: 0,
+      marginTop: 0,
       padding: '0.32rem 0.6rem',
       borderRadius: '6px',
       border: '1px solid var(--border)',
       background: 'rgba(0,0,0,0.15)',
       color: 'var(--text-primary)',
+      fontWeight: 500,
       cursor: 'pointer',
       fontSize: '0.8rem',
       fontFamily: 'var(--font-sans)',
