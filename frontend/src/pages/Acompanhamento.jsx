@@ -51,13 +51,14 @@ function Acompanhamento() {
   async function exportarExcel() {
     const XLSX = await import('xlsx');
     const header = [
-      'Grupo', 'Cota', 'Contrato', 'Data Venda', 'Prazo do Grupo', 'Taxa Adm',
+      'Grupo', 'Cota', 'Contrato', 'Valor do Bem', 'Data Venda', 'Prazo do Grupo', 'Taxa Adm',
       'Próximo Reajuste', 'Parcelas Pagas', 'Soma Parcelas Pagas', 'Prazo Restante', 'Saldo Devedor Restante',
     ];
     const body = contratos.map((c) => [
       c.grupo,
       String(c.cota).replace('-00', ''),
       c.contrato,
+      c.valor_do_bem != null ? Number(c.valor_do_bem) : '',
       c.data_venda,
       c.prazo_grupo,
       c.taxa_adm,
@@ -67,7 +68,7 @@ function Acompanhamento() {
       c.prazo_restante,
       Number(c.saldo_devedor),
     ]);
-    const total = ['Total', `${contratos.length} contratos`, '', '', '', '', '', '',
+    const total = ['Total', `${contratos.length} contratos`, '', '', '', '', '', '', '',
       Number(totalSomaParcelas.toFixed(2)), '', ''];
     const ws = XLSX.utils.aoa_to_sheet([header, ...body, total]);
     ws['!cols'] = header.map((h) => ({ wch: Math.max(12, h.length + 2) }));
@@ -133,6 +134,7 @@ function Acompanhamento() {
                 <th>Grupo</th>
                 <th>Cota</th>
                 <th>Contrato</th>
+                <th style={{ textAlign: 'right' }}>Valor do Bem</th>
                 <th>Data Venda</th>
                 <th style={{ textAlign: 'center' }}>Prazo do Grupo</th>
                 <th style={{ textAlign: 'center' }}>Taxa Adm</th>
@@ -149,6 +151,7 @@ function Acompanhamento() {
                   <td className="text-primary">{c.grupo}</td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{c.cota.replace('-00', '')}</td>
                   <td>{c.contrato}</td>
+                  <td style={{ textAlign: 'right' }}>{c.valor_do_bem != null ? fmtMoeda(c.valor_do_bem) : '-'}</td>
                   <td>{c.data_venda}</td>
                   <td style={{ textAlign: 'center' }}>{c.prazo_grupo} meses</td>
                   <td style={{ textAlign: 'center' }}>{c.taxa_adm}</td>
@@ -165,7 +168,7 @@ function Acompanhamento() {
             <tfoot>
               <tr style={{ fontWeight: 700 }}>
                 <td>Total ({contratos.length} contratos)</td>
-                <td colSpan={7} />
+                <td colSpan={8} />
                 <td style={{ textAlign: 'right' }} className="text-primary">
                   {fmtMoeda(totalSomaParcelas)}
                 </td>
