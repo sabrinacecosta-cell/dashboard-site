@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -8,6 +8,28 @@ const EMAILS_PERMITIDOS = ['sabrina@jtdkinvest.com', 'joaomatheus_heckler@outloo
 const fmtMoeda = (v) =>
   Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+// Cabeçalho da planilha (normalizado) → coluna do banco
+const norm = (h) => String(h || '').toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[%:]/g, '').replace(/\s+/g, ' ').trim();
+
+const COLMAP = {
+  'cliente': 'cliente_nome', 'cliente nome': 'cliente_nome', 'nome': 'cliente_nome',
+  'nome do cliente': 'cliente_nome', 'nome cliente': 'cliente_nome',
+  'cpf': 'cliente_cpf', 'cliente cpf': 'cliente_cpf', 'cpf do cliente': 'cliente_cpf', 'cpf cliente': 'cliente_cpf',
+  'grupo': 'grupo',
+  'cota': 'cota',
+  'contrato': 'contrato',
+  'data venda': 'data_venda', 'data da venda': 'data_venda',
+  'prazo do grupo': 'prazo_grupo', 'prazo grupo': 'prazo_grupo',
+  'taxa adm': 'taxa_adm', 'taxa administracao': 'taxa_adm', 'taxa de administracao': 'taxa_adm',
+  'proximo reajuste': 'proximo_reajuste', 'proximo reajuste em': 'proximo_reajuste',
+  'parcelas pagas': 'parcelas_pagas',
+  'soma parcelas pagas': 'soma_parcelas_pagas', 'soma das parcelas pagas': 'soma_parcelas_pagas', 'soma parcelas': 'soma_parcelas_pagas',
+  'prazo restante': 'prazo_restante',
+  'saldo devedor': 'saldo_devedor', 'saldo devedor restante': 'saldo_devedor',
+};
+
 function Acompanhamento() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -15,6 +37,47 @@ function Acompanhamento() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [clienteIdx, setClienteIdx] = useState(0);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
+  const fileRef = useRef(null);
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';               // permite reimportar o mesmo arquivo
+    if (!file) return;
+    setImporting(true);
+    setImportMsg('');
+    try {
+      const XLSX = await import('xlsx');
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      const linhas = raw.map((row) => {
+        const o = {};
+        for (const [k, v] of Object.entries(row)) {
+          const field = COLMAP[norm(k)];
+          if (field) o[field] = typeof v === 'string' ? v.trim() : v;
+        }
+        return o;
+      }).filter((o) => o.grupo && o.cota && o.cliente_nome);
+
+      if (!linhas.length) {
+        setImportMsg('Nenhuma linha válida — confira os cabeçalhos (precisa de Cliente, Grupo e Cota).');
+        return;
+      }
+
+      const r = await api.post('/acompanhamento/importar', { linhas });
+      const { inseridos, atualizados, ignorados } = r.data;
+      setImportMsg(`Importado: ${inseridos} inserida(s), ${atualizados} atualizada(s)${ignorados ? `, ${ignorados} ignorada(s)` : ''}.`);
+      const nd = await api.get('/acompanhamento');
+      setDados(nd.data);
+    } catch (err) {
+      setImportMsg(err?.response?.data?.error || 'Erro ao importar o arquivo.');
+    } finally {
+      setImporting(false);
+    }
+  }
 
   useEffect(() => {
     if (user && !user.is_demo && !EMAILS_PERMITIDOS.includes(user.email)) {
@@ -50,11 +113,38 @@ function Acompanhamento() {
 
   return (
     <div className="page-acompanhamento">
-      <div className="page-header">
-        <h1>Acompanhamento</h1>
-        <p className="page-subtitle">
-          {clienteSelecionado.nome} — CPF {clienteSelecionado.cpf}
-        </p>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h1>Acompanhamento</h1>
+          <p className="page-subtitle">
+            {clienteSelecionado.nome} — CPF {clienteSelecionado.cpf}
+          </p>
+        </div>
+        {user && !user.is_demo && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFile}
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              className="btn-admin-action"
+              onClick={() => fileRef.current?.click()}
+              disabled={importing}
+              style={{ width: 'auto', marginTop: 0, whiteSpace: 'nowrap' }}
+            >
+              {importing ? 'Importando…' : '📊 Importar Excel'}
+            </button>
+            {importMsg && (
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', maxWidth: '260px', textAlign: 'right' }}>
+                {importMsg}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Seletor de cliente */}
