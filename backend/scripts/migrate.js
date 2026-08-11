@@ -154,12 +154,19 @@ async function migrate() {
   // Obs.: lance_percent é DECIMAL(5,1) → 77,99% é gravado como 78,0 (padrão dos demais grupos).
   await db.query(`
     INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+    SELECT 1053, 'junho/2026', 77.99, 51, 0, '0', NULL, NULL
+    WHERE NOT EXISTS (
+      SELECT 1 FROM contemplacao WHERE grupo = 1053 AND LOWER(mes) = 'junho/2026'
+    )
+  `);
+  await db.query(`
+    INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
     SELECT 1053, 'julho/2026', 77.99, 37, 0, '0', NULL, NULL
     WHERE NOT EXISTS (
       SELECT 1 FROM contemplacao WHERE grupo = 1053 AND LOWER(mes) = 'julho/2026'
     )
   `);
-  console.log('Contemplação 1053 julho/2026 OK (idempotente)!');
+  console.log('Contemplação 1053 junho+julho/2026 OK (idempotente)!');
 
   // ── Média principal de contemplação (imóvel) = ÚLTIMOS 12 MESES ──────────────
   // O resumo de Métricas e o card do Simulador exibem "média de 12 meses". Este
