@@ -47,6 +47,7 @@ function Acompanhamento() {
   const clienteSelecionado = clientes[clienteIdx] || clientes[0];
   const { contratos } = clienteSelecionado;
   const totalSomaParcelas = contratos.reduce((s, c) => s + Number(c.soma_parcelas_pagas), 0);
+  const totalValorBem = contratos.reduce((s, c) => s + (c.valor_do_bem != null ? Number(c.valor_do_bem) : 0), 0);
 
   async function exportarExcel() {
     const XLSX = await import('xlsx');
@@ -68,8 +69,8 @@ function Acompanhamento() {
       c.prazo_restante,
       Number(c.saldo_devedor),
     ]);
-    const total = ['Total', `${contratos.length} contratos`, '', '', '', '', '', '', '',
-      Number(totalSomaParcelas.toFixed(2)), '', ''];
+    const total = ['Total', `${contratos.length} contratos`, '', Number(totalValorBem.toFixed(2)),
+      '', '', '', '', '', Number(totalSomaParcelas.toFixed(2)), '', ''];
     const ws = XLSX.utils.aoa_to_sheet([header, ...body, total]);
     ws['!cols'] = header.map((h) => ({ wch: Math.max(12, h.length + 2) }));
     const wb = XLSX.utils.book_new();
@@ -168,7 +169,11 @@ function Acompanhamento() {
             <tfoot>
               <tr style={{ fontWeight: 700 }}>
                 <td>Total ({contratos.length} contratos)</td>
-                <td colSpan={8} />
+                <td colSpan={2} />
+                <td style={{ textAlign: 'right' }} className="text-primary">
+                  {fmtMoeda(totalValorBem)}
+                </td>
+                <td colSpan={5} />
                 <td style={{ textAlign: 'right' }} className="text-primary">
                   {fmtMoeda(totalSomaParcelas)}
                 </td>
