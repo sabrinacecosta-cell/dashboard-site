@@ -784,6 +784,30 @@ async function migrate() {
   `);
   console.log('Cotas grupo 1042 (16 créditos ago/2026) OK!');
 
+  // ── Grupo 1051 (imóvel CNP): premissas + cotas ──────────────────────────────
+  // taxa_adm=0.20 e taxa_adm_redutor=0.19 já são forçados pela campanha julho
+  // (blocos acima, 1051 está nas listas). prazo_restante=228 / total 240.
+  // sem_media_contemplacao: a média virá da aba de Métricas depois.
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao, decrementa_prazo)
+    VALUES
+      (1051, 'imovel', 'CNP', 0.20, 0.19, 0.037, 'INPC', 'SETEMBRO', 0.30, 228, 240, TRUE, TRUE)
+    ON CONFLICT (numero_grupo, modalidade) DO NOTHING
+  `);
+  // Cotas 150k a 300k (de 10 em 10), sem redutor e com redutor 50%.
+  // parcela=0 provisória — recalculada no bloco de recálculo logo abaixo.
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT 1051, 'imovel', c, c, 0, r
+    FROM generate_series(150000, 300000, 10000) AS c
+    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('simulador_grupos/cotas 1051 inseridos!');
+
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
     UPDATE simulador_cotas sc
