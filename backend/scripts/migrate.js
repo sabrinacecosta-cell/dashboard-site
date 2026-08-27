@@ -269,6 +269,11 @@ async function migrate() {
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.17
     WHERE modalidade = 'auto' AND numero_grupo IN (2127, 2130, 2134, 3002)
   `);
+  // Imóvel: grupo 1040 — redutor 50% com taxa adm de 23%.
+  await db.query(`
+    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
+    WHERE modalidade = 'imovel' AND numero_grupo = 1040
+  `);
   console.log('Coluna taxa_adm_redutor e valores OK!');
 
   // Imóvel: taxa_adm base (sem redutor) — autoritativo p/ os grupos da campanha julho.
@@ -739,6 +744,17 @@ async function migrate() {
     ON CONFLICT DO NOTHING
   `);
   console.log('Imóvel redutor 50% grupo 1035 OK!');
+
+  // Grupo 1040 (imóvel): opção "com redutor 50%" espelhando as cotas sem redutor.
+  // parcela = 0 provisória; recalculada no bloco abaixo (usa taxa_adm_redutor = 0.23).
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT numero_grupo, modalidade, bem_referencia, cota, 0, 0.5
+    FROM simulador_cotas
+    WHERE numero_grupo = 1040 AND modalidade = 'imovel' AND redutor_parcela = 0
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('Imóvel redutor 50% grupo 1040 OK!');
 
   // Grupo 1042 (imóvel): tabela de cotas autoritativa (16 créditos informados pela
   // área comercial, ago/2026). Reseta e redefine — apaga o que houver e reinsere,
