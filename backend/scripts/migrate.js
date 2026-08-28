@@ -824,6 +824,38 @@ async function migrate() {
   `);
   console.log('simulador_grupos/cotas 1051 inseridos!');
 
+  // ── Grupo 1049 (imóvel CNP): premissas + cotas ──────────────────────────────
+  // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
+  // taxa_adm sem redutor 20% / com redutor 50% = 18%; fundo 3,7%.
+  // prazo_restante=181 / total 200. Reajuste INPC/FEVEREIRO.
+  // lance_embutido_max=0.30 e reajuste=INPC são defaults padrão dos imóveis CNP
+  // (não confirmados explicitamente). sem_media_contemplacao: média virá depois.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1049 AND modalidade = 'imovel'`);
+  await db.query(`DELETE FROM simulador_grupos WHERE numero_grupo = 1049 AND modalidade = 'imovel'`);
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao, decrementa_prazo)
+    VALUES
+      (1049, 'imovel', 'CNP', 0.20, 0.18, 0.037, 'INPC', 'FEVEREIRO', 0.30, 181, 200, TRUE, TRUE)
+  `);
+  // Cotas informadas pela área comercial (16 créditos, PA de R$ 10.389,79),
+  // sem redutor e com redutor 50%. bem_referencia = cota.
+  // parcela=0 provisória — recalculada no bloco de recálculo logo abaixo.
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT 1049, 'imovel', c, c, 0, r
+    FROM (VALUES
+      (155846.85), (166236.64), (176626.43), (187016.22),
+      (197406.01), (207795.80), (218185.59), (228575.38),
+      (238965.17), (249354.96), (259744.75), (270134.54),
+      (280524.33), (290914.12), (301303.91), (311693.70)
+    ) AS t(c)
+    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
+  `);
+  console.log('simulador_grupos/cotas 1049 inseridos!');
+
   // Recalcula todas as parcelas com base no prazo_restante atual
   await db.query(`
     UPDATE simulador_cotas sc
