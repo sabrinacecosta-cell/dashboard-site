@@ -828,8 +828,9 @@ async function migrate() {
   // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
   // taxa_adm sem redutor 20% / com redutor 50% = 18%; fundo 3,7%.
   // prazo_restante=181 / total 200. Reajuste INPC/FEVEREIRO.
-  // lance_embutido_max=0.30 e reajuste=INPC são defaults padrão dos imóveis CNP
-  // (não confirmados explicitamente). sem_media_contemplacao: média virá depois.
+  // lance_embutido_max=0.30 confirmado pela área comercial.
+  // reajuste=INPC é default padrão dos imóveis CNP (não confirmado explicitamente).
+  // sem_media_contemplacao: média virá depois.
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1049 AND modalidade = 'imovel'`);
   await db.query(`DELETE FROM simulador_grupos WHERE numero_grupo = 1049 AND modalidade = 'imovel'`);
   await db.query(`
