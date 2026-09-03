@@ -175,6 +175,18 @@ async function migrate() {
   `);
   console.log('Contemplação 1053 maio+junho+julho/2026 OK (idempotente)!');
 
+  // Novo mês do grupo 1038 (imóvel): agosto/2026 — 22 contemplados em 543 lances,
+  // lance vencedor 57%. Idempotente por mês. media_contemplacao fica NULL: o bloco
+  // dos 12 meses abaixo recalcula a média do grupo já incluindo este mês.
+  await db.query(`
+    INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+    SELECT 1038, 'agosto/2026', 57, 543, 22, '0.040516', NULL, NULL
+    WHERE NOT EXISTS (
+      SELECT 1 FROM contemplacao WHERE grupo = 1038 AND LOWER(mes) = 'agosto/2026'
+    )
+  `);
+  console.log('Contemplação 1038 agosto/2026 OK (idempotente)!');
+
   // ── Média principal de contemplação (imóvel) = ÚLTIMOS 12 MESES ──────────────
   // O resumo de Métricas e o card do Simulador exibem "média de 12 meses". Este
   // bloco calcula soma(contemplados)/soma(qnt_lances) dos 12 meses mais recentes
