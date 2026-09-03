@@ -46,6 +46,10 @@ async function migrate() {
   `);
   console.log('Tabela "contemplacao" OK!');
 
+  // Coluna da média de 6 meses (imóvel). Vinha só das migrations manuais na produção;
+  // aqui garante que exista para o recálculo automático 6m/12m mais abaixo.
+  await db.query(`ALTER TABLE contemplacao ADD COLUMN IF NOT EXISTS media_contemplacao_6m TEXT`);
+
   // Tabela contemplacao_auto (Auto - Planilha3)
   await db.query(`
     CREATE TABLE IF NOT EXISTS contemplacao_auto (
@@ -187,13 +191,16 @@ async function migrate() {
   `);
   console.log('Contemplação 1038 agosto/2026 OK (idempotente)!');
 
-  // ── Média principal de contemplação (imóvel) = ÚLTIMOS 12 MESES ──────────────
-  // O resumo de Métricas e o card do Simulador exibem "média de 12 meses". Este
-  // bloco calcula soma(contemplados)/soma(qnt_lances) dos 12 meses mais recentes
-  // por grupo (fonte: tabela contemplacao, importada à parte) e substitui o valor
-  // curado/all-time do patchesImovel acima. Autossuficiente: recalcula a cada boot
-  // e acompanha novos meses importados. Grava em simulador_grupos (Multiplicador)
-  // e na própria contemplacao (resumo/card usam MAX(media_contemplacao) dela).
+  // ── Médias de contemplação (imóvel) = ÚLTIMOS 12 E 6 MESES ───────────────────
+  // O resumo de Métricas exibe "média de 12 meses" e "média de 6 meses"; o card do
+  // Simulador exibe a de 12 meses (lida viva via MAX(media_contemplacao)). Este bloco
+  // calcula soma(contemplados)/soma(qnt_lances) das janelas de 12 e 6 meses mais
+  // recentes por grupo (fonte: tabela contemplacao, importada à parte) e substitui o
+  // valor curado/all-time do patchesImovel acima. Autossuficiente: recalcula a cada
+  // boot e acompanha todo mês novo importado — por isso, subir um mês novo já atualiza
+  // sozinho as médias 6m/12m (Métricas) e o valor exibido no card do Simulador.
+  // Grava em simulador_grupos (Multiplicador + colunas 12m/6m) e na própria contemplacao
+  // (resumo/card usam MAX(...) dela, gravada só na linha mais recente do grupo).
   // AUTO NÃO entra: a média de auto é curada — a contemplacao_auto não guarda os
   // ofertados de forma comparável e um SUM/SUM bruto dá valores errados.
   {
@@ -214,7 +221,8 @@ async function migrate() {
             WHEN 'outubro' THEN 10 WHEN 'novembro' THEN 11 WHEN 'dezembro' THEN 12
             ELSE 0 END + 100
         END`;
-    const MEDIA12 = `
+    // Média SUM/SUM dos N meses mais recentes por grupo.
+    const mediaN = (n) => `
       WITH ranked AS (
         SELECT grupo, contemplados, qnt_lances,
                ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES} DESC) rn
@@ -222,25 +230,40 @@ async function migrate() {
       ),
       agg AS (
         SELECT grupo, SUM(contemplados)::numeric sc, SUM(qnt_lances)::numeric sq
-        FROM ranked WHERE rn <= 12 GROUP BY grupo
+        FROM ranked WHERE rn <= ${n} GROUP BY grupo
       )
-      SELECT grupo, ROUND(sc / sq, 6) media12 FROM agg WHERE sq > 0`;
+      SELECT grupo, ROUND(sc / sq, 6) media FROM agg WHERE sq > 0`;
+    const MEDIA12 = mediaN(12);
+    const MEDIA6 = mediaN(6);
+    const LATEST = `
+      SELECT id, grupo FROM (
+        SELECT id, grupo, ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES} DESC) rn
+        FROM contemplacao
+      ) x WHERE rn = 1`;
+
+    // simulador_grupos: media_contemplacao (principal = 12m, lida pelo card e Multiplicador)
+    // + colunas dedicadas 12m/6m.
     await db.query(`
-      UPDATE simulador_grupos sg SET media_contemplacao = m.media12
+      UPDATE simulador_grupos sg
+         SET media_contemplacao = m.media, media_contemplacao_12m = m.media
       FROM (${MEDIA12}) m
       WHERE sg.numero_grupo = m.grupo AND sg.modalidade = 'imovel' AND sg.administradora = 'CNP'`);
-    // A média fica numa única linha por grupo (a mais recente) — o resumo usa MAX.
-    await db.query(`UPDATE contemplacao SET media_contemplacao = NULL`);
     await db.query(`
-      WITH latest AS (
-        SELECT id, grupo FROM (
-          SELECT id, grupo, ROW_NUMBER() OVER (PARTITION BY grupo ORDER BY ${ORD_MES} DESC) rn
-          FROM contemplacao
-        ) x WHERE rn = 1
-      ), m AS (${MEDIA12})
-      UPDATE contemplacao c SET media_contemplacao = m.media12
+      UPDATE simulador_grupos sg SET media_contemplacao_6m = m.media
+      FROM (${MEDIA6}) m
+      WHERE sg.numero_grupo = m.grupo AND sg.modalidade = 'imovel' AND sg.administradora = 'CNP'`);
+
+    // contemplacao: cada média fica numa única linha por grupo (a mais recente) — resumo usa MAX.
+    await db.query(`UPDATE contemplacao SET media_contemplacao = NULL, media_contemplacao_6m = NULL`);
+    await db.query(`
+      WITH latest AS (${LATEST}), m AS (${MEDIA12})
+      UPDATE contemplacao c SET media_contemplacao = m.media
       FROM latest l, m WHERE c.id = l.id AND l.grupo = m.grupo`);
-    console.log('Média de contemplação 12m (imóvel) recalculada!');
+    await db.query(`
+      WITH latest AS (${LATEST}), m AS (${MEDIA6})
+      UPDATE contemplacao c SET media_contemplacao_6m = m.media
+      FROM latest l, m WHERE c.id = l.id AND l.grupo = m.grupo`);
+    console.log('Médias de contemplação 12m e 6m (imóvel) recalculadas!');
   }
 
   // Popular lance_maximo_contemplado para grupos auto
