@@ -779,14 +779,16 @@ async function migrate() {
   `);
 
   // Grupo 2134: plano opcional com taxa adm de 6% (taxa_adm por cota = 0.06).
-  // Cotas de 50 a 80 mil de 5 em 5, apenas sem redutor. Autoritativo (apaga+reinsere
-  // o subconjunto 6%) para a granularidade poder mudar sem deixar cotas órfãs.
+  // Cotas de 50 a 80 mil de 5 em 5, sem redutor e com redutor 50% (mesma taxa 6%:
+  // o redutor só divide a parcela por 2). Autoritativo (apaga+reinsere o subconjunto
+  // 6%) para a granularidade poder mudar sem deixar cotas órfãs.
   // parcela = 0 provisória; recalculada no bloco de recálculo abaixo com COALESCE.
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 2134 AND modalidade = 'auto' AND taxa_adm = 0.06`);
   await db.query(`
     INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, taxa_adm)
-    SELECT 2134, 'auto', c, c, 0, 0, 0.06
+    SELECT 2134, 'auto', c, c, 0, r, 0.06
     FROM generate_series(50000, 80000, 5000) AS c
+    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
     ON CONFLICT DO NOTHING
   `);
 
@@ -1002,9 +1004,11 @@ async function migrate() {
       AND sg.prazo_restante > 0
       AND NOT COALESCE(sc.parcela_fixa, FALSE)
   `);
+  // Com redutor 50%: cota com taxa própria (sc.taxa_adm) usa a sua; senão a taxa
+  // com redutor do grupo (taxa_adm_redutor), caindo na taxa base se não houver.
   await db.query(`
     UPDATE simulador_cotas sc
-    SET parcela = ROUND((sc.cota * (1 + COALESCE(sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
+    SET parcela = ROUND((sc.cota * (1 + COALESCE(sc.taxa_adm, sg.taxa_adm_redutor, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante / 2)::numeric, 2)
     FROM simulador_grupos sg
     WHERE sc.numero_grupo = sg.numero_grupo
       AND sc.modalidade = sg.modalidade
