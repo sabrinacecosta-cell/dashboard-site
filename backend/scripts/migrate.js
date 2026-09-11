@@ -123,6 +123,13 @@ async function migrate() {
   `);
   console.log('Tabela "simulador_cotas" OK!');
 
+  // taxa_adm por cota: override opcional da taxa do grupo. NULL = usa a taxa do
+  // grupo (comportamento padrão de todas as cotas). Não-nulo = a cota tem uma taxa
+  // própria — permite, no mesmo grupo, uma "opção" com taxa diferente (ex.: grupo
+  // 2134 com plano 11,5% e plano 6%). Entra na chave única via COALESCE (abaixo).
+  await db.query(`ALTER TABLE simulador_cotas ADD COLUMN IF NOT EXISTS taxa_adm DECIMAL(5,4)`);
+  console.log('Coluna "simulador_cotas.taxa_adm" OK!');
+
   await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS lance_maximo_contemplado DECIMAL(5,2)`);
   console.log('Coluna "lance_maximo_contemplado" OK!');
 
@@ -332,11 +339,16 @@ async function migrate() {
   await db.query(`CREATE INDEX IF NOT EXISTS idx_sim_cotas_grupo ON simulador_cotas(numero_grupo, modalidade)`);
   console.log('Índices simulador OK!');
 
-  // Deduplica cotas idênticas (mesmo grupo/modalidade/bem/cota/redutor), mantendo o
-  // menor id, e cria índice único para impedir re-duplicação. Necessário porque o
+  // Deduplica cotas idênticas (mesmo grupo/modalidade/bem/cota/redutor/taxa), mantendo
+  // o menor id, e cria índice único para impedir re-duplicação. Necessário porque o
   // INSERT do grupo 2129 usa ON CONFLICT DO NOTHING (sem este índice, reinseria a
   // cada boot). A coluna `cota` faz parte da chave porque há grupos (ex.: 1037) com
   // cotas distintas para o mesmo bem_referencia — que devem ser preservadas.
+  // COALESCE(taxa_adm, -1): a taxa por cota entra na chave, e cotas com taxa própria
+  // (ex.: plano 6% do 2134) coexistem com as de mesmo bem/cota/redutor sem taxa
+  // (plano padrão). -1 é sentinela impossível para NULL — dois NULLs colidem (dedup),
+  // mas NULL e 0,06 não. O índice antigo (sem taxa) é substituído por este.
+  await db.query(`DROP INDEX IF EXISTS uq_sim_cotas_natural`);
   await db.query(`
     DELETE FROM simulador_cotas a USING simulador_cotas b
     WHERE a.id > b.id
@@ -345,9 +357,10 @@ async function migrate() {
       AND a.bem_referencia = b.bem_referencia
       AND a.cota = b.cota
       AND a.redutor_parcela = b.redutor_parcela
+      AND COALESCE(a.taxa_adm, -1) = COALESCE(b.taxa_adm, -1)
   `);
   await db.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_sim_cotas_natural
-    ON simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, redutor_parcela)`);
+    ON simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, redutor_parcela, (COALESCE(taxa_adm, -1)))`);
   console.log('Cotas deduplicadas e índice único uq_sim_cotas_natural OK!');
 
   // Índices para busca por assessor
@@ -759,6 +772,18 @@ async function migrate() {
     ON CONFLICT DO NOTHING
   `);
 
+  // Grupo 2134: plano opcional com taxa adm de 6% (taxa_adm por cota = 0.06).
+  // Cotas de 50 a 80 mil de 5 em 5, apenas sem redutor. Autoritativo (apaga+reinsere
+  // o subconjunto 6%) para a granularidade poder mudar sem deixar cotas órfãs.
+  // parcela = 0 provisória; recalculada no bloco de recálculo abaixo com COALESCE.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 2134 AND modalidade = 'auto' AND taxa_adm = 0.06`);
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, taxa_adm)
+    SELECT 2134, 'auto', c, c, 0, 0, 0.06
+    FROM generate_series(50000, 80000, 5000) AS c
+    ON CONFLICT DO NOTHING
+  `);
+
   // Grupo 2127: opção "com redutor 50%" espelhando as cotas sem redutor.
   await db.query(`
     INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
@@ -891,10 +916,12 @@ async function migrate() {
   `);
   console.log('simulador_grupos/cotas 1049 inseridos!');
 
-  // Recalcula todas as parcelas com base no prazo_restante atual
+  // Recalcula todas as parcelas com base no prazo_restante atual.
+  // COALESCE(sc.taxa_adm, sg.taxa_adm): cotas com taxa própria (ex.: plano 6% do
+  // 2134) usam a sua; as demais usam a taxa do grupo.
   await db.query(`
     UPDATE simulador_cotas sc
-    SET parcela = ROUND((sc.cota * (1 + sg.taxa_adm + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
+    SET parcela = ROUND((sc.cota * (1 + COALESCE(sc.taxa_adm, sg.taxa_adm) + sg.fundo_reserva) / sg.prazo_restante)::numeric, 2)
     FROM simulador_grupos sg
     WHERE sc.numero_grupo = sg.numero_grupo
       AND sc.modalidade = sg.modalidade

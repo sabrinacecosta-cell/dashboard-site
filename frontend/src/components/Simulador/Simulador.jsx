@@ -173,6 +173,9 @@ export default function Simulador() {
   const [cotas, setCotas]                         = useState([]);
   const [loadingCotas, setLoadingCotas]           = useState(false);
   const [comRedutor, setComRedutor]               = useState(false);
+  // Opção de taxa adm selecionada dentro do grupo. null = taxa padrão do grupo
+  // (cotas sem taxa própria); um número = uma taxa por cota (ex.: 0.06 do 2134).
+  const [taxaSel, setTaxaSel]                     = useState(null);
   const [qtdesCotas, setQtdesCotas]               = useState({});
   const [linhasSim, setLinhasSim]                 = useState(() => {
     // Preserva as cotas do "Monte sua simulação" ao trocar de aba (unmount/remount).
@@ -223,16 +226,30 @@ export default function Simulador() {
     api.get(`/simulador/cotas?grupo=${grupoSelecionado.numero_grupo}&modalidade=${modalidade}`)
       .then(r => {
         setCotas(r.data);
-        const temReducao = r.data.some(c => parseFloat(c.redutor_parcela) === 0.5);
+        setTaxaSel(null); // sempre inicia no plano padrão (taxa do grupo)
+        // Só há redutor no plano padrão (cotas sem taxa própria).
+        const temReducao = r.data.some(c => c.taxa_adm == null && parseFloat(c.redutor_parcela) === 0.5);
         setComRedutor(temReducao);
       })
       .catch(() => setCotas([]))
       .finally(() => setLoadingCotas(false));
   }, [grupoSelecionado, modalidade]);
 
-  const hasReducao     = cotas.some(c => parseFloat(c.redutor_parcela) === 0.5);
-  const cotasFiltradas = cotas.filter(c =>
-    comRedutor
+  // Taxas alternativas oferecidas dentro do grupo (cotas com taxa própria).
+  // Se houver, o grupo mostra um toggle "taxa do grupo" vs cada taxa alternativa.
+  const taxasExtras = [...new Set(
+    cotas.filter(c => c.taxa_adm != null).map(c => parseFloat(c.taxa_adm))
+  )].sort((a, b) => a - b);
+  const hasTaxaOpcoes = taxasExtras.length > 0;
+
+  // Cotas do plano selecionado: padrão (taxa_adm nula) ou a taxa escolhida.
+  const cotasDaTaxa = taxaSel == null
+    ? cotas.filter(c => c.taxa_adm == null)
+    : cotas.filter(c => c.taxa_adm != null && parseFloat(c.taxa_adm) === taxaSel);
+
+  const hasReducao     = cotasDaTaxa.some(c => parseFloat(c.redutor_parcela) === 0.5);
+  const cotasFiltradas = cotasDaTaxa.filter(c =>
+    (hasReducao && comRedutor)
       ? parseFloat(c.redutor_parcela) === 0.5
       : parseFloat(c.redutor_parcela) === 0
   );
@@ -294,7 +311,12 @@ export default function Simulador() {
   const adicionarLinhaSim = (cota, qtde = 1) => {
     const g = grupoSelecionado;
     const redutorVal   = parseFloat(cota.redutor_parcela) === 0.5 ? 50 : 0;
-    const simKey       = `${g.numero_grupo}_${cota.bem_referencia}_${redutorVal}`;
+    // Taxa da cota (override) quando houver; senão a do grupo (com/sem redutor).
+    const taxaAdmCota  = cota.taxa_adm != null
+      ? parseFloat(cota.taxa_adm)
+      : ((redutorVal === 50 && g.taxa_adm_redutor != null) ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm));
+    // A taxa entra na chave: um plano 6% e o 11,5% da mesma cota/redutor são linhas distintas.
+    const simKey       = `${g.numero_grupo}_${cota.bem_referencia}_${redutorVal}_${taxaAdmCota}`;
     const lanceEmbutidoMax = Math.round(parseFloat(g.lance_embutido_max) * 100);
     setLinhasSim(prev => {
       const existente = prev.find(l => l.simKey === simKey);
@@ -312,7 +334,7 @@ export default function Simulador() {
         redutor:              redutorVal,
         lanceEmbutidoPercent: lanceEmbutidoMax,
         lanceEmbutidoMax,
-        taxaAdm:              (redutorVal === 50 && g.taxa_adm_redutor != null) ? parseFloat(g.taxa_adm_redutor) : parseFloat(g.taxa_adm),
+        taxaAdm:              taxaAdmCota,
         fundoReserva:         parseFloat(g.fundo_reserva),
         prazoRestante:        parseInt(g.prazo_restante),
         reajuste:             g.reajuste,
@@ -995,13 +1017,37 @@ export default function Simulador() {
           <div className="sim-cotas-header">
             <h2 className="sim-cotas-titulo">Grupo {grupoSelecionado.numero_grupo}</h2>
             <div className="sim-cotas-meta">
-              <span>Taxa adm: {formatarPercentual((comRedutor && grupoSelecionado.taxa_adm_redutor != null) ? parseFloat(grupoSelecionado.taxa_adm_redutor) : parseFloat(grupoSelecionado.taxa_adm))}</span>
+              <span>Taxa adm: {formatarPercentual(
+                taxaSel != null
+                  ? taxaSel
+                  : ((comRedutor && grupoSelecionado.taxa_adm_redutor != null) ? parseFloat(grupoSelecionado.taxa_adm_redutor) : parseFloat(grupoSelecionado.taxa_adm))
+              )}</span>
               <span>Fundo reserva: {formatarPercentual(parseFloat(grupoSelecionado.fundo_reserva))}</span>
               <span>Reajuste: {grupoSelecionado.reajuste} / {grupoSelecionado.mes_reajuste}</span>
               <span>Lance embutido máximo: {Math.round(parseFloat(grupoSelecionado.lance_embutido_max) * 100)}%</span>
               <span>Prazo restante: {grupoSelecionado.prazo_restante} meses</span>
             </div>
           </div>
+
+          {hasTaxaOpcoes && (
+            <div className="sim-redutor-toggle">
+              <button
+                className={`sim-redutor-btn${taxaSel == null ? ' active' : ''}`}
+                onClick={() => setTaxaSel(null)}
+              >
+                Taxa {formatarPercentual(parseFloat(grupoSelecionado.taxa_adm))}
+              </button>
+              {taxasExtras.map(t => (
+                <button
+                  key={t}
+                  className={`sim-redutor-btn${taxaSel === t ? ' active' : ''}`}
+                  onClick={() => { setTaxaSel(t); setComRedutor(false); }}
+                >
+                  Taxa {formatarPercentual(t)}
+                </button>
+              ))}
+            </div>
+          )}
 
           {hasReducao && (
             <div className="sim-redutor-toggle">
@@ -1034,7 +1080,7 @@ export default function Simulador() {
               </thead>
               <tbody>
                 {cotasFiltradas.map(cota => {
-                  const key  = `${cota.bem_referencia}_${cota.redutor_parcela}`;
+                  const key  = `${cota.bem_referencia}_${cota.redutor_parcela}_${cota.taxa_adm ?? 'g'}`;
                   const qtde = qtdesCotas[key] || 1;
                   return (
                     <tr key={cota.id}>
