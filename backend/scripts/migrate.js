@@ -130,6 +130,12 @@ async function migrate() {
   await db.query(`ALTER TABLE simulador_cotas ADD COLUMN IF NOT EXISTS taxa_adm DECIMAL(5,4)`);
   console.log('Coluna "simulador_cotas.taxa_adm" OK!');
 
+  // parcela_fixa: quando TRUE, a parcela é curada (ex.: tabela promocional da área
+  // comercial) e o recálculo automático de parcelas NÃO a sobrescreve. Default FALSE
+  // = parcela derivada da fórmula (cota, taxa, fundo, prazo do grupo).
+  await db.query(`ALTER TABLE simulador_cotas ADD COLUMN IF NOT EXISTS parcela_fixa BOOLEAN DEFAULT FALSE`);
+  console.log('Coluna "simulador_cotas.parcela_fixa" OK!');
+
   await db.query(`ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS lance_maximo_contemplado DECIMAL(5,2)`);
   console.log('Coluna "lance_maximo_contemplado" OK!');
 
@@ -860,6 +866,73 @@ async function migrate() {
   `);
   console.log('Cotas grupo 1042 (16 créditos ago/2026) OK!');
 
+  // ── Grupo 1047 (imóvel CNP): créditos reajustados + plano opcional 10% ───────
+  // Créditos reajustados (INPC/agosto) informados pela área comercial (card XP,
+  // set/2026): 16 cartas com bem nominal 150k–300k e crédito reajustado
+  // (fator ~1,09436). Autoritativo — apaga e redefine TODAS as cotas do 1047.
+  //   • Plano padrão: taxa do grupo (15% sem redutor / 18% com redutor 50%),
+  //     16 cotas sem redutor + 16 com redutor. parcela=0 provisória (recalculada
+  //     no bloco de recálculo abaixo, pela fórmula com o prazo atual do grupo).
+  //   • Plano opcional 10% (taxa_adm=0.10 por cota), só sem redutor, com a
+  //     parcela FIXA "com desconto" do card (parcela_fixa=TRUE — o recálculo não
+  //     sobrescreve). Coexiste com o plano padrão porque a taxa entra na chave
+  //     única (COALESCE(taxa_adm,-1)).
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1047 AND modalidade = 'imovel'`);
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, taxa_adm, parcela_fixa)
+    VALUES
+      (1047,'imovel',150000,164154,0,0,NULL,FALSE),
+      (1047,'imovel',160000,175098,0,0,NULL,FALSE),
+      (1047,'imovel',170000,186041,0,0,NULL,FALSE),
+      (1047,'imovel',180000,196985,0,0,NULL,FALSE),
+      (1047,'imovel',190000,207929,0,0,NULL,FALSE),
+      (1047,'imovel',200000,218872,0,0,NULL,FALSE),
+      (1047,'imovel',210000,229816,0,0,NULL,FALSE),
+      (1047,'imovel',220000,240760,0,0,NULL,FALSE),
+      (1047,'imovel',230000,251703,0,0,NULL,FALSE),
+      (1047,'imovel',240000,262647,0,0,NULL,FALSE),
+      (1047,'imovel',250000,273590,0,0,NULL,FALSE),
+      (1047,'imovel',260000,284534,0,0,NULL,FALSE),
+      (1047,'imovel',270000,295478,0,0,NULL,FALSE),
+      (1047,'imovel',280000,306421,0,0,NULL,FALSE),
+      (1047,'imovel',290000,317365,0,0,NULL,FALSE),
+      (1047,'imovel',300000,328308,0,0,NULL,FALSE),
+      (1047,'imovel',150000,164154,0,0.5,NULL,FALSE),
+      (1047,'imovel',160000,175098,0,0.5,NULL,FALSE),
+      (1047,'imovel',170000,186041,0,0.5,NULL,FALSE),
+      (1047,'imovel',180000,196985,0,0.5,NULL,FALSE),
+      (1047,'imovel',190000,207929,0,0.5,NULL,FALSE),
+      (1047,'imovel',200000,218872,0,0.5,NULL,FALSE),
+      (1047,'imovel',210000,229816,0,0.5,NULL,FALSE),
+      (1047,'imovel',220000,240760,0,0.5,NULL,FALSE),
+      (1047,'imovel',230000,251703,0,0.5,NULL,FALSE),
+      (1047,'imovel',240000,262647,0,0.5,NULL,FALSE),
+      (1047,'imovel',250000,273590,0,0.5,NULL,FALSE),
+      (1047,'imovel',260000,284534,0,0.5,NULL,FALSE),
+      (1047,'imovel',270000,295478,0,0.5,NULL,FALSE),
+      (1047,'imovel',280000,306421,0,0.5,NULL,FALSE),
+      (1047,'imovel',290000,317365,0,0.5,NULL,FALSE),
+      (1047,'imovel',300000,328308,0,0.5,NULL,FALSE),
+      (1047,'imovel',150000,164154,1060,0,0.10,TRUE),
+      (1047,'imovel',160000,175098,1131,0,0.10,TRUE),
+      (1047,'imovel',170000,186041,1202,0,0.10,TRUE),
+      (1047,'imovel',180000,196985,1273,0,0.10,TRUE),
+      (1047,'imovel',190000,207929,1343,0,0.10,TRUE),
+      (1047,'imovel',200000,218872,1414,0,0.10,TRUE),
+      (1047,'imovel',210000,229816,1485,0,0.10,TRUE),
+      (1047,'imovel',220000,240760,1555,0,0.10,TRUE),
+      (1047,'imovel',230000,251703,1626,0,0.10,TRUE),
+      (1047,'imovel',240000,262647,1697,0,0.10,TRUE),
+      (1047,'imovel',250000,273590,1767,0,0.10,TRUE),
+      (1047,'imovel',260000,284534,1838,0,0.10,TRUE),
+      (1047,'imovel',270000,295478,1909,0,0.10,TRUE),
+      (1047,'imovel',280000,306421,1980,0,0.10,TRUE),
+      (1047,'imovel',290000,317365,2050,0,0.10,TRUE),
+      (1047,'imovel',300000,328308,2121,0,0.10,TRUE)
+    ON CONFLICT DO NOTHING
+  `);
+  console.log('Cotas grupo 1047 (créditos reajustados + plano 10%) OK!');
+
   // ── Grupo 1051 (imóvel CNP): premissas + cotas ──────────────────────────────
   // taxa_adm=0.20 e taxa_adm_redutor=0.19 já são forçados pela campanha julho
   // (blocos acima, 1051 está nas listas). prazo_restante=228 / total 240.
@@ -927,6 +1000,7 @@ async function migrate() {
       AND sc.modalidade = sg.modalidade
       AND sc.redutor_parcela = 0
       AND sg.prazo_restante > 0
+      AND NOT COALESCE(sc.parcela_fixa, FALSE)
   `);
   await db.query(`
     UPDATE simulador_cotas sc
@@ -936,6 +1010,7 @@ async function migrate() {
       AND sc.modalidade = sg.modalidade
       AND sc.redutor_parcela = 0.5
       AND sg.prazo_restante > 0
+      AND NOT COALESCE(sc.parcela_fixa, FALSE)
   `);
   console.log('Recálculo de parcelas concluído!');
 
