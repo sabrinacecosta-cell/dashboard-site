@@ -918,7 +918,10 @@ export default function Simulador() {
                     className="sim-card-grupo"
                     onClick={() => setGrupoSelecionado(g)}
                   >
-                    <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
+                    <div className="sim-card-grupo-numero">
+                      Grupo {g.numero_grupo}
+                      {condicaoEspecial && <span style={{ color: '#ffffff' }}>*</span>}
+                    </div>
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
                       <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
