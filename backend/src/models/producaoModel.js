@@ -13,6 +13,19 @@ const EMAILS_VENDAS_COMPLETAS = [
   'paula.santana@xpi.com.br', // visão completa de vendas; sem acesso admin
 ];
 
+// Acesso de equipe: um assessor também enxerga a produção de outros.
+// chave = nome do assessor logado (minúsculo); valor = nomes que ele também vê.
+const EQUIPE = {
+  'lucas barbosa': ['Nycolas Palma'],
+};
+
+// Nomes de assessor cuja produção o usuário logado pode ver (o próprio + equipe).
+// Usado no filtro: casa contra cada parte do campo `assessor` (separado por "/").
+function nomesVisiveis(nomeAssessor) {
+  const extras = EQUIPE[(nomeAssessor || '').toLowerCase().trim()] || [];
+  return [nomeAssessor, ...extras].filter(Boolean);
+}
+
 const ProducaoModel = {
   isAdmin(email) {
     return EMAILS_VENDAS_COMPLETAS.includes(email?.toLowerCase());
@@ -21,9 +34,9 @@ const ProducaoModel = {
   async findByAssessor(nomeAssessor, emailAssessor) {
     const result = await db.query(
       `SELECT * FROM producao 
-       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
+       WHERE (EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2))
        ORDER BY ano DESC, mes DESC`,
-      [nomeAssessor, emailAssessor]
+      [nomesVisiveis(nomeAssessor), emailAssessor]
     );
     return result.rows;
   },
@@ -36,10 +49,10 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
+       WHERE (EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2))
        GROUP BY ano, mes
        ORDER BY ano DESC, mes DESC`,
-      [nomeAssessor, emailAssessor]
+      [nomesVisiveis(nomeAssessor), emailAssessor]
     );
     return result.rows;
   },
@@ -50,8 +63,8 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)`,
-      [nomeAssessor, emailAssessor]
+       WHERE (EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2))`,
+      [nomesVisiveis(nomeAssessor), emailAssessor]
     );
     return result.rows[0];
   },
@@ -63,10 +76,10 @@ const ProducaoModel = {
         COUNT(*) as quantidade,
         SUM(valor_do_bem) as total
        FROM producao 
-       WHERE assessor = $1 OR LOWER(email_assessor) = LOWER($2)
+       WHERE (EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2))
        GROUP BY ano
        ORDER BY ano DESC`,
-      [nomeAssessor, emailAssessor]
+      [nomesVisiveis(nomeAssessor), emailAssessor]
     );
     return result.rows;
   },
@@ -74,8 +87,8 @@ const ProducaoModel = {
   // ========== MÉTODOS ASSESSOR COM FILTROS ==========
 
   async findByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
-    let query = 'SELECT * FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))';
-    const params = [nomeAssessor, emailAssessor];
+    let query = 'SELECT * FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))';
+    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -97,8 +110,8 @@ const ProducaoModel = {
   },
 
   async getTotalByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
-    const params = [nomeAssessor, emailAssessor];
+    let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
+    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -119,8 +132,8 @@ const ProducaoModel = {
   },
 
   async getTotalPorEscritorioByAssessor(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
-    const params = [nomeAssessor, emailAssessor];
+    let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
+    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -142,8 +155,8 @@ const ProducaoModel = {
   },
 
   async getTotalPorMesByAssessor(nomeAssessor, emailAssessor, filters = {}) {
-    let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE (assessor = $1 OR LOWER(email_assessor) = LOWER($2))`;
-    const params = [nomeAssessor, emailAssessor];
+    let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
+    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
     let paramIndex = 3;
 
     if (filters.ano) {
@@ -161,8 +174,8 @@ const ProducaoModel = {
   },
 
   async getFilterOptionsByAssessor(nomeAssessor, emailAssessor) {
-    const baseWhere = '(assessor = $1 OR LOWER(email_assessor) = LOWER($2))';
-    const params = [nomeAssessor, emailAssessor];
+    const baseWhere = '((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))';
+    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
 
     const [meses, anos, escritorios] = await Promise.all([
       db.query(`SELECT DISTINCT mes FROM producao WHERE ${baseWhere} ORDER BY mes`, params),
