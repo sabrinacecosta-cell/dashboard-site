@@ -907,10 +907,11 @@ export default function Simulador() {
                   (modalidade === 'auto' && Number(g.numero_grupo) >= 2129);
                 const contempLongoPrazoLabel =
                   modalidade === 'auto' ? 'Contemplação médio a longo prazo' : 'Contemplação longo prazo';
-                // "Condição especial setembro": grupos com redutor 50% ativo. O
-                // backend define taxa_adm_redutor só para esses grupos, então serve
-                // de fonte única (fica em sincronia com a opção "com redutor 50%").
-                const condicaoEspecial = g.taxa_adm_redutor != null;
+                // "Condição especial setembro": grupos da campanha vigente. Inclui
+                // os de redutor 50% e também o 1047 (10% sem redutor, sem redutor).
+                const condicaoEspecial =
+                  (modalidade === 'imovel' && [1035, 1042, 1043, 1044, 1047, 1048, 1049, 1050, 1055, 41056].includes(Number(g.numero_grupo))) ||
+                  (modalidade === 'auto' && [2127, 2130, 2134, 3002].includes(Number(g.numero_grupo)));
                 const card = (
                   <button
                     key={g.id}

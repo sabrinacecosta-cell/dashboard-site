@@ -360,14 +360,17 @@ async function migrate() {
   console.log('Coluna taxa_adm_redutor e valores OK!');
 
   // Imóvel: taxa_adm base (sem redutor) — autoritativo p/ os grupos da campanha julho.
-  // Campanha julho: sem redutor 20% nestes grupos; 1055 sem redutor 15%.
+  // Campanha julho: sem redutor 20% nestes grupos.
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm = 0.20
     WHERE modalidade = 'imovel' AND numero_grupo IN (1035, 1038, 1042, 1043, 1044, 1051, 1054)
   `);
+  // Condição especial setembro: sem redutor 15% (1049 e 41056 já saem 15% dos
+  // próprios INSERTs). Autoritativo — cobre também 1048/1050/1055, que só existem
+  // em produção (criados por migrations .sql aplicadas à mão).
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm = 0.15
-    WHERE modalidade = 'imovel' AND numero_grupo = 1055
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1048, 1050, 1055)
   `);
   // Imóvel: grupo 1040 — taxa administrativa corrigida para 17% (autoritativo).
   await db.query(`
@@ -892,72 +895,38 @@ async function migrate() {
   `);
   console.log('Cotas grupo 1042 (16 créditos ago/2026) OK!');
 
-  // ── Grupo 1047 (imóvel CNP): créditos reajustados + plano opcional 10% ───────
-  // Créditos reajustados (INPC/agosto) informados pela área comercial (card XP,
-  // set/2026): 16 cartas com bem nominal 150k–300k e crédito reajustado
-  // (fator ~1,09436). Autoritativo — apaga e redefine TODAS as cotas do 1047.
-  //   • Plano padrão: taxa do grupo (15% sem redutor / 18% com redutor 50%),
-  //     16 cotas sem redutor + 16 com redutor. parcela=0 provisória (recalculada
-  //     no bloco de recálculo abaixo, pela fórmula com o prazo atual do grupo).
-  //   • Plano opcional 10% (taxa_adm=0.10 por cota), só sem redutor, com a
-  //     parcela FIXA "com desconto" do card (parcela_fixa=TRUE — o recálculo não
-  //     sobrescreve). Coexiste com o plano padrão porque a taxa entra na chave
-  //     única (COALESCE(taxa_adm,-1)).
+  // ── Grupo 1047 (imóvel CNP): plano único 10%, sem redutor ───────────────────
+  // Condição especial de setembro: 1047 fica SÓ com as 16 cartas a 10% (parcela
+  // FIXA "com desconto" do card), sem redutor e sem o plano padrão 15%/18%.
+  // Créditos reajustados (INPC/agosto, fator ~1,09436), bem nominal 150k–300k.
+  // As cotas 10% viram o PLANO PADRÃO (taxa_adm = NULL): assim a visão inicial já
+  // mostra o 10% (o simulador abre no plano de taxa NULL). parcela_fixa = TRUE →
+  // o recálculo não sobrescreve a parcela com desconto. A taxa 10% do grupo fica
+  // no cabeçalho (UPDATE abaixo). Autoritativo — apaga e redefine a cada boot.
+  await db.query(`UPDATE simulador_grupos SET taxa_adm = 0.10 WHERE numero_grupo = 1047 AND modalidade = 'imovel'`);
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1047 AND modalidade = 'imovel'`);
   await db.query(`
     INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, taxa_adm, parcela_fixa)
     VALUES
-      (1047,'imovel',150000,164154,0,0,NULL,FALSE),
-      (1047,'imovel',160000,175098,0,0,NULL,FALSE),
-      (1047,'imovel',170000,186041,0,0,NULL,FALSE),
-      (1047,'imovel',180000,196985,0,0,NULL,FALSE),
-      (1047,'imovel',190000,207929,0,0,NULL,FALSE),
-      (1047,'imovel',200000,218872,0,0,NULL,FALSE),
-      (1047,'imovel',210000,229816,0,0,NULL,FALSE),
-      (1047,'imovel',220000,240760,0,0,NULL,FALSE),
-      (1047,'imovel',230000,251703,0,0,NULL,FALSE),
-      (1047,'imovel',240000,262647,0,0,NULL,FALSE),
-      (1047,'imovel',250000,273590,0,0,NULL,FALSE),
-      (1047,'imovel',260000,284534,0,0,NULL,FALSE),
-      (1047,'imovel',270000,295478,0,0,NULL,FALSE),
-      (1047,'imovel',280000,306421,0,0,NULL,FALSE),
-      (1047,'imovel',290000,317365,0,0,NULL,FALSE),
-      (1047,'imovel',300000,328308,0,0,NULL,FALSE),
-      (1047,'imovel',150000,164154,0,0.5,NULL,FALSE),
-      (1047,'imovel',160000,175098,0,0.5,NULL,FALSE),
-      (1047,'imovel',170000,186041,0,0.5,NULL,FALSE),
-      (1047,'imovel',180000,196985,0,0.5,NULL,FALSE),
-      (1047,'imovel',190000,207929,0,0.5,NULL,FALSE),
-      (1047,'imovel',200000,218872,0,0.5,NULL,FALSE),
-      (1047,'imovel',210000,229816,0,0.5,NULL,FALSE),
-      (1047,'imovel',220000,240760,0,0.5,NULL,FALSE),
-      (1047,'imovel',230000,251703,0,0.5,NULL,FALSE),
-      (1047,'imovel',240000,262647,0,0.5,NULL,FALSE),
-      (1047,'imovel',250000,273590,0,0.5,NULL,FALSE),
-      (1047,'imovel',260000,284534,0,0.5,NULL,FALSE),
-      (1047,'imovel',270000,295478,0,0.5,NULL,FALSE),
-      (1047,'imovel',280000,306421,0,0.5,NULL,FALSE),
-      (1047,'imovel',290000,317365,0,0.5,NULL,FALSE),
-      (1047,'imovel',300000,328308,0,0.5,NULL,FALSE),
-      (1047,'imovel',150000,164154,1060,0,0.10,TRUE),
-      (1047,'imovel',160000,175098,1131,0,0.10,TRUE),
-      (1047,'imovel',170000,186041,1202,0,0.10,TRUE),
-      (1047,'imovel',180000,196985,1273,0,0.10,TRUE),
-      (1047,'imovel',190000,207929,1343,0,0.10,TRUE),
-      (1047,'imovel',200000,218872,1414,0,0.10,TRUE),
-      (1047,'imovel',210000,229816,1485,0,0.10,TRUE),
-      (1047,'imovel',220000,240760,1555,0,0.10,TRUE),
-      (1047,'imovel',230000,251703,1626,0,0.10,TRUE),
-      (1047,'imovel',240000,262647,1697,0,0.10,TRUE),
-      (1047,'imovel',250000,273590,1767,0,0.10,TRUE),
-      (1047,'imovel',260000,284534,1838,0,0.10,TRUE),
-      (1047,'imovel',270000,295478,1909,0,0.10,TRUE),
-      (1047,'imovel',280000,306421,1980,0,0.10,TRUE),
-      (1047,'imovel',290000,317365,2050,0,0.10,TRUE),
-      (1047,'imovel',300000,328308,2121,0,0.10,TRUE)
+      (1047,'imovel',150000,164154,1060,0,NULL,TRUE),
+      (1047,'imovel',160000,175098,1131,0,NULL,TRUE),
+      (1047,'imovel',170000,186041,1202,0,NULL,TRUE),
+      (1047,'imovel',180000,196985,1273,0,NULL,TRUE),
+      (1047,'imovel',190000,207929,1343,0,NULL,TRUE),
+      (1047,'imovel',200000,218872,1414,0,NULL,TRUE),
+      (1047,'imovel',210000,229816,1485,0,NULL,TRUE),
+      (1047,'imovel',220000,240760,1555,0,NULL,TRUE),
+      (1047,'imovel',230000,251703,1626,0,NULL,TRUE),
+      (1047,'imovel',240000,262647,1697,0,NULL,TRUE),
+      (1047,'imovel',250000,273590,1767,0,NULL,TRUE),
+      (1047,'imovel',260000,284534,1838,0,NULL,TRUE),
+      (1047,'imovel',270000,295478,1909,0,NULL,TRUE),
+      (1047,'imovel',280000,306421,1980,0,NULL,TRUE),
+      (1047,'imovel',290000,317365,2050,0,NULL,TRUE),
+      (1047,'imovel',300000,328308,2121,0,NULL,TRUE)
     ON CONFLICT DO NOTHING
   `);
-  console.log('Cotas grupo 1047 (créditos reajustados + plano 10%) OK!');
+  console.log('Cotas grupo 1047 (plano único 10%, sem redutor) OK!');
 
   // ── Grupo 1051 (imóvel CNP): premissas + cotas ──────────────────────────────
   // taxa_adm=0.20 e taxa_adm_redutor=0.19 já são forçados pela campanha julho
@@ -985,7 +954,7 @@ async function migrate() {
 
   // ── Grupo 1049 (imóvel CNP): premissas + cotas ──────────────────────────────
   // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
-  // taxa_adm sem redutor 20% / com redutor 50% = 18%; fundo 3,7%.
+  // taxa_adm sem redutor 15% / com redutor 50% = 18%; fundo 3,7%.
   // prazo_restante=181 / total 200. Reajuste INPC/FEVEREIRO.
   // lance_embutido_max=0.30 e reajuste=INPC confirmados pela área comercial.
   // sem_media_contemplacao: média virá depois.
@@ -997,7 +966,7 @@ async function migrate() {
        reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
        sem_media_contemplacao, decrementa_prazo)
     VALUES
-      (1049, 'imovel', 'CNP', 0.20, 0.18, 0.037, 'INPC', 'FEVEREIRO', 0.30, 181, 200, TRUE, TRUE)
+      (1049, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'FEVEREIRO', 0.30, 181, 200, TRUE, TRUE)
   `);
   // Cotas informadas pela área comercial (16 créditos, PA de R$ 10.389,79),
   // sem redutor e com redutor 50%. bem_referencia = cota.
