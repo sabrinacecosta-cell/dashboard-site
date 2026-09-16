@@ -1138,21 +1138,36 @@ async function migrate() {
   console.log('simulador_cotas 2129 inseridas!');
 
   // ── Grupo 2129: histórico contemplacao_auto Out/2025–Abr/2026 ───────────────
+  // Correção: este bloco antes usava ON CONFLICT DO NOTHING, mas contemplacao_auto
+  // não tem índice único em (grupo, mes) — então nada conflitava e as 7 linhas do
+  // 2129 eram REINSERIDAS a cada boot (meses duplicados na aba de Métricas).
+  // 1) Remove as duplicatas históricas, mantendo a linha de menor id por mês.
   await db.query(`
-    INSERT INTO contemplacao_auto
-      (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal,
-       media_contemplacao, media_lance_percent, observacao)
-    VALUES
-      (2129,'outubro',  88.75, 11, 8, '73%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'novembro', 87.50, 14,11, '79%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'dezembro', 86.25,  8, 4, '50%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'janeiro',  85.00,  7, 6, '86%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'fevereiro',83.75,  6, 5, '83%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'março',    82.50,  7, 5, '71%', NULL, NULL, 'Este grupo não está em lance máximo'),
-      (2129,'Abril/2026',72.00,  5, 5,'100%', NULL, NULL, 'Este grupo não está em lance máximo')
-    ON CONFLICT DO NOTHING
+    DELETE FROM contemplacao_auto a USING contemplacao_auto b
+    WHERE a.id > b.id AND a.grupo = b.grupo AND a.mes = b.mes AND a.grupo = 2129
   `);
-  console.log('contemplacao_auto 2129 inserida!');
+  // 2) Insere só se o grupo ainda não tiver histórico (idempotente, como o 2130).
+  const { rows: rows2129 } = await db.query(
+    'SELECT COUNT(*) FROM contemplacao_auto WHERE grupo = 2129'
+  );
+  if (parseInt(rows2129[0].count) === 0) {
+    await db.query(`
+      INSERT INTO contemplacao_auto
+        (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal,
+         media_contemplacao, media_lance_percent, observacao)
+      VALUES
+        (2129,'outubro',  88.75, 11, 8, '73%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'novembro', 87.50, 14,11, '79%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'dezembro', 86.25,  8, 4, '50%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'janeiro',  85.00,  7, 6, '86%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'fevereiro',83.75,  6, 5, '83%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'março',    82.50,  7, 5, '71%', NULL, NULL, 'Este grupo não está em lance máximo'),
+        (2129,'Abril/2026',72.00,  5, 5,'100%', NULL, NULL, 'Este grupo não está em lance máximo')
+    `);
+    console.log('contemplacao_auto 2129 inserida!');
+  } else {
+    console.log('contemplacao_auto 2129 já existe, pulando.');
+  }
 
   // ── Atualiza lance_ultimo_mes e media_contemplacao do grupo 2129 ─────────────
   await db.query(`
