@@ -900,10 +900,17 @@ export default function Simulador() {
                 const mediaVal = g.media_contemplacao != null
                   ? `${(parseFloat(g.media_contemplacao) * 100).toFixed(2).replace('.', ',')}%`
                   : null;
-                // Grupos de imóvel 1044+ exibem "Contemplação longo prazo" (sem
-                // valor) no lugar da média/mês.
+                // Grupos de imóvel 1044+ e auto 2129+ exibem "Contemplação (médio a)
+                // longo prazo" (sem valor) no lugar da média/mês.
                 const contempLongoPrazo =
-                  modalidade === 'imovel' && Number(g.numero_grupo) >= 1044;
+                  (modalidade === 'imovel' && Number(g.numero_grupo) >= 1044) ||
+                  (modalidade === 'auto' && Number(g.numero_grupo) >= 2129);
+                const contempLongoPrazoLabel =
+                  modalidade === 'auto' ? 'Contemplação médio a longo prazo' : 'Contemplação longo prazo';
+                // "Condição especial setembro": grupos com redutor 50% ativo. O
+                // backend define taxa_adm_redutor só para esses grupos, então serve
+                // de fonte única (fica em sincronia com a opção "com redutor 50%").
+                const condicaoEspecial = g.taxa_adm_redutor != null;
                 const card = (
                   <button
                     key={g.id}
@@ -918,7 +925,7 @@ export default function Simulador() {
                     </div>
                     <div className={`sim-card-grupo-media${(g.sem_media_contemplacao && !contempLongoPrazo) ? ' sem-media' : ''}`}>
                       {contempLongoPrazo
-                        ? 'Contemplação longo prazo'
+                        ? contempLongoPrazoLabel
                         : g.sem_media_contemplacao
                           ? (
                             <span>
@@ -938,6 +945,11 @@ export default function Simulador() {
                     </div>
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'var(--texto-secundario)', fontSize: '12px', marginTop: 4 }}>Vagas esgotadas</div>
+                    )}
+                    {condicaoEspecial && (
+                      <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
+                        Condição especial setembro
+                      </span>
                     )}
                   </button>
                 );
