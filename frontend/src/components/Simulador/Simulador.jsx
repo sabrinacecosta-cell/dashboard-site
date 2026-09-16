@@ -17,16 +17,6 @@ const SEGURO_PRESTAMISTA = {
   auto:   { taxa: 0.00068,   label: '0,06800%' },
 };
 
-// Pontos Livelo por faixa de crédito (campanha "Ganhe até 60 mil pontos").
-// A partir de 100 mil = 5.000; cada 100 mil adiciona 5.000; a partir de
-// 1 milhão o teto é 60.000 (não linear no topo, conforme tabela da campanha).
-const pontosLivelo = (credito) => {
-  if (!credito || credito < 100000) return 0;
-  if (credito >= 1000000) return 60000;
-  return Math.min(Math.floor(credito / 100000), 9) * 5000;
-};
-
-
 function LinhaSimulacaoLanc({ linha, onRemove, onUpdate }) {
   const cartaTotal         = (Number(linha.credito) || 0) * linha.qtde;
   const parcelaInicial     = linha.parcelaInicialSim;
@@ -188,7 +178,6 @@ export default function Simulador() {
   const [simParcelasX, setSimParcelasX]                   = useState(18);
   const [incluirSeguro, setIncluirSeguro]                 = useState(false);
   const [showSeguroModal, setShowSeguroModal]             = useState(false);
-  const [showLiveloModal, setShowLiveloModal]             = useState(false);
 
   // Modo Multiplicador
   const [modoMultiplicador, setModoMultiplicador] = useState(false);
@@ -578,28 +567,6 @@ export default function Simulador() {
     doc.setTextColor(...grey);
     doc.text(user?.email || '', M, wy);
 
-    // Caixa de pontos Livelo (campanha), calculada sobre a carta de crédito total.
-    const pontos = pontosLivelo(totaisSim.cartaTotal);
-    if (pontos > 0) {
-      wy += 18;
-      const boxH = 28;
-      doc.setFillColor(...darkCard);
-      doc.setDrawColor(...gold);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(M, wy, W - 2 * M, boxH, 4, 4, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(...gold);
-      doc.text('PONTOS LIVELO', M + 7, wy + 9);
-      doc.setFontSize(18);
-      doc.setTextColor(...white);
-      doc.text(`${pontos.toLocaleString('pt-BR')} pontos`, M + 7, wy + 18);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(...lightGrey);
-      doc.text('Pontuação estimada com esta simulação (campanha Livelo).', M + 7, wy + 24);
-    }
-
     // ── Página 3: Dados da simulação (formato atual, sem cabeçalho) ──
     doc.addPage();
     drawBg();
@@ -937,13 +904,10 @@ export default function Simulador() {
                 // valor) no lugar da média/mês.
                 const contempLongoPrazo =
                   modalidade === 'imovel' && Number(g.numero_grupo) >= 1044;
-                const emCampanha =
-                  (modalidade === 'imovel' && ['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo))) ||
-                  (modalidade === 'auto' && ['2127','2130','2134','3002'].includes(String(g.numero_grupo)));
                 const card = (
                   <button
                     key={g.id}
-                    className={`sim-card-grupo${emCampanha ? ' sim-card-grupo--campanha' : ''}`}
+                    className="sim-card-grupo"
                     onClick={() => setGrupoSelecionado(g)}
                   >
                     <div className="sim-card-grupo-numero">Grupo {g.numero_grupo}</div>
@@ -975,34 +939,8 @@ export default function Simulador() {
                     {g.numero_grupo === 1053 && (
                       <div style={{ color: 'var(--texto-secundario)', fontSize: '12px', marginTop: 4 }}>Vagas esgotadas</div>
                     )}
-                    {['1035','1038','1042','1043','1044','1051','1054','1055'].includes(String(g.numero_grupo)) && modalidade === 'imovel' && (
-                      <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente agosto
-                      </span>
-                    )}
-                    {['2127','2130','2134','3002'].includes(String(g.numero_grupo)) && modalidade === 'auto' && (
-                      <span style={{ color: 'var(--texto-secundario)', fontSize: '11px', fontWeight: 500, display: 'block', marginTop: '6px' }}>
-                        Campanha vigente agosto
-                      </span>
-                    )}
                   </button>
                 );
-                if (String(g.numero_grupo) === '1038' && modalidade === 'imovel') {
-                  return (
-                    <div key={g.id} className="sim-card-com-selo">
-                      <button
-                        type="button"
-                        className="sim-selo-livelo"
-                        onClick={() => setShowLiveloModal(true)}
-                        title="Ver detalhes da campanha Livelo"
-                      >
-                        <span className="sim-selo-livelo-aviao" aria-hidden="true">✈</span>
-                        <span>Ganhe até <strong>60&nbsp;mil</strong> pontos <strong>Livelo</strong></span>
-                      </button>
-                      {card}
-                    </div>
-                  );
-                }
                 return card;
               })}
             </div>
@@ -1372,19 +1310,6 @@ export default function Simulador() {
                 Baixar PDF
               </a>
             </div>
-          </div>
-        </div>
-      )}
-
-      {showLiveloModal && (
-        <div className="sim-modal-overlay" onClick={() => setShowLiveloModal(false)}>
-          <div className="sim-modal-livelo" onClick={e => e.stopPropagation()}>
-            <button
-              className="sim-modal-x-livelo"
-              onClick={() => setShowLiveloModal(false)}
-              aria-label="Fechar"
-            >×</button>
-            <img src="/livelo-beneficios.jpg" alt="Benefícios — Ganhe até 60 mil pontos Livelo" />
           </div>
         </div>
       )}
