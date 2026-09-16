@@ -204,6 +204,18 @@ async function migrate() {
   `);
   console.log('Contemplação 1038 agosto/2026 OK (idempotente)!');
 
+  // Novo mês do grupo 1040 (imóvel): agosto/2026 — 17 contemplados em 125 lances,
+  // lance vencedor 60%. Idempotente por mês. media_contemplacao fica NULL: o bloco
+  // dos 12 meses abaixo recalcula a média do grupo já incluindo este mês.
+  await db.query(`
+    INSERT INTO contemplacao (grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal, media_contemplacao, media_lance_percent)
+    SELECT 1040, 'agosto/2026', 60, 125, 17, '0.136000', NULL, NULL
+    WHERE NOT EXISTS (
+      SELECT 1 FROM contemplacao WHERE grupo = 1040 AND LOWER(mes) = 'agosto/2026'
+    )
+  `);
+  console.log('Contemplação 1040 agosto/2026 OK (idempotente)!');
+
   // ── Médias de contemplação (imóvel) = ÚLTIMOS 12 E 6 MESES ───────────────────
   // O resumo de Métricas exibe "média de 12 meses" e "média de 6 meses"; o card do
   // Simulador exibe a de 12 meses (lida viva via MAX(media_contemplacao)). Este bloco
@@ -302,25 +314,24 @@ async function migrate() {
 
   // Imóvel: taxa_adm_redutor (campanha redutor 50%). Reseta e redefine — autoritativo.
   await db.query(`UPDATE simulador_grupos SET taxa_adm_redutor = NULL WHERE modalidade = 'imovel'`);
-  // Imóvel: campanha julho — sem redutor 20%, com redutor 19%
+  // Redutor 50% ativo APENAS nos grupos em campanha vigente. Os demais não
+  // oferecem a opção (as cotas 0.5 deles são removidas no bloco de limpeza mais
+  // abaixo, depois de todas as inserções). O grupo novo 41056 define seu próprio
+  // taxa_adm_redutor no INSERT (é criado depois desta seção).
+  // Imóvel: 19% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.19
-    WHERE modalidade = 'imovel' AND numero_grupo IN (1035, 1038, 1042, 1043, 1044, 1051, 1054)
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1035, 1042, 1043, 1044)
   `);
   // Imóvel: 18% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.18
-    WHERE modalidade = 'imovel' AND numero_grupo IN (1047, 1048, 1049, 1050, 1055)
+    WHERE modalidade = 'imovel' AND numero_grupo IN (1048, 1049, 1050, 1055)
   `);
   // Auto: campanha (2127, 2130, 2134, 3002) → 17% com redutor
   await db.query(`
     UPDATE simulador_grupos SET taxa_adm_redutor = 0.17
     WHERE modalidade = 'auto' AND numero_grupo IN (2127, 2130, 2134, 3002)
-  `);
-  // Imóvel: grupo 1040 — redutor 50% com taxa adm de 23%.
-  await db.query(`
-    UPDATE simulador_grupos SET taxa_adm_redutor = 0.23
-    WHERE modalidade = 'imovel' AND numero_grupo = 1040
   `);
   console.log('Coluna taxa_adm_redutor e valores OK!');
 
@@ -813,17 +824,6 @@ async function migrate() {
   `);
   console.log('Imóvel redutor 50% grupo 1035 OK!');
 
-  // Grupo 1040 (imóvel): opção "com redutor 50%" espelhando as cotas sem redutor.
-  // parcela = 0 provisória; recalculada no bloco abaixo (usa taxa_adm_redutor = 0.23).
-  await db.query(`
-    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
-    SELECT numero_grupo, modalidade, bem_referencia, cota, 0, 0.5
-    FROM simulador_cotas
-    WHERE numero_grupo = 1040 AND modalidade = 'imovel' AND redutor_parcela = 0
-    ON CONFLICT DO NOTHING
-  `);
-  console.log('Imóvel redutor 50% grupo 1040 OK!');
-
   // Grupo 1042 (imóvel): tabela de cotas autoritativa (16 créditos informados pela
   // área comercial, ago/2026). Reseta e redefine — apaga o que houver e reinsere,
   // com opção sem redutor e com redutor 50% (campanha vigente). bem_referencia = cota.
@@ -990,6 +990,47 @@ async function migrate() {
     CROSS JOIN (VALUES (0), (0.5)) AS red(r)
   `);
   console.log('simulador_grupos/cotas 1049 inseridos!');
+
+  // ── Grupo 41056 (imóvel CNP): grupo novo ────────────────────────────────────
+  // "Apaga o que tem e redefine" (autoritativo a cada boot). Cartas de 200k a
+  // 300k (de 10 em 10). taxa_adm sem redutor 15% / com redutor 50% = 18%;
+  // fundo 3,7%; lance embutido máx 30%; prazo 240 (grupo novo: restante=total).
+  // Reajuste FIXO/OUTUBRO. sem_media_contemplacao: média virá das Métricas depois.
+  // parcela=0 provisória — recalculada no bloco de recálculo logo abaixo.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 41056 AND modalidade = 'imovel'`);
+  await db.query(`DELETE FROM simulador_grupos WHERE numero_grupo = 41056 AND modalidade = 'imovel'`);
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao, decrementa_prazo)
+    VALUES
+      (41056, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'FIXO', 'OUTUBRO', 0.30, 240, 240, TRUE, TRUE)
+  `);
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT 41056, 'imovel', c, c, 0, r
+    FROM generate_series(200000, 300000, 10000) AS c
+    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
+  `);
+  console.log('simulador_grupos/cotas 41056 inseridos!');
+
+  // ── Redutor 50%: ativo APENAS nos grupos em campanha vigente ────────────────
+  // A opção "com redutor 50%" só aparece no simulador quando o grupo tem cotas
+  // com redutor_parcela = 0.5. Removemos essas cotas de TODOS os grupos fora da
+  // lista (imóvel e auto), então só os grupos abaixo mantêm a opção. Autoritativo
+  // a cada boot — roda depois de todas as inserções de cotas.
+  await db.query(`
+    DELETE FROM simulador_cotas
+    WHERE modalidade = 'imovel' AND redutor_parcela = 0.5
+      AND numero_grupo NOT IN (1035, 1042, 1043, 1044, 1048, 1049, 1050, 1055, 41056)
+  `);
+  await db.query(`
+    DELETE FROM simulador_cotas
+    WHERE modalidade = 'auto' AND redutor_parcela = 0.5
+      AND numero_grupo NOT IN (2127, 2130, 2134, 3002)
+  `);
+  console.log('Redutor 50%: cotas 0.5 fora da campanha removidas!');
 
   // Recalcula todas as parcelas com base no prazo_restante atual.
   // COALESCE(sc.taxa_adm, sg.taxa_adm): cotas com taxa própria (ex.: plano 6% do
