@@ -904,31 +904,31 @@ export default function Simulador() {
 
     if (isUNE) {
       // Quadro de contato do assessor (foto + nome/e-mail + WhatsApp/telefone),
-      // no lugar do "Fale conosco" — espelha o rodapé do flyer.
-      const boxH = 22;
+      // compacto e fixo na parte de baixo da página (acima do texto legal).
+      const boxH = 15;
+      const cy0 = H - 32 - boxH;
       doc.setFillColor(...darkCard);
       doc.setDrawColor(...darkBorder);
       doc.setLineWidth(0.3);
-      doc.roundedRect(M, y, W - 2 * M, boxH, 4, 4, 'FD');
-      const ps = 16, px = M + 5, py = y + (boxH - ps) / 2;
+      doc.roundedRect(M, cy0, W - 2 * M, boxH, 3, 3, 'FD');
+      const ps = 11, px = M + 4, py = cy0 + (boxH - ps) / 2;
       if (fotoAssessor) doc.addImage(fotoAssessor, 'PNG', px, py, ps, ps);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(...white);
-      doc.text('Sabrina - JTDK Investimentos', px + ps + 6, y + 9.5);
-      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
+      doc.setTextColor(...white);
+      doc.text('Sabrina - JTDK Investimentos', px + ps + 5, cy0 + 6.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
       doc.setTextColor(...grey);
-      doc.text('sabrinajtdk@gmail.com', px + ps + 6, y + 15);
+      doc.text('sabrinajtdk@gmail.com', px + ps + 5, cy0 + 11);
       const telefone = '(17) 99682-0555';
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(9);
       doc.setTextColor(...white);
       const telW = doc.getTextWidth(telefone);
-      doc.text(telefone, W - M - 6, y + boxH / 2 + 1, { align: 'right' });
+      doc.text(telefone, W - M - 5, cy0 + boxH / 2 + 1, { align: 'right' });
       doc.setFillColor(24, 185, 92);
-      doc.circle(W - M - 10 - telW, y + boxH / 2 - 0.5, 3, 'F');
-      y += boxH + 7;
+      doc.circle(W - M - 9 - telW, cy0 + boxH / 2, 2.4, 'F');
     } else {
       doc.setFillColor(22, 18, 0);
       doc.setDrawColor(...gold);
