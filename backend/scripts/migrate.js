@@ -854,11 +854,17 @@ async function migrate() {
        reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
        sem_media_contemplacao)
     SELECT 5002, 'auto', 'UNE', 0.155, NULL, 0,
-           'INPC', 'ANUAL', 0, 36, 36, TRUE
+           'INPC', 'ANUAL', 0.50, 36, 36, TRUE
     WHERE NOT EXISTS (
       SELECT 1 FROM simulador_grupos
       WHERE numero_grupo = 5002 AND modalidade = 'auto' AND administradora = 'UNE'
     )
+  `);
+  // Autoritativo (cobre a linha já existente, que o NOT EXISTS acima não atualiza):
+  // lance embutido máximo do 5002 = 50%.
+  await db.query(`
+    UPDATE simulador_grupos SET lance_embutido_max = 0.50
+    WHERE numero_grupo = 5002 AND modalidade = 'auto' AND administradora = 'UNE'
   `);
   // Cotas curadas da tabela UNE (crédito → parcela). parcela_fixa = TRUE: o recálculo
   // automático de parcelas NÃO as sobrescreve (o arredondamento divergiria em ~1
