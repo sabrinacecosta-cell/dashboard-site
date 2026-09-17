@@ -500,21 +500,35 @@ export default function Simulador() {
     const W = 210, H = 297, M = 12;
     let y = M;
 
-    const gold       = [245, 192, 0];
-    const white      = [255, 255, 255];
-    const black      = [10, 10, 10];
-    const grey       = [153, 153, 153];
-    const lightGrey  = [200, 200, 200];
-    const darkCard   = [30, 30, 30];
-    const darkBorder = [46, 46, 46];
+    // Tema por administradora. A UNE usa o mesmo esquema claro/verde da página 2
+    // (fundo claro, texto escuro, acento verde); a CNP mantém o escuro/dourado.
+    // As constantes são semânticas (papel), então a UNE INVERTE cada papel:
+    // black = fundo, white = texto/título principal, gold = acento, grey/lightGrey
+    // = texto secundário/corpo, darkCard/darkBorder = card e borda.
+    const isUNE = administradora === 'UNE';
+    const gold       = isUNE ? [10, 122, 61]   : [245, 192, 0];   // acento (#0a7a3d / dourado)
+    const white      = isUNE ? [16, 20, 20]    : [255, 255, 255]; // texto/título principal
+    const black      = isUNE ? [255, 255, 255] : [10, 10, 10];    // fundo da página
+    const grey       = isUNE ? [91, 102, 92]   : [153, 153, 153]; // texto secundário (labels)
+    const lightGrey  = isUNE ? [40, 48, 42]    : [200, 200, 200]; // corpo de texto
+    const darkCard   = isUNE ? [234, 244, 236] : [30, 30, 30];    // fundo dos cards (#eaf4ec)
+    const darkBorder = isUNE ? [200, 220, 206] : [46, 46, 46];    // borda dos cards
 
     const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
     const dataHoje   = new Date().toLocaleDateString('pt-BR');
-    const marcaConsorcio = administradora === 'UNE' ? 'UNE Consórcios' : 'Consórcio XP';
+    const marcaConsorcio = isUNE ? 'UNE Consórcios' : 'Consórcio XP';
     const rodapeTxt  = `Wflow Assessoria de Investimentos Ltda  |  ${marcaConsorcio} - ${dataHoje}`;
 
-    // Fundo escuro + cantos dourados (padrão da marca).
+    // Fundo da página. CNP: escuro + cantos dourados. UNE: claro + faixa verde no
+    // topo (mesmo acabamento da página 2).
     const drawBg = () => {
+      if (isUNE) {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, W, H, 'F');
+        doc.setFillColor(24, 185, 92);
+        doc.rect(0, 0, W, 4, 'F');
+        return;
+      }
       doc.setFillColor(...black);
       doc.rect(0, 0, W, H, 'F');
       doc.setFillColor(...gold);
@@ -578,7 +592,7 @@ export default function Simulador() {
       y2 = drawRich([
         { t: 'O consórcio planeja a aquisição de ' },
         { t: 'automóveis', hl: true },
-        { t: ' (carros, motos, SUVs e afins) ' },
+        { t: ' (carros, motos e equipamentos elétricos) ' },
         { t: 'sem os juros de um financiamento tradicional.', hl: true },
       ], M, y2, maxW, 7, 14);
 
@@ -856,7 +870,7 @@ export default function Simulador() {
     indicados.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
     y += barH + 5;
 
-    doc.setFillColor(22, 18, 0);
+    doc.setFillColor(...(isUNE ? darkCard : [22, 18, 0]));
     doc.setDrawColor(...gold);
     doc.setLineWidth(0.4);
     doc.roundedRect(M, y, W - 2 * M, 16, 4, 4, 'FD');
@@ -876,7 +890,7 @@ export default function Simulador() {
       doc.text(doc.splitTextToSize(OBSERVACOES_LEGAIS[legalKey], W - 2 * M), M, legalY);
     }
 
-    doc.setFillColor(20, 20, 20);
+    doc.setFillColor(...(isUNE ? darkCard : [20, 20, 20]));
     doc.rect(0, H - 16, W, 16, 'F');
     doc.setFontSize(9);
     doc.setTextColor(...gold);
