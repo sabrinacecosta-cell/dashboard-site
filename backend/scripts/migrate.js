@@ -1027,6 +1027,37 @@ async function migrate() {
   `);
   console.log('simulador_grupos/cotas 1049 inseridos!');
 
+  // ── Grupo 1048 (imóvel CNP): premissas + cotas ──────────────────────────────
+  // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
+  // Condição especial setembro: taxa sem redutor 15% / com redutor 50% = 18%;
+  // fundo 3,7%; lance embutido máx 30%; prazo_restante=180 / total=200.
+  // Reajuste INPC/JANEIRO. sem_media_contemplacao: média virá das Métricas depois.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1048 AND modalidade = 'imovel'`);
+  await db.query(`DELETE FROM simulador_grupos WHERE numero_grupo = 1048 AND modalidade = 'imovel'`);
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao, decrementa_prazo)
+    VALUES
+      (1048, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'JANEIRO', 0.30, 180, 200, TRUE, TRUE)
+  `);
+  // Cotas informadas pela área comercial (16 créditos, PA de R$ 10.417,78),
+  // sem redutor e com redutor 50%. bem_referencia = cota.
+  // parcela=0 provisória — recalculada no bloco de recálculo logo abaixo.
+  await db.query(`
+    INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
+    SELECT 1048, 'imovel', c, c, 0, r
+    FROM (VALUES
+      (156266.70), (166684.48), (177102.26), (187520.04),
+      (197937.82), (208355.60), (218773.38), (229191.16),
+      (239608.94), (250026.72), (260444.50), (270862.28),
+      (281280.06), (291697.84), (302115.62), (312533.40)
+    ) AS t(c)
+    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
+  `);
+  console.log('simulador_grupos/cotas 1048 inseridos!');
+
   // ── Grupo 41056 (imóvel CNP): grupo novo ────────────────────────────────────
   // "Apaga o que tem e redefine" (autoritativo a cada boot). Cartas de 200k a
   // 300k (de 10 em 10). taxa_adm sem redutor 15% / com redutor 50% = 18%;
