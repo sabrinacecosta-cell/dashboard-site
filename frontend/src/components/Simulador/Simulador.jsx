@@ -500,6 +500,21 @@ export default function Simulador() {
     const W = 210, H = 297, M = 12;
     let y = M;
 
+    // Foto do assessor (círculo) para o rodapé de contato da UNE. Carrega do
+    // asset público como dataURL; se falhar, o quadro sai sem foto.
+    let fotoAssessor = null;
+    if (administradora === 'UNE') {
+      try {
+        const blob = await (await fetch('/assessor-foto.png')).blob();
+        fotoAssessor = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onloadend = () => res(r.result);
+          r.onerror = rej;
+          r.readAsDataURL(blob);
+        });
+      } catch { fotoAssessor = null; }
+    }
+
     // Tema por administradora. A UNE usa o mesmo esquema claro/verde da página 2
     // (fundo claro, texto escuro, acento verde); a CNP mantém o escuro/dourado.
     // As constantes são semânticas (papel), então a UNE INVERTE cada papel:
@@ -887,16 +902,45 @@ export default function Simulador() {
     indicados.forEach((linha, i) => doc.text(linha, M + 7, y + 11 + i * 4.5));
     y += barH + 5;
 
-    doc.setFillColor(...(isUNE ? darkCard : [22, 18, 0]));
-    doc.setDrawColor(...gold);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(M, y, W - 2 * M, 16, 4, 4, 'FD');
-    doc.setFontSize(9);
-    doc.setTextColor(...gold);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fale conosco para avaliarmos como este consórcio', W / 2, y + 6.5, { align: 'center' });
-    doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 12.5, { align: 'center' });
-    y += 23;
+    if (isUNE) {
+      // Quadro de contato do assessor (foto + nome/e-mail + WhatsApp/telefone),
+      // no lugar do "Fale conosco" — espelha o rodapé do flyer.
+      const boxH = 22;
+      doc.setFillColor(...darkCard);
+      doc.setDrawColor(...darkBorder);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(M, y, W - 2 * M, boxH, 4, 4, 'FD');
+      const ps = 16, px = M + 5, py = y + (boxH - ps) / 2;
+      if (fotoAssessor) doc.addImage(fotoAssessor, 'PNG', px, py, ps, ps);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...white);
+      doc.text('Sabrina - JTDK Investimentos', px + ps + 6, y + 9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...grey);
+      doc.text('sabrinajtdk@gmail.com', px + ps + 6, y + 15);
+      const telefone = '(17) 99682-0555';
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...white);
+      const telW = doc.getTextWidth(telefone);
+      doc.text(telefone, W - M - 6, y + boxH / 2 + 1, { align: 'right' });
+      doc.setFillColor(24, 185, 92);
+      doc.circle(W - M - 10 - telW, y + boxH / 2 - 0.5, 3, 'F');
+      y += boxH + 7;
+    } else {
+      doc.setFillColor(22, 18, 0);
+      doc.setDrawColor(...gold);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(M, y, W - 2 * M, 16, 4, 4, 'FD');
+      doc.setFontSize(9);
+      doc.setTextColor(...gold);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Fale conosco para avaliarmos como este consórcio', W / 2, y + 6.5, { align: 'center' });
+      doc.text('pode se integrar à sua estratégia patrimonial', W / 2, y + 12.5, { align: 'center' });
+      y += 23;
+    }
 
     const legalY   = H - 28;
     const legalKey = modalidade === 'imovel' ? 'imovel' : 'automovel';
