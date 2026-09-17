@@ -510,7 +510,8 @@ export default function Simulador() {
 
     const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
     const dataHoje   = new Date().toLocaleDateString('pt-BR');
-    const rodapeTxt  = `Wflow Assessoria de Investimentos Ltda  |  Consórcio XP - ${dataHoje}`;
+    const marcaConsorcio = administradora === 'UNE' ? 'UNE Consórcios' : 'Consórcio XP';
+    const rodapeTxt  = `Wflow Assessoria de Investimentos Ltda  |  ${marcaConsorcio} - ${dataHoje}`;
 
     // Fundo escuro + cantos dourados (padrão da marca).
     const drawBg = () => {
@@ -527,8 +528,13 @@ export default function Simulador() {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...white);
     doc.setFontSize(54);
-    doc.text('Consórcio', M, 150);
-    doc.text('XP', M, 172);
+    if (administradora === 'UNE') {
+      doc.text('UNE', M, 150);
+      doc.text('Consórcios', M, 172);
+    } else {
+      doc.text('Consórcio', M, 150);
+      doc.text('XP', M, 172);
+    }
     doc.setFontSize(11);
     doc.setTextColor(...gold);
     doc.text(`CONSÓRCIO ${modalLabel}`, M, 188);
@@ -875,7 +881,7 @@ export default function Simulador() {
     doc.setFontSize(9);
     doc.setTextColor(...gold);
     doc.setFont('helvetica', 'bold');
-    doc.text('Consórcio XP', M, H - 6);
+    doc.text(marcaConsorcio, M, H - 6);
     // Validade = penúltimo dia útil do mês corrente
     const dataValidade = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
     let diasUteis = 0;
