@@ -8,6 +8,7 @@ import React from 'react';
 // e os componentes da Embracon continuam no lugar.
 const OPCOES = [
   { valor: 'CNP', label: 'CNP' },
+  { valor: 'UNE', label: 'UNE' },
   // { valor: 'EMBRACON', label: 'Embracon' },
 ];
 

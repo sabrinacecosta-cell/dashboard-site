@@ -6,10 +6,11 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.get('/grupos', authMiddleware, async (req, res) => {
   const { modalidade, administradora } = req.query;
 
-  // Administradoras que não seguem o modelo CNP (1 série por grupo/mês) listam
-  // apenas os grupos disponíveis daquela administradora — sem lance_ultimo_mes,
-  // que depende das tabelas de contemplação CNP.
-  if (administradora && administradora !== 'CNP') {
+  // Embracon segue o modelo por FAIXA de crédito (credito_min/max), não o modelo
+  // CNP (cotas fixas). Por isso lista só os grupos daquela administradora, sem
+  // lance_ultimo_mes/média (que dependem das tabelas de contemplação CNP).
+  // Demais administradoras (CNP, UNE, ...) usam o fluxo de cards/cotas abaixo.
+  if (administradora === 'EMBRACON') {
     try {
       const result = await db.query(
         `SELECT sg.numero_grupo, sg.modalidade, sg.administradora,
@@ -80,10 +81,10 @@ router.get('/grupos', authMiddleware, async (req, res) => {
         ${semMediaExpr} AS sem_media_contemplacao
       FROM simulador_grupos sg
       WHERE sg.modalidade = $1
-        AND sg.administradora = 'CNP'
-        AND sg.id = (SELECT MIN(id) FROM simulador_grupos WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade)
+        AND sg.administradora = $2
+        AND sg.id = (SELECT MIN(id) FROM simulador_grupos WHERE numero_grupo = sg.numero_grupo AND modalidade = sg.modalidade AND administradora = $2)
       ORDER BY sg.numero_grupo ASC`,
-      [modalidade]
+      [modalidade, administradora || 'CNP']
     );
     return res.json(result.rows);
   } catch (err) {

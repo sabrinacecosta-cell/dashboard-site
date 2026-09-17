@@ -840,6 +840,43 @@ async function migrate() {
   `);
   console.log('Auto campanha (taxas, grupo 2134, redutor 2127) OK!');
 
+  // ── UNE CONSÓRCIOS — grupo auto 5002 (novo, set/2026) ───────────────────────
+  // Administradora nova, fora do modelo CNP (sem tabelas de contemplação/lance),
+  // mas renderiza no MESMO fluxo de cards da CNP (grupos + cotas), selecionável
+  // pelo toggle de administradora. Fonte: tabela oficial UNE — 36 meses, taxa adm
+  // 15,5% total (0,430%/mês), SEM fundo de reserva, SEM redutor, seguro opcional.
+  // prazo_restante = prazo_total = 36 (grupo novo; não decrementa: só CNP decrementa).
+  // Idempotente por NOT EXISTS / DELETE+INSERT — NÃO usa ON CONFLICT (simulador_cotas
+  // não tem índice único, ver bug do grupo 2129).
+  await db.query(`
+    INSERT INTO simulador_grupos
+      (numero_grupo, modalidade, administradora, taxa_adm, taxa_adm_redutor, fundo_reserva,
+       reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
+       sem_media_contemplacao)
+    SELECT 5002, 'auto', 'UNE', 0.155, NULL, 0,
+           'INPC', 'ANUAL', 0, 36, 36, TRUE
+    WHERE NOT EXISTS (
+      SELECT 1 FROM simulador_grupos
+      WHERE numero_grupo = 5002 AND modalidade = 'auto' AND administradora = 'UNE'
+    )
+  `);
+  // Cotas curadas da tabela UNE (crédito → parcela). parcela_fixa = TRUE: o recálculo
+  // automático de parcelas NÃO as sobrescreve (o arredondamento divergiria em ~1
+  // centavo). DELETE+INSERT torna idempotente e permite a tabela mudar sem órfãs.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 5002 AND modalidade = 'auto'`);
+  await db.query(`
+    INSERT INTO simulador_cotas
+      (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, parcela_fixa)
+    VALUES
+      (5002,'auto', 29475.37, 29475.37,  945.66, 0, TRUE),
+      (5002,'auto', 35370.45, 35370.45, 1134.80, 0, TRUE),
+      (5002,'auto', 41265.52, 41265.52, 1323.94, 0, TRUE),
+      (5002,'auto', 47160.60, 47160.60, 1513.07, 0, TRUE),
+      (5002,'auto', 53055.66, 53055.66, 1702.21, 0, TRUE),
+      (5002,'auto', 58950.74, 58950.74, 1891.34, 0, TRUE)
+  `);
+  console.log('UNE grupo auto 5002 OK!');
+
   // Grupo 1035 (imóvel): opção "com redutor 50%" espelhando as cotas sem redutor.
   // parcela = 0 provisória; recalculada no bloco abaixo (usa taxa_adm_redutor = 0.19).
   await db.query(`

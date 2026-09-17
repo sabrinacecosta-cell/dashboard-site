@@ -199,14 +199,16 @@ export default function Simulador() {
   useEffect(() => { localStorage.setItem('sim_administradora', administradora); }, [administradora]);
 
   useEffect(() => {
+    // Embracon tem fluxo próprio (componente à parte); não busca grupos CNP-style.
+    if (administradora === 'EMBRACON') return;
     setLoadingGrupos(true);
     setGrupoSelecionado(null);
     setCotas([]);
-    api.get(`/simulador/grupos?modalidade=${modalidade}`)
+    api.get(`/simulador/grupos?modalidade=${modalidade}&administradora=${administradora}`)
       .then(r => { console.log('grupos:', r.data); setGrupos(r.data); })
       .catch(() => setGrupos([]))
       .finally(() => setLoadingGrupos(false));
-  }, [modalidade]);
+  }, [modalidade, administradora]);
 
   useEffect(() => {
     if (!grupoSelecionado) { setCotas([]); return; }
@@ -925,7 +927,9 @@ export default function Simulador() {
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
                       <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
-                      <span style={{ color: '#ffffff' }}>Lance último mês: {g.lance_ultimo_mes}%</span>
+                      {g.lance_ultimo_mes != null && (
+                        <span style={{ color: '#ffffff' }}>Lance último mês: {g.lance_ultimo_mes}%</span>
+                      )}
                     </div>
                     <div className={`sim-card-grupo-media${(g.sem_media_contemplacao && !contempLongoPrazo) ? ' sem-media' : ''}`}>
                       {contempLongoPrazo
