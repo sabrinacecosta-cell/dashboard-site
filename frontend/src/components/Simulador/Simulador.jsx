@@ -533,8 +533,101 @@ export default function Simulador() {
     doc.setTextColor(...gold);
     doc.text(`CONSÓRCIO ${modalLabel}`, M, 188);
 
-    // ── Página 2: Bem-vindo ─────────────────────────────────
+    // ── Página 2 ────────────────────────────────────────────
     doc.addPage();
+    if (administradora === 'UNE') {
+      // Página explicativa (tema verde UNE): texto institucional do consórcio +
+      // 4 diferenciais em cards 2x2. Substitui a carta "Bem-vindo" só na UNE.
+      const uGreen = [10, 122, 61];      // #0a7a3d — destaques em negrito
+      const uGreenBright = [24, 185, 92]; // #18b95c — detalhe de marca
+      const uDark = [16, 20, 20];         // #101414 — texto
+      const uPanel = [234, 244, 236];     // #eaf4ec — fundo dos diferenciais
+      const uGrey = [91, 102, 92];        // #5b665c — descrição dos cards
+
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, W, H, 'F');
+      doc.setFillColor(...uGreenBright);
+      doc.rect(0, 0, W, 4, 'F');
+
+      // Texto com destaques inline (negrito verde). segs = [{ t, hl }].
+      const drawRich = (segs, x, startY, maxW, lineH, size) => {
+        doc.setFontSize(size);
+        let cx = x, cy = startY;
+        segs.forEach(seg => {
+          doc.setFont('helvetica', seg.hl ? 'bold' : 'normal');
+          (seg.t.match(/\S+|\s+/g) || []).forEach(tok => {
+            if (/^\s+$/.test(tok)) { if (cx > x) cx += doc.getTextWidth(' '); return; }
+            const w = doc.getTextWidth(tok);
+            if (cx + w > x + maxW) { cx = x; cy += lineH; }
+            doc.setTextColor(...(seg.hl ? uGreen : uDark));
+            doc.text(tok, cx, cy);
+            cx += w;
+          });
+        });
+        return cy;
+      };
+
+      const maxW = 165;
+      let y2 = 44;
+      y2 = drawRich([
+        { t: 'O consórcio planeja a aquisição de ' },
+        { t: 'automóveis', hl: true },
+        { t: ' (carros, motos, SUVs e afins) ' },
+        { t: 'sem os juros de um financiamento tradicional.', hl: true },
+      ], M, y2, maxW, 7, 14);
+
+      y2 += 13;
+      y2 = drawRich([
+        { t: 'Você entra em um grupo, paga parcelas ' },
+        { t: 'dentro do seu orçamento', hl: true },
+        { t: ' e é contemplado, por sorteio ou lance, com uma carta de crédito para usar no ' },
+        { t: 'veículo', hl: true },
+        { t: ' que precisar.' },
+      ], M, y2, maxW, 7, 14);
+
+      // Painel verde-claro com 4 diferenciais (cards brancos 2x2).
+      const panelY = y2 + 18;
+      const panelW = W - 2 * M;
+      const pad = 8, gap = 6, cardH = 34;
+      const cardW = (panelW - 2 * pad - gap) / 2;
+      const panelH = pad + 2 * cardH + gap + pad;
+      doc.setFillColor(...uPanel);
+      doc.roundedRect(M, panelY, panelW, panelH, 5, 5, 'F');
+
+      const cards = [
+        ['Sem juros de financiamento', 'Só taxa de administração, diluída nas parcelas.'],
+        ['Parcela do seu tamanho', 'Você escolhe o crédito e o prazo conforme o seu orçamento.'],
+        ['Lance para antecipar', 'Dá pra ser contemplado antes do fim do grupo.'],
+        ['Liberdade de escolha', 'A carta contemplada compra o veículo que você quiser.'],
+      ];
+      cards.forEach((c, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        const cardX = M + pad + col * (cardW + gap);
+        const cardY = panelY + pad + row * (cardH + gap);
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(cardX, cardY, cardW, cardH, 4, 4, 'F');
+        // Quadrado verde com check branco
+        const sq = 9, sx = cardX + 7, sy = cardY + 7;
+        doc.setFillColor(...uGreen);
+        doc.roundedRect(sx, sy, sq, sq, 2, 2, 'F');
+        doc.setDrawColor(255, 255, 255);
+        doc.setLineWidth(1.1);
+        doc.line(sx + 2, sy + 4.8, sx + 3.7, sy + 6.6);
+        doc.line(sx + 3.7, sy + 6.6, sx + 7, sy + 2.6);
+        // Título + descrição
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.setTextColor(...uDark);
+        doc.text(c[0], sx + sq + 5, cardY + 13.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...uGrey);
+        doc.splitTextToSize(c[1], cardW - 14).forEach((ln, k) =>
+          doc.text(ln, cardX + 7, cardY + 22 + k * 4.2)
+        );
+      });
+    } else {
+    // ── Bem-vindo (CNP) ─────────────────────────────────────
     drawBg();
     doc.setFillColor(...gold);
     doc.rect(0, 95, W, 6, 'F');
@@ -568,6 +661,7 @@ export default function Simulador() {
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...grey);
     doc.text(user?.email || '', M, wy);
+    }
 
     // ── Página 3: Dados da simulação (formato atual, sem cabeçalho) ──
     doc.addPage();
