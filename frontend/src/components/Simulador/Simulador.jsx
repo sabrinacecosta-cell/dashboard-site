@@ -1131,7 +1131,7 @@ export default function Simulador() {
                             </span>
                           )
                           : mediaVal
-                            ? `Média contemplação: ${mediaVal}/mês`
+                            ? `Do total de lances ofertados, o percentual de contemplados é de: ${mediaVal} (mensal)`
                             : ''}
                     </div>
                     {g.numero_grupo === 1053 && (
