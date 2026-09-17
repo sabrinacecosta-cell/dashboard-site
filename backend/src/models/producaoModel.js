@@ -87,7 +87,7 @@ const ProducaoModel = {
   // ========== MÉTODOS ASSESSOR COM FILTROS ==========
 
   async findByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
-    let query = 'SELECT * FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))';
+    let query = `SELECT * FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
     const params = [nomesVisiveis(nomeAssessor), emailAssessor];
     let paramIndex = 3;
 
@@ -174,7 +174,7 @@ const ProducaoModel = {
   },
 
   async getFilterOptionsByAssessor(nomeAssessor, emailAssessor) {
-    const baseWhere = '((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))';
+    const baseWhere = `((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
     const params = [nomesVisiveis(nomeAssessor), emailAssessor];
 
     const [meses, anos, escritorios] = await Promise.all([
