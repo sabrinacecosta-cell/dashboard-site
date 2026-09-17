@@ -26,6 +26,38 @@ function nomesVisiveis(nomeAssessor) {
   return [nomeAssessor, ...extras].filter(Boolean);
 }
 
+// Valor de filtro que representa "toda a equipe" (próprio + colegas).
+const ASSESSOR_EQUIPE = '__equipe__';
+
+// Escopo efetivo da consulta do assessor. Regras:
+// - sem seleção → só os registros do próprio usuário (default);
+// - '__equipe__' → todo o conjunto visível (próprio + equipe);
+// - nome de colega visível → só os daquele colega;
+// - qualquer outro valor → cai no default (só o próprio), por segurança.
+// Um assessor nunca consegue filtrar fora do que já tem permissão de ver.
+// Retorna [nomes, email] no formato esperado pelos params das queries.
+function escopoAssessor(nomeAssessor, emailAssessor, filters = {}) {
+  const visiveis = nomesVisiveis(nomeAssessor);
+  const sel = (filters.assessor || '').trim();
+
+  if (sel === ASSESSOR_EQUIPE) {
+    return [visiveis, emailAssessor];
+  }
+
+  const colega = visiveis.find(
+    n => n.toLowerCase() === sel.toLowerCase() &&
+         n.toLowerCase() !== (nomeAssessor || '').toLowerCase()
+  );
+  if (colega) {
+    // Ao ver um colega de equipe, não casa pelo e-mail do próprio usuário
+    // (senão os registros do próprio vazariam). Sentinela nunca casa.
+    return [[colega], '\x00'];
+  }
+
+  // Default e fallback: só o próprio assessor.
+  return [[nomeAssessor].filter(Boolean), emailAssessor];
+}
+
 const ProducaoModel = {
   isAdmin(email) {
     return EMAILS_VENDAS_COMPLETAS.includes(email?.toLowerCase());
@@ -88,7 +120,7 @@ const ProducaoModel = {
 
   async findByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
     let query = `SELECT * FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
-    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
+    const params = escopoAssessor(nomeAssessor, emailAssessor, filters);
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -111,7 +143,7 @@ const ProducaoModel = {
 
   async getTotalByAssessorWithFilters(nomeAssessor, emailAssessor, filters = {}) {
     let query = `SELECT COUNT(*) as quantidade, SUM(valor_do_bem) as total FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
-    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
+    const params = escopoAssessor(nomeAssessor, emailAssessor, filters);
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -133,7 +165,7 @@ const ProducaoModel = {
 
   async getTotalPorEscritorioByAssessor(nomeAssessor, emailAssessor, filters = {}) {
     let query = `SELECT TRIM(escritorio) as escritorio, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
-    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
+    const params = escopoAssessor(nomeAssessor, emailAssessor, filters);
     let paramIndex = 3;
 
     if (filters.mes) {
@@ -156,7 +188,7 @@ const ProducaoModel = {
 
   async getTotalPorMesByAssessor(nomeAssessor, emailAssessor, filters = {}) {
     let query = `SELECT mes, SUM(valor_do_bem) as total, COUNT(*) as quantidade FROM producao WHERE ((EXISTS (SELECT 1 FROM unnest(string_to_array(assessor, '/')) AS a WHERE TRIM(a) = ANY($1)) OR LOWER(email_assessor) = LOWER($2)))`;
-    const params = [nomesVisiveis(nomeAssessor), emailAssessor];
+    const params = escopoAssessor(nomeAssessor, emailAssessor, filters);
     let paramIndex = 3;
 
     if (filters.ano) {
@@ -186,7 +218,10 @@ const ProducaoModel = {
     return {
       meses: meses.rows.map(r => r.mes),
       anos: anos.rows.map(r => r.ano),
-      escritorios: escritorios.rows.map(r => r.escritorio)
+      escritorios: escritorios.rows.map(r => r.escritorio),
+      // Assessores que este usuário pode ver (próprio + equipe). O front só
+      // mostra o filtro de assessor quando há mais de um nome aqui.
+      assessores: nomesVisiveis(nomeAssessor)
     };
   },
 

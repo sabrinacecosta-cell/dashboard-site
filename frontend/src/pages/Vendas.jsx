@@ -196,7 +196,7 @@ function Vendas() {
             </select>
           </div>
 
-          {/* Filtro de Assessor só para Admin */}
+          {/* Filtro de Assessor para Admin */}
           {isAdmin && (
             <div style={{ minWidth: '180px' }}>
               <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Assessor</label>
@@ -209,6 +209,27 @@ function Vendas() {
                 {producao?.filterOptions?.assessores?.map(a => (
                   <option key={a} value={a}>{a}</option>
                 ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filtro de Assessor para líder de equipe (não-admin que vê colegas).
+              Sem seleção mostra os clientes do próprio usuário. */}
+          {!isAdmin && (producao?.filterOptions?.assessores?.length || 0) > 1 && (
+            <div style={{ minWidth: '180px' }}>
+              <label style={{ fontSize: '12px', marginBottom: '4px', display: 'block' }}>Assessor</label>
+              <select
+                value={filtroAssessor}
+                onChange={(e) => setFiltroAssessor(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px' }}
+              >
+                <option value="">Meus clientes</option>
+                {producao.filterOptions.assessores
+                  .filter(a => a !== producao.assessor)
+                  .map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                <option value="__equipe__">Todos (equipe)</option>
               </select>
             </div>
           )}
