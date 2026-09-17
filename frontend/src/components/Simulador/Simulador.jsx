@@ -1102,7 +1102,15 @@ export default function Simulador() {
                     <div className="sim-card-grupo-info">
                       <span>Prazo restante: {g.prazo_restante} meses</span>
                       <span>Lance embutido máximo: {Math.round(parseFloat(g.lance_embutido_max) * 100)}%</span>
-                      {g.lance_ultimo_mes != null && (
+                      {contempLongoPrazo ? (
+                        <span
+                          role="button"
+                          style={{ color: '#ffffff', textDecoration: 'underline', cursor: 'pointer' }}
+                          onClick={e => { e.stopPropagation(); navigate('/grupos'); }}
+                        >
+                          Consultar dados na aba de Métricas
+                        </span>
+                      ) : g.lance_ultimo_mes != null && (
                         <span style={{ color: '#ffffff' }}>Lance último mês: {g.lance_ultimo_mes}%</span>
                       )}
                     </div>
