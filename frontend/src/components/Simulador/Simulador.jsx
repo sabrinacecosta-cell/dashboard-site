@@ -517,7 +517,9 @@ export default function Simulador() {
     const modalLabel = modalidade === 'imovel' ? 'IMOBILIÁRIO' : 'AUTOMÓVEL';
     const dataHoje   = new Date().toLocaleDateString('pt-BR');
     const marcaConsorcio = isUNE ? 'UNE Consórcios' : 'Consórcio XP';
-    const rodapeTxt  = `Wflow Assessoria de Investimentos Ltda  |  ${marcaConsorcio} - ${dataHoje}`;
+    const rodapeTxt  = isUNE
+      ? `${marcaConsorcio} - ${dataHoje}`
+      : `Wflow Assessoria de Investimentos Ltda  |  ${marcaConsorcio} - ${dataHoje}`;
 
     // Fundo da página. CNP: escuro + cantos dourados. UNE: claro + faixa verde no
     // topo (mesmo acabamento da página 2).
@@ -545,13 +547,16 @@ export default function Simulador() {
     if (administradora === 'UNE') {
       doc.text('UNE', M, 150);
       doc.text('Consórcios', M, 172);
+      doc.setFontSize(11);
+      doc.setTextColor(...gold);
+      doc.text('GLOOV RIO PRETO', M, 188);
     } else {
       doc.text('Consórcio', M, 150);
       doc.text('XP', M, 172);
+      doc.setFontSize(11);
+      doc.setTextColor(...gold);
+      doc.text(`CONSÓRCIO ${modalLabel}`, M, 188);
     }
-    doc.setFontSize(11);
-    doc.setTextColor(...gold);
-    doc.text(`CONSÓRCIO ${modalLabel}`, M, 188);
 
     // ── Página 2 ────────────────────────────────────────────
     doc.addPage();
@@ -783,7 +788,12 @@ export default function Simulador() {
       doc.setFont('helvetica', 'bold');
       doc.text(`Prazo restante médio: ${prazoMedio} meses`, M + 6, y + 14);
       doc.text(`Lance embutido máximo médio: ${lanceMedio}%`, M + 6, y + 21);
-      doc.text(`Taxa administrativa média: ${formatarPercentual(taxaMedia)}   Fundo de reserva médio: ${formatarPercentual(fundoMedio)}`, M + 6, y + 28);
+      doc.text(
+        isUNE
+          ? `Taxa administrativa média: ${formatarPercentual(taxaMedia)}`
+          : `Taxa administrativa média: ${formatarPercentual(taxaMedia)}   Fundo de reserva médio: ${formatarPercentual(fundoMedio)}`,
+        M + 6, y + 28
+      );
       doc.setFontSize(7);
       doc.setTextColor(...grey);
       doc.setFont('helvetica', 'normal');
@@ -799,7 +809,12 @@ export default function Simulador() {
       doc.setFont('helvetica', 'bold');
       doc.text(`Prazo restante: ${l.prazoRestante} meses`, M + 6, y + 14);
       doc.text(`Lance embutido máximo: ${l.lanceEmbutidoMax}%`, M + 6, y + 21);
-      doc.text(`Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`, M + 6, y + 28);
+      doc.text(
+        isUNE
+          ? `Taxa administrativa: ${formatarPercentual(l.taxaAdm)}`
+          : `Taxa administrativa: ${formatarPercentual(l.taxaAdm)}   Fundo de reserva: ${formatarPercentual(l.fundoReserva)}`,
+        M + 6, y + 28
+      );
       doc.setFontSize(7);
       doc.setTextColor(...grey);
       doc.setFont('helvetica', 'normal');
@@ -854,7 +869,9 @@ export default function Simulador() {
       y += notaBarH + 5;
     }
 
-    const indicados = modalidade === 'imovel'
+    const indicados = isUNE
+      ? ['• Planejamento de aquisições futuras']
+      : modalidade === 'imovel'
       ? ['• Construção gradual de patrimônio imobiliário', '• Planejamento de aquisições futuras', '• Estratégias familiares e sucessórias', '• Preservação de liquidez e rentabilidade dos investimentos']
       : ['• Planejamento de aquisições futuras', '• Preservação de liquidez e rentabilidade dos investimentos'];
     const barH = 8 + indicados.length * 4.5;
