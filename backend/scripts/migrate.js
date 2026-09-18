@@ -984,14 +984,21 @@ async function migrate() {
       (1051, 'imovel', 'CNP', 0.20, 0.19, 0.037, 'INPC', 'SETEMBRO', 0.30, 228, 240, TRUE, TRUE)
     ON CONFLICT (numero_grupo, modalidade) DO NOTHING
   `);
-  // Cotas 150k a 300k (de 10 em 10), sem redutor e com redutor 50%.
+  // Cotas (set/2026): 16 cartas específicas 156.147,00 … 312.300,40, sem redutor.
+  // Autoritativo — apaga e reinsere (os valores antigos 150k-300k não existem mais).
+  // 1051 não está na campanha de redutor 50% (as cotas 0.5 seriam removidas na
+  // limpeza abaixo), então só cotas redutor 0.
   // parcela=0 provisória — recalculada no bloco de recálculo logo abaixo.
+  await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1051 AND modalidade = 'imovel'`);
   await db.query(`
     INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela)
-    SELECT 1051, 'imovel', c, c, 0, r
-    FROM generate_series(150000, 300000, 10000) AS c
-    CROSS JOIN (VALUES (0), (0.5)) AS red(r)
-    ON CONFLICT DO NOTHING
+    SELECT 1051, 'imovel', c, c, 0, 0
+    FROM (VALUES
+      (156147.00), (166556.80), (176966.60), (187376.40),
+      (197786.20), (208196.00), (218605.80), (229015.60),
+      (239425.40), (249835.20), (260245.00), (270654.80),
+      (281064.60), (291474.40), (301884.20), (312300.40)
+    ) AS t(c)
   `);
   console.log('simulador_grupos/cotas 1051 inseridos!');
 
