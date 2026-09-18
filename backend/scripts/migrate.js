@@ -696,7 +696,8 @@ async function migrate() {
       (2127,'Agosto/2026', 55.00::decimal, 156, 22, '0.141'),
       (2128,'Maio/2026',   64.50::decimal,  23,  7, '0.304'),
       (2128,'Junho/2026',  71.80::decimal,  54,  0, '0.000'),
-      (2128,'Julho/2026',  50.00::decimal,  24, 24, '1.000')
+      (2128,'Julho/2026',  50.00::decimal,  24, 24, '1.000'),
+      (2128,'Agosto/2026', 55.00::decimal,   5,  5, '1.000')
     ) AS v(grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal)
     WHERE NOT EXISTS (
       SELECT 1 FROM contemplacao_auto c WHERE c.grupo = v.grupo AND c.mes = v.mes
