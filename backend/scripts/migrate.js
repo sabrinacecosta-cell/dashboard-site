@@ -697,17 +697,18 @@ async function migrate() {
       (2128,'Maio/2026',   64.50::decimal,  23,  7, '0.304'),
       (2128,'Junho/2026',  71.80::decimal,  54,  0, '0.000'),
       (2128,'Julho/2026',  50.00::decimal,  24, 24, '1.000'),
-      (2128,'Agosto/2026', 55.00::decimal,   5,  5, '1.000')
+      (2128,'Agosto/2026', 55.00::decimal,   5,  5, '1.000'),
+      (2132,'Agosto/2026', 66.00::decimal,   6,  6, '1.000')
     ) AS v(grupo, mes, lance_percent, qnt_lances, contemplados, contemplacao_mensal)
     WHERE NOT EXISTS (
       SELECT 1 FROM contemplacao_auto c WHERE c.grupo = v.grupo AND c.mes = v.mes
     )`;
   const resMesesNovos = await db.query(mesesNovosAuto);
-  console.log(`Meses novos auto (2127/2128) inseridos: ${resMesesNovos.rowCount}`);
+  console.log(`Meses novos auto (2127/2128/2132) inseridos: ${resMesesNovos.rowCount}`);
 
   // Recálculo autossuficiente da média (até 12 meses) e do lance do último mês.
   {
-    const AUTO_CURADOS = [2127, 2128];
+    const AUTO_CURADOS = [2127, 2128, 2132];
     const ORD_MES_AUTO = `CASE
         WHEN mes NOT LIKE '%/%' THEN
           CASE LOWER(mes)
