@@ -945,34 +945,35 @@ async function migrate() {
   console.log('Cotas grupo 1042 (16 créditos ago/2026) OK!');
 
   // ── Grupo 1047 (imóvel CNP): plano único 10%, sem redutor ───────────────────
-  // Condição especial de setembro: 1047 fica SÓ com as 16 cartas a 10% (parcela
-  // FIXA "com desconto" do card), sem redutor e sem o plano padrão 15%/18%.
-  // Créditos reajustados (INPC/agosto, fator ~1,09436), bem nominal 150k–300k.
-  // As cotas 10% viram o PLANO PADRÃO (taxa_adm = NULL): assim a visão inicial já
-  // mostra o 10% (o simulador abre no plano de taxa NULL). parcela_fixa = TRUE →
-  // o recálculo não sobrescreve a parcela com desconto. A taxa 10% do grupo fica
-  // no cabeçalho (UPDATE abaixo). Autoritativo — apaga e redefine a cada boot.
+  // Condição especial de setembro: 1047 fica SÓ com as 16 cartas a 10%, sem redutor
+  // e sem o plano padrão 15%/18%. Créditos reajustados (INPC/agosto, fator ~1,09436),
+  // bem nominal 150k–300k. As cotas 10% viram o PLANO PADRÃO (taxa_adm = NULL): a
+  // visão inicial já mostra o 10% (o simulador abre no plano de taxa NULL). A taxa
+  // 10% do grupo fica no cabeçalho (UPDATE abaixo). parcela_fixa = FALSE → a parcela
+  // é calculada pela fórmula (cota, 10%, fundo, prazo) no bloco de recálculo abaixo,
+  // acompanhando o prazo_restante a cada mês. Autoritativo — apaga e redefine a cada
+  // boot; parcela = 0 provisória.
   await db.query(`UPDATE simulador_grupos SET taxa_adm = 0.10 WHERE numero_grupo = 1047 AND modalidade = 'imovel'`);
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1047 AND modalidade = 'imovel'`);
   await db.query(`
     INSERT INTO simulador_cotas (numero_grupo, modalidade, bem_referencia, cota, parcela, redutor_parcela, taxa_adm, parcela_fixa)
     VALUES
-      (1047,'imovel',150000,164154,1060,0,NULL,TRUE),
-      (1047,'imovel',160000,175098,1131,0,NULL,TRUE),
-      (1047,'imovel',170000,186041,1202,0,NULL,TRUE),
-      (1047,'imovel',180000,196985,1273,0,NULL,TRUE),
-      (1047,'imovel',190000,207929,1343,0,NULL,TRUE),
-      (1047,'imovel',200000,218872,1414,0,NULL,TRUE),
-      (1047,'imovel',210000,229816,1485,0,NULL,TRUE),
-      (1047,'imovel',220000,240760,1555,0,NULL,TRUE),
-      (1047,'imovel',230000,251703,1626,0,NULL,TRUE),
-      (1047,'imovel',240000,262647,1697,0,NULL,TRUE),
-      (1047,'imovel',250000,273590,1767,0,NULL,TRUE),
-      (1047,'imovel',260000,284534,1838,0,NULL,TRUE),
-      (1047,'imovel',270000,295478,1909,0,NULL,TRUE),
-      (1047,'imovel',280000,306421,1980,0,NULL,TRUE),
-      (1047,'imovel',290000,317365,2050,0,NULL,TRUE),
-      (1047,'imovel',300000,328308,2121,0,NULL,TRUE)
+      (1047,'imovel',150000,164154,0,0,NULL,FALSE),
+      (1047,'imovel',160000,175098,0,0,NULL,FALSE),
+      (1047,'imovel',170000,186041,0,0,NULL,FALSE),
+      (1047,'imovel',180000,196985,0,0,NULL,FALSE),
+      (1047,'imovel',190000,207929,0,0,NULL,FALSE),
+      (1047,'imovel',200000,218872,0,0,NULL,FALSE),
+      (1047,'imovel',210000,229816,0,0,NULL,FALSE),
+      (1047,'imovel',220000,240760,0,0,NULL,FALSE),
+      (1047,'imovel',230000,251703,0,0,NULL,FALSE),
+      (1047,'imovel',240000,262647,0,0,NULL,FALSE),
+      (1047,'imovel',250000,273590,0,0,NULL,FALSE),
+      (1047,'imovel',260000,284534,0,0,NULL,FALSE),
+      (1047,'imovel',270000,295478,0,0,NULL,FALSE),
+      (1047,'imovel',280000,306421,0,0,NULL,FALSE),
+      (1047,'imovel',290000,317365,0,0,NULL,FALSE),
+      (1047,'imovel',300000,328308,0,0,NULL,FALSE)
     ON CONFLICT DO NOTHING
   `);
   console.log('Cotas grupo 1047 (plano único 10%, sem redutor) OK!');
@@ -1403,17 +1404,13 @@ async function migrate() {
   console.log('Coluna administradora em simulador_grupos OK!');
 
   // decrementa_prazo: se FALSE, o grupo fica fora do "-1 mês em todos" do fechamento
-  // de mês (rota PUT /admin/grupos/prazo/decrement). Reseta e redefine — autoritativo,
-  // porque o 1055 já foi decrementado por engano uma vez e precisou de revert manual.
+  // de mês (rota PUT /admin/grupos/prazo/decrement). Reseta todos os CNP para TRUE —
+  // autoritativo. (Nenhum grupo fica fixo hoje; o 1055 passou a decrementar em set/2026.)
   await db.query(
     `ALTER TABLE simulador_grupos ADD COLUMN IF NOT EXISTS decrementa_prazo BOOLEAN NOT NULL DEFAULT TRUE`
   );
   await db.query(`UPDATE simulador_grupos SET decrementa_prazo = TRUE WHERE administradora = 'CNP'`);
-  // 1055: prazo fixo em 240 — não decrementa no fechamento de mês.
-  await db.query(`
-    UPDATE simulador_grupos SET decrementa_prazo = FALSE
-    WHERE administradora = 'CNP' AND modalidade = 'imovel' AND numero_grupo = 1055
-  `);
+  // 1055: a partir de set/2026 decrementa como os demais (antes ficava fixo em 240).
   console.log('Coluna decrementa_prazo em simulador_grupos OK!');
 
   // Histórico mensal de lances da Embracon. Diferente do modelo CNP (1 série por
