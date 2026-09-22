@@ -1011,7 +1011,7 @@ async function migrate() {
   // ── Grupo 1049 (imóvel CNP): premissas + cotas ──────────────────────────────
   // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
   // taxa_adm sem redutor 15% / com redutor 50% = 18%; fundo 3,7%.
-  // prazo_restante=181 / total 200. Reajuste INPC/FEVEREIRO.
+  // prazo_restante=180 / total 200. Reajuste INPC/FEVEREIRO.
   // lance_embutido_max=0.30 e reajuste=INPC confirmados pela área comercial.
   // sem_media_contemplacao: média virá depois.
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1049 AND modalidade = 'imovel'`);
@@ -1022,7 +1022,7 @@ async function migrate() {
        reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
        sem_media_contemplacao, decrementa_prazo)
     VALUES
-      (1049, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'FEVEREIRO', 0.30, 181, 200, TRUE, TRUE)
+      (1049, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'FEVEREIRO', 0.30, 180, 200, TRUE, TRUE)
   `);
   // Cotas informadas pela área comercial (16 créditos, PA de R$ 10.389,79),
   // sem redutor e com redutor 50%. bem_referencia = cota.
@@ -1043,7 +1043,7 @@ async function migrate() {
   // ── Grupo 1048 (imóvel CNP): premissas + cotas ──────────────────────────────
   // "Apaga o que tem e redefine" (autoritativo a cada boot): reseta grupo+cotas.
   // Condição especial setembro: taxa sem redutor 15% / com redutor 50% = 18%;
-  // fundo 3,7%; lance embutido máx 30%; prazo_restante=180 / total=200.
+  // fundo 3,7%; lance embutido máx 30%; prazo_restante=179 / total=200.
   // Reajuste INPC/JANEIRO. sem_media_contemplacao: média virá das Métricas depois.
   await db.query(`DELETE FROM simulador_cotas WHERE numero_grupo = 1048 AND modalidade = 'imovel'`);
   await db.query(`DELETE FROM simulador_grupos WHERE numero_grupo = 1048 AND modalidade = 'imovel'`);
@@ -1053,7 +1053,7 @@ async function migrate() {
        reajuste, mes_reajuste, lance_embutido_max, prazo_restante, prazo_total,
        sem_media_contemplacao, decrementa_prazo)
     VALUES
-      (1048, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'JANEIRO', 0.30, 180, 200, TRUE, TRUE)
+      (1048, 'imovel', 'CNP', 0.15, 0.18, 0.037, 'INPC', 'JANEIRO', 0.30, 179, 200, TRUE, TRUE)
   `);
   // Cotas informadas pela área comercial (16 créditos, PA de R$ 10.417,78),
   // sem redutor e com redutor 50%. bem_referencia = cota.
